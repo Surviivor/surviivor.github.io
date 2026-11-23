@@ -516,3 +516,6 @@ nav.bottom .nbadge{position:absolute;top:-6px;left:calc(50% + 6px);min-width:20p
 .slide .hero-in{display:flex;flex-direction:column;min-height:250px;box-sizing:border-box}
 .slide .hero-in .btn{align-self:flex-start}
 .slide .hero-go{margin-top:auto}
+
+.hero-ph.shot img{object-position:0 0}
+.hero-ph.trophy img{object-position:50% 30%}
