@@ -1,0 +1,40 @@
+name: Mise à jour des matchs et classements
+
+on:
+  schedule:
+    # 2 fois par jour (heure UTC) : 6h23 et 23h23 à Paris en hiver
+    - cron: '23 5,22 * * *'
+  workflow_dispatch: {}   # bouton « Run workflow » pour lancer à la main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Récupérer les données ESPN
+        run: python scripts/fetch_espn.py dump.json data/logos
+      - name: Construire les fichiers du site
+        run: python scripts/build_feeds.py dump.json data
+      - name: Enregistrer les changements
+        run: |
+          rm -f dump.json
+          git config user.name "survivor-bot"
+          git config user.email "survivor-bot@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet; then
+            echo "Rien de nouveau."
+          else
+            git commit -m "Mise à jour des matchs et classements"
+            git push
+          fi

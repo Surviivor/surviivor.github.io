@@ -1,0 +1,41 @@
+rules_version = '2';
+// Règles de sécurité Survivor — à coller dans Firebase > Firestore > Règles.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+
+    // Mets ici les mêmes adresses que dans firebase-config.js (SURVIVOR_ADMINS)
+    function isAdmin() {
+      return signedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in ['remy.wannebroucq@gmail.com'];
+    }
+
+    // Ligues : tout le monde (connecté) les lit.
+    // Seuls les admins les modifient, sauf la ligue privée d'un joueur,
+    // qui porte son identifiant et qu'il est le seul à gérer.
+    match /leagues/{lid} {
+      allow read: if signedIn();
+      allow write: if isAdmin() || (signedIn() && lid == request.auth.uid);
+    }
+
+    // Profils des joueurs : chacun ne modifie que le sien.
+    match /players/{uid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && (uid == request.auth.uid || isAdmin());
+    }
+
+    // Choix des joueurs : un document par joueur, ligue et journée.
+    // Le serveur refuse tout choix créé ou modifié après l'heure limite.
+    match /picks/{pid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && pid == request.resource.data.league + '__' + request.resource.data.round + '__' + request.auth.uid
+        && request.time.toMillis() <
+           get(/databases/$(database)/documents/leagues/$(request.resource.data.league)).data.rounds[request.resource.data.round].dl;
+      allow delete: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+    }
+  }
+}

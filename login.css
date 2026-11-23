@@ -1,0 +1,11 @@
+.login{min-height:100vh;display:flex;flex-direction:column;justify-content:center;gap:14px;padding:32px 22px calc(32px + var(--safe-b))}
+.login-logo{width:82%;max-width:330px;height:auto;margin:0 auto 4px}
+.login-sub{text-align:center;color:var(--muted);font-weight:600;margin-bottom:18px}
+.login .lg-btn{gap:12px}
+.login .lg-btn svg{width:22px;height:22px;margin:0}
+.login-form{display:flex;flex-direction:column;gap:10px}
+.login-links{display:flex;flex-wrap:wrap;justify-content:center;gap:16px;margin-top:6px}
+.login-links button{font-family:var(--title);font-weight:700;font-size:13px;color:var(--muted);text-decoration:underline}
+.login-msg{background:var(--brand-soft);color:#991B1B;border-radius:12px;padding:10px 12px;font-weight:600;font-size:14px;text-align:center}
+.login-card{background:var(--card);border-radius:20px;padding:18px;line-height:1.5}
+.login-card code{background:#fff;border-radius:6px;padding:1px 5px}
