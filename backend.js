@@ -225,5 +225,5 @@ onAuthStateChanged(auth, async u => {
     const cur = await getDoc(ref);
     if (!cur.exists()) await setDoc(ref, { id: u.uid, pseudo: (pendingPseudo || u.displayName || (u.email || 'Joueur').split('@')[0]).slice(0, 24), leagues: {} });
   } catch (e) { console.warn(e); }
-  const s = document.createElement('script'); s.src = 'app.js'; document.body.appendChild(s);
+  const s = document.createElement('script'); s.src = 'app.js' + (new URL(import.meta.url).search || ''); document.body.appendChild(s);
 });
