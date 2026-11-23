@@ -354,6 +354,25 @@ function startDemo(){
   afterData(); render(); setInterval(render,30000);
 }
 
+
+/* ---------- Installer l'appli (écran d'accueil du téléphone) ---------- */
+let installEvt=null;
+window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); installEvt=e; render(); });
+window.addEventListener('appinstalled',()=>{ installEvt=null; toast('Survivor est installé sur ton téléphone !'); render(); });
+const isStandalone=()=>{ try{ return matchMedia('(display-mode: standalone)').matches || navigator.standalone===true; }catch(e){ return false; } };
+const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+function installCard(where){
+  if(!window.SURVIVOR_FIREBASE || isStandalone()) return '';
+  if(where==='home'){ try{ if(localStorage.getItem('survivor-install-hide')) return ''; }catch(e){} }
+  const ios=isIOS();
+  if(!ios && !installEvt && where==='home') return '';
+  const how=ios
+    ? `Dans Safari, touche <b>Partager</b> <span class="ishare"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M7 10H5v11h14V10h-2"/></svg></span> puis <b>« Sur l'écran d'accueil »</b>.`
+    : installEvt ? `Ajoute l'icône Survivor sur ton téléphone : elle ouvre le site en plein écran, comme une appli.`
+    : `Dans le menu du navigateur <b>⋮</b>, choisis <b>« Ajouter à l'écran d'accueil »</b> ou <b>« Installer l'application »</b>.`;
+  return `<div class="card install"><img src="img/icon-192.png" alt=""><div class="itx"><b>INSTALLE L'APPLI</b><p>${how}</p>${!ios&&installEvt?`<button class="btn pop sm" data-a="install">INSTALLER</button>`:''}</div>${where==='home'?`<button class="ix" data-a="hideInstall" aria-label="Fermer">✕</button>`:''}</div>`;
+}
+
 /* ================================================================ Actions */
 function buildRound(lg, comp, fr, nFallback){
   const f=S.feeds[comp];
@@ -393,6 +412,8 @@ const A = {
   hview(v){ S.view.hview=v; S.view.hv=v; render(); },
   toLeagues(){ const el=document.getElementById('ligues'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); },
   slide(i){ const el=document.getElementById('slides'); if(el) el.scrollTo({left:el.clientWidth*(+i),behavior:'smooth'}); },
+  install(){ if(!installEvt) return; installEvt.prompt(); installEvt.userChoice.finally(()=>{ installEvt=null; render(); }); },
+  hideInstall(){ try{ localStorage.setItem('survivor-install-hide','1'); }catch(e){} render(); },
   logout(){ if(window.survivorLogout) window.survivorLogout(); },
   tab(v){ S.view.tab=v; S.view.league=null; S.view.manage=null; render(); scrollTo(0,0); },
   filter(v){ S.view.filter=v; render(); },
@@ -597,6 +618,7 @@ function viewHome(){
     <div class="hero slide"><div class="hero-ph shot"><img src="img/slide-pari.jpg" alt=""></div><div class="hero-in"><div class="hero-k">2 / 3</div><div class="hero-h">BON PARI,<br><span>TU SURVIS.</span></div><div class="hero-l">Bon pari = tu survis.<br>Mauvais pari = éliminé.</div><button class="btn light" data-a="slide" data-v="2">SUIVANT ${I.arrow}</button></div></div>
     <div class="hero slide"><div class="hero-ph trophy"><img src="img/covers/trophee.jpg" alt=""></div><div class="hero-in"><div class="hero-k">3 / 3</div><div class="hero-h">LE DERNIER<br><span>EN VIE</span><br>GAGNE.</div><button class="btn brand hero-go" data-a="toLeagues">À TOI DE JOUER ${I.arrow}</button></div></div>
   </div><div class="sdots">${[0,1,2].map(i=>`<button data-a="slide" data-v="${i}" aria-label="Écran ${i+1}"></button>`).join('')}</div></div>
+  ${installCard('home')}
   <div class="sec" id="ligues" style="margin:26px 0 12px;scroll-margin-top:16px">Les ligues</div>`;
   h+=`<div class="chips"><button class="chip ${f==='all'?'on':''}" data-a="filter" data-v="all">Toutes</button><button class="chip ${f==='mine'?'on':''}" data-a="filter" data-v="mine">Mes ligues</button>`+cats.map(k=>`<button class="chip ${f===k?'on':''}" data-a="filter" data-v="${k}">${esc(cat(k).label)}</button>`).join('')+`</div>`;
   if(!list.length){
@@ -1067,6 +1089,7 @@ function viewProfil(){
   const jl=my.filter(c=>c.started && c.rounds.some(r=>t(r.deadline)<=now()));
   if(jl.length){ h+=`<div class="sec">Mon parcours</div>`+jl.map(c=>journey(c,S.me,{title:true,share:true})).join(''); }
   if(CREDITS && Object.keys(CREDITS).length) h+=`<details class="card coll" style="margin-top:14px"><summary><span class="lbl">Crédits photos</span>${I.chev}</summary><div class="credits">${PHOTOS.filter(p=>CREDITS[p.k]).map(p=>`<p><b>${esc(p.label)}</b> — ${creditLine(p.k)}</p>`).join('')}</div></details>`;
+  h+=installCard('profil');
   if(window.survivorLogout) h+=`<button class="btn line full" style="margin-top:18px" data-a="logout">SE DÉCONNECTER</button>`;
   h+=`<div style="text-align:center;margin-top:26px"><button class="link red" style="color:var(--err)" data-a="wipe">${I.trash.replace('<svg','<svg width="22" height="22"')} Supprimer mes données</button></div>`;
   return h;
