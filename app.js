@@ -615,10 +615,11 @@ function viewHome(){
   }
   let h=`<div class="topbar"><span class="tb-logo">${WM()}</span><button class="tb-av" data-a="tab" data-v="profil" aria-label="Profil">${me.avatar?`<img src="${blobUrl(me.avatar)}" data-fb="${esc(initials(nm))}" alt="">`:esc(initials(nm))}</button></div>
   <div class="slider"><div class="slides" id="slides">
-    <div class="hero slide"><div class="hero-ph shot"><img src="img/slide-choix.jpg" alt=""></div><div class="hero-in"><div class="hero-k">1 / 3</div><div class="hero-h">CHOISIS<br><span>UNE</span><br>ÉQUIPE.</div><div class="hero-l">Chaque journée, mise sur l'équipe de ton choix.</div><button class="btn light" data-a="slide" data-v="1">SUIVANT ${I.arrow}</button></div></div>
-    <div class="hero slide"><div class="hero-ph shot"><img src="img/slide-pari.jpg" alt=""></div><div class="hero-in"><div class="hero-k">2 / 3</div><div class="hero-h">BON PARI,<br><span>TU SURVIS.</span></div><div class="hero-l">Bon pari = tu survis.<br>Mauvais pari = éliminé.</div><button class="btn light" data-a="slide" data-v="2">SUIVANT ${I.arrow}</button></div></div>
-    <div class="hero slide"><div class="hero-ph trophy"><img src="img/covers/trophee.jpg" alt=""></div><div class="hero-in"><div class="hero-k">3 / 3</div><div class="hero-h">LE DERNIER<br><span>EN VIE</span><br>GAGNE.</div><button class="btn brand hero-go" data-a="toLeagues">À TOI DE JOUER ${I.arrow}</button></div></div>
-  </div><div class="sdots">${[0,1,2].map(i=>`<button data-a="slide" data-v="${i}" aria-label="Écran ${i+1}"></button>`).join('')}</div></div>
+    <div class="hero slide"><div class="hero-ph shot"><img src="img/slide-choix.jpg" alt=""></div><div class="hero-in"><div class="hero-k">1 / 4</div><div class="hero-h">CHOISIS<br><span>UNE</span><br>ÉQUIPE.</div><div class="hero-l">Chaque journée, mise sur l'équipe de ton choix.</div><button class="btn light" data-a="slide" data-v="1">SUIVANT ${I.arrow}</button></div></div>
+    <div class="hero slide"><div class="hero-ph shot"><img src="img/slide-pari.jpg" alt=""></div><div class="hero-in"><div class="hero-k">2 / 4</div><div class="hero-h">BON PARI,<br><span>TU SURVIS.</span></div><div class="hero-l">Bon pari = tu survis.<br>Mauvais pari = éliminé.</div><button class="btn light" data-a="slide" data-v="2">SUIVANT ${I.arrow}</button></div></div>
+    <div class="hero slide"><div class="hero-ph trophy"><img src="img/covers/trophee.jpg" alt=""></div><div class="hero-in"><div class="hero-k">3 / 4</div><div class="hero-h">LE DERNIER<br><span>EN VIE</span><br>GAGNE.</div><button class="btn light" data-a="slide" data-v="3">SUIVANT ${I.arrow}</button></div></div>
+    <div class="hero slide"><div class="hero-ph"><img src="img/covers/mur.jpg" alt=""></div><div class="hero-in"><div class="hero-k">4 / 4</div><div class="hero-h">JAMAIS<br><span>2 FOIS</span><br>LA MÊME.</div><div class="hero-l">Interdit de parier 2 fois<br>sur la même équipe.</div><button class="btn brand hero-go" data-a="toLeagues">À TOI DE JOUER ${I.arrow}</button></div></div>
+  </div><div class="sdots">${[0,1,2,3].map(i=>`<button data-a="slide" data-v="${i}" aria-label="Écran ${i+1}"></button>`).join('')}</div></div>
   ${installCard('home')}
   <div class="sec" id="ligues" style="margin:26px 0 12px;scroll-margin-top:16px">Les ligues</div>`;
   h+=`<div class="chips"><button class="chip ${f==='all'?'on':''}" data-a="filter" data-v="all">Toutes</button><button class="chip ${f==='mine'?'on':''}" data-a="filter" data-v="mine">Mes ligues</button>`+cats.map(k=>`<button class="chip ${f===k?'on':''}" data-a="filter" data-v="${k}">${esc(cat(k).label)}</button>`).join('')+`</div>`;
@@ -659,7 +660,7 @@ function syncSlider(){
   const el=document.getElementById('slides'); if(!el) return;
   const upd=()=>{ const i=Math.round(el.scrollLeft/Math.max(1,el.clientWidth)); S.slide=i; document.querySelectorAll('.sdots button').forEach((b,j)=>b.classList.toggle('on',j===i)); };
   if(!el.dataset.bound){ el.dataset.bound='1'; el.addEventListener('scroll',()=>requestAnimationFrame(upd),{passive:true}); }
-  if(S.slide===undefined){ const seen=(()=>{ try{ return localStorage.getItem('survivor-tuto'); }catch(e){ return null; } })(); S.slide=seen?2:0; try{ localStorage.setItem('survivor-tuto','1'); }catch(e){} }
+  if(S.slide===undefined){ const seen=(()=>{ try{ return localStorage.getItem('survivor-tuto'); }catch(e){ return null; } })(); S.slide=seen?3:0; try{ localStorage.setItem('survivor-tuto','1'); }catch(e){} }
   el.scrollLeft=el.clientWidth*S.slide; upd();
 }
 function tickCountdowns(){
