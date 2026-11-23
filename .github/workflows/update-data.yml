@@ -36,6 +36,7 @@ jobs:
             echo "Rien de nouveau."
           else
             git commit -m "Mise à jour des matchs et classements"
+            git pull --rebase origin main
             git push
           fi
       - name: Ajouter les nouvelles journées dans les ligues
