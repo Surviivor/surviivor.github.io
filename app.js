@@ -484,6 +484,7 @@ const A = {
     if(lg.comp!==S.view.comp) patch.comp=S.view.comp;
     writeLeague(lid,patch).then(()=>toast(`Journée ${b.round.n} importée : ${b.count} matchs.`));
   },
+  togglePin(lid){ const on=!S.leagues[lid].pin; writeLeague(lid,{pin:on?Date.now():0}).then(()=>toast(on?'Ligue affichée en premier sur l\'accueil.':'Ligue retirée de la tête de liste.')); },
   toggleAuto(lid){ const on=S.leagues[lid].autoImport===false; writeLeague(lid,{autoImport:on}).then(()=>{ toast(on?'Ajout automatique activé.':'Ajout automatique désactivé.'); if(on) autoImport(lid); }); },
   peek(v){ S.open['peek'+v]=!S.open['peek'+v]; render(); },
   saveRules(lid){ writeLeague(lid,{rules:document.getElementById('ru-txt').value.slice(0,3000)}).then(()=>toast('Règles enregistrées.')); },
@@ -598,7 +599,7 @@ const visible = lg => !lg.private || isMember(lg.id) || canManage(lg);
 function viewHome(){
   const all=Object.values(S.leagues).filter(visible).map(l=>C(l.id)).filter(Boolean);
   const order={upcoming:0,live:1,finished:2};
-  all.sort((a,b)=>order[a.status]-order[b.status] || (a.status==='upcoming'?t(a.lg.startAt)-t(b.lg.startAt):t(b.lg.createdAt)-t(a.lg.createdAt)));
+  all.sort((a,b)=>(+(b.lg.pin||0))-(+(a.lg.pin||0)) || order[a.status]-order[b.status] || (a.status==='upcoming'?t(a.lg.startAt)-t(b.lg.startAt):t(b.lg.createdAt)-t(a.lg.createdAt)));
   const cats=[...new Set(all.map(c=>c.lg.category||'football'))];
   const f=S.view.filter;
   const list=all.filter(c=> f==='all'?true : f==='mine'?isMember(c.lg.id) : (c.lg.category||'football')===f);
@@ -974,9 +975,9 @@ function viewAdmin(){
   }
   if(mineL.length){
     h+=`<div class="sec">${owner?'Gérer les ligues':'Ma ligue'}</div>`;
-    mineL.map(l=>C(l.id)).filter(Boolean).sort((a,b)=>t(b.lg.createdAt)-t(a.lg.createdAt)).forEach(c=>{
+    mineL.map(l=>C(l.id)).filter(Boolean).sort((a,b)=>(+(b.lg.pin||0))-(+(a.lg.pin||0)) || t(b.lg.createdAt)-t(a.lg.createdAt)).forEach(c=>{
       const todo=c.rounds.filter(r=>(c.info[r.k]||{}).state==='waiting').length;
-      h+=`<button class="lrow" data-a="manage" data-v="${c.lg.id}"><span class="th">${coverHtml(c.lg)}</span><span class="x">${leagueTitle(c.lg.name)}<small>${c.mem.length} joueurs · ${c.rounds.length} journées · code ${esc(c.lg.code||'')}</small></span>${todo?'<span class="pill orange">Résultats</span>':statusPill(c)}</button>`;
+      h+=`<button class="lrow" data-a="manage" data-v="${c.lg.id}"><span class="th">${coverHtml(c.lg)}</span><span class="x">${leagueTitle(c.lg.name)}<small>${c.lg.pin?'⭐ En premier · ':''}${c.mem.length} joueurs · ${c.rounds.length} journées · code ${esc(c.lg.code||'')}</small></span>${todo?'<span class="pill orange">Résultats</span>':statusPill(c)}</button>`;
     });
   }
   return h;
@@ -987,6 +988,7 @@ function viewManage(lid){
   const lg=c.lg, cc=cat(lg.category);
   let h=`<div class="mhead"><button class="back" data-a="unmanage">${I.back}</button><div class="grow" style="min-width:0"><div class="cat">${esc(cc.label)}</div>${leagueTitle(lg.name,'inline')}</div></div>`;
   h+=`<div class="card codebox"><div class="lbl">Code de la ligue</div><div class="code">${esc(lg.code||'—')}</div><div class="help" style="margin:0 0 16px">Partage ce code à tes proches pour qu'ils rejoignent la ligue.</div><button class="btn pop" data-a="shareCode" data-v="${lid}">${I.share} PARTAGER LE CODE</button></div>`;
+  if(S.isOwner) h+=`<div class="card"><label class="auto-sw" style="margin:0"><input type="checkbox" ${lg.pin?'checked':''} data-a="togglePin" data-v="${lid}"> ⭐ Afficher en premier sur l'accueil</label><div class="help" style="margin:8px 0 0">La ligue passe en tête de la liste « Les ligues ». Si plusieurs ligues sont cochées, la dernière cochée est la première.</div></div>`;
   // info
   const sd=new Date(lg.startAt);
   h+=`<div class="card"><div class="h-disp">NOM &amp; DESCRIPTION</div>
