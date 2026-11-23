@@ -493,6 +493,20 @@ const A = {
     writeLeague(lid,{rounds:{[rk]:{n:Object.keys(lg.rounds||{}).length+1,deadline:new Date(d+'T'+tm).toISOString(),dl:Date.parse(d+'T'+tm),q:q.slice(0,80),a:{n:a.slice(0,40),img:S.tmpImg.a||''},b:{n:b.slice(0,40),img:S.tmpImg.b||''}}}});
     S.tmpImg={}; S.qNames={a:'',b:'',q:''}; g('aq-a').value=''; g('aq-b').value=''; g('aq-q').value=''; toast('Question ajoutée !');
   },
+  async autoImg(){
+    const sides=['a','b'].filter(k=>(S.qNames[k]||'').trim());
+    if(!sides.length) return toast('Écris d\'abord les deux options.',true);
+    toast('Recherche des photos…');
+    let n=0; for(const k of sides){ if(await autoSide(k)) n++; }
+    if(n) toast(n>1?'Photos trouvées !':'Photo trouvée !');
+  },
+  async autoImgFor(arg){
+    const [lid,rk]=arg.split('|'); const r=((S.leagues[lid]||{}).rounds||{})[rk]; if(!r) return;
+    toast('Recherche des photos…'); const upd={};
+    for(const k of ['a','b']){ const u=await findImg((r[k]||{}).n); if(u) upd[k]={img:u}; }
+    if(!Object.keys(upd).length) return toast('Aucune photo trouvée.',true);
+    writeLeague(lid,{rounds:{[rk]:upd}}).then(()=>toast('Photos mises à jour.'));
+  },
   qImg(side){ pickFile(async f=>{ const a=await upload(f); if(a){ S.tmpImg=S.tmpImg||{}; S.tmpImg[side]=a.id; render(); toast('Photo ajoutée.'); } }); },
   qImgFor(arg){ const [lid,rk,side]=arg.split('|'); pickFile(async f=>{ const a=await upload(f); if(a) writeLeague(lid,{rounds:{[rk]:{[side]:{img:a.id}}}}).then(()=>toast('Photo mise à jour.')); }); },
   setRes(arg){
@@ -693,6 +707,32 @@ const PH_COLORS=[['#E5493A','#7F1D1D'],['#2563EB','#1E1B4B'],['#16A34A','#064E3B
 function phColor(name, alt){ let h=0; const s=String(name||'?').toLowerCase(); for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; let i=h%PH_COLORS.length; if(alt!==undefined && i===alt) i=(i+1)%PH_COLORS.length; return i; }
 function phHtml(name, idx){ const c=PH_COLORS[idx]; return `<span class="ph2" style="background:linear-gradient(150deg,${c[0]},${c[1]})"><b>${esc(initials(name||'?'))}</b></span>`; }
 function sideColors(a,b){ const ia=phColor(a); return [ia, phColor(b, ia)]; }
+
+// Photo automatique (Wikipédia, images libres) pour les questions « Tu préfères »
+const imgCache={};
+async function findImg(term){
+  term=String(term||'').trim(); if(!term) return '';
+  if(term in imgCache) return imgCache[term];
+  let url='';
+  for(const lang of ['fr','en']){
+    try{
+      const u=`https://${lang}.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch=${encodeURIComponent(term)}&gsrlimit=3&prop=pageimages&piprop=thumbnail&pithumbsize=640`;
+      const j=await (await fetch(u)).json();
+      const pages=Object.values((j.query||{}).pages||{}).sort((x,y)=>(x.index||0)-(y.index||0));
+      const hit=pages.find(pg=>pg.thumbnail&&pg.thumbnail.source);
+      if(hit){ url=hit.thumbnail.source; break; }
+    }catch(e){}
+  }
+  imgCache[term]=url; return url;
+}
+async function autoSide(side, quiet){
+  const name=(S.qNames[side]||'').trim(); if(!name) return false;
+  const url=await findImg(name);
+  if((S.qNames[side]||'').trim()!==name) return false;
+  if(url){ S.tmpImg=S.tmpImg||{}; S.tmpImg[side]=url; render(); return true; }
+  if(!quiet) toast(`Pas de photo trouvée pour « ${name} ».`,true);
+  return false;
+}
 function duelEdit(a, b, actA, actB, q){
   const [ca,cb]=sideColors(a.n,b.n);
   const half=(s,act,ci,key)=>`<button class="dedit" ${act}>${s.img?`<img src="${blobUrl(s.img)}" data-fb="" alt="">`:phHtml(s.n,ci)}<span class="cta">${I.cam}${s.img?'CHANGER':'PHOTO'}</span><span class="nm" data-prev="${key}">${esc(s.n||'Option '+key.toUpperCase())}</span></button>`;
@@ -983,8 +1023,9 @@ function viewManage(lid){
     h+=`<div class="card"><div class="h-disp" style="font-size:24px">CRÉER UNE QUESTION</div>
       <label class="f">Question</label><input class="in w" id="aq-q" maxlength="80" placeholder="Tu préfères ?">
       <div class="row2 eq"><div><label class="f">Option A</label><input class="in w" id="aq-a" maxlength="40" placeholder="Zidane"></div><div><label class="f">Option B</label><input class="in w" id="aq-b" maxlength="40" placeholder="Henry"></div></div>
-      <label class="f">Photos (touche une moitié)</label>
+      <label class="f">Photos (trouvées automatiquement, ou touche une moitié pour mettre la tienne)</label>
       ${duelEdit({n:S.qNames.a,img:ti.a},{n:S.qNames.b,img:ti.b},'data-a="qImg" data-v="a"','data-a="qImg" data-v="b"',S.qNames.q)}
+      <button class="btn line sm full" style="margin-top:10px" data-a="autoImg">${I.sparkle}PHOTOS AUTOMATIQUES</button>
       <label class="f">Date limite du vote</label><div class="row2"><input class="in w" type="date" id="aq-d" value="${dateIn(d)}"><input class="in w" type="time" id="aq-t" value="20:00"></div>
       <button class="btn pop full" style="margin-top:16px" data-a="addQuestion" data-v="${lid}">AJOUTER LA QUESTION</button></div>`;
   }
@@ -1003,7 +1044,7 @@ function viewManage(lid){
           h+=`</div>`;
         });
       } else {
-        h+=`<div class="adm-m"><div class="mm">${esc(r.q||'')} : ${esc(r.a.n)} / ${esc(r.b.n)}</div>${ri.votes?`<div class="muted" style="font-size:12px;margin-top:4px">Votes : ${ri.votes.A} / ${ri.votes.B}</div>`:''}${duelEdit(r.a||{},r.b||{},`data-a="qImgFor" data-v="${lid}|${r.k}|a"`,`data-a="qImgFor" data-v="${lid}|${r.k}|b"`,r.q)}</div>`;
+        h+=`<div class="adm-m"><div class="mm">${esc(r.q||'')} : ${esc(r.a.n)} / ${esc(r.b.n)}</div>${ri.votes?`<div class="muted" style="font-size:12px;margin-top:4px">Votes : ${ri.votes.A} / ${ri.votes.B}</div>`:''}${duelEdit(r.a||{},r.b||{},`data-a="qImgFor" data-v="${lid}|${r.k}|a"`,`data-a="qImgFor" data-v="${lid}|${r.k}|b"`,r.q)}<button class="btn line sm full" style="margin-top:8px" data-a="autoImgFor" data-v="${lid}|${r.k}">${I.sparkle}PHOTOS AUTO</button></div>`;
       }
       if(t(r.deadline)>now()) h+=`<button class="link" style="font-size:12px;margin-top:10px" data-a="delRound" data-v="${lid}|${r.k}">${I.trash.replace('<svg','<svg width="14" height="14"')} Supprimer</button>`;
       h+=`</div>`;
@@ -1055,6 +1096,10 @@ function render(){
   tickCountdowns();
   syncSlider();
 }
+document.addEventListener('change',e=>{
+  const m=/^aq-(a|b)$/.exec(e.target.id||''); if(!m) return; const k=m[1];
+  S.qNames[k]=e.target.value; if(!(S.tmpImg||{})[k]) autoSide(k,true);
+});
 document.addEventListener('input',e=>{
   const id=e.target.id; if(!/^aq-(a|b|q)$/.test(id)) return; const k=id.slice(3); S.qNames[k]=e.target.value;
   if(k==='q'){ const q=document.querySelector('.duel.edit .q'); if(q) q.textContent=(e.target.value||'TU PRÉFÈRES ?').toUpperCase(); return; }
