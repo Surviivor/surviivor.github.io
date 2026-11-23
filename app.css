@@ -519,3 +519,4 @@ nav.bottom .nbadge{position:absolute;top:-6px;left:calc(50% + 6px);min-width:20p
 
 .hero-ph.shot img{object-position:0 0}
 .hero-ph.trophy img{object-position:50% 30%}
+.hero-ph.shot img{object-position:0 50%}
