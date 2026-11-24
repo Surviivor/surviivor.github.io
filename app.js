@@ -94,16 +94,19 @@ document.addEventListener('error', e=>{
   const el=e.target; if(el && el.tagName==='IMG' && el.dataset.fb!==undefined){ const span=document.createElement('span'); span.innerHTML=el.dataset.fb; el.replaceWith(...span.childNodes); }
 }, true);
 
-const WM = () => `<img class="wm" src="img/survivor.png" data-fb="${esc('<span class="wm-txt">SURVIVOR</span>')}" alt="Survivor">`;
-const WM_RE=/survivor/i;
+// Logos : « Survivor » (élimination) et « One Shot » (ligue aux points)
+const BRANDS = { survivor:{img:'survivor', txt:'SURVIVOR', alt:'Survivor'}, oneshot:{img:'oneshot', txt:'ONE SHOT', alt:'One Shot'} };
+const brandOf = s => /^one\s*shot$/i.test(String(s).trim()) ? 'oneshot' : 'survivor';
+const WM = (k='survivor', white=false) => { const b=BRANDS[k]||BRANDS.survivor; return `<img class="wm" src="img/${b.img}${white?'-white':''}.png" data-fb="${esc('<span class="wm-txt">'+b.txt+'</span>')}" alt="${b.alt}">`; };
+const WM_RE=/survivor|one shot/i;
 function isLight(el){ try{ const c=getComputedStyle(el).color.match(/\d+(\.\d+)?/g); if(!c) return false; const [r,g,b]=c.map(Number); return (0.299*r+0.587*g+0.114*b)>160; }catch(e){ return false; } }
 function wmify(root){
   if(!root) return;
   const tw=document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {acceptNode:n=>{ const p=n.parentElement; if(!p||/^(SCRIPT|STYLE|OPTION|SELECT|TEXTAREA|TITLE)$/.test(p.tagName)||p.closest('.wm-txt')) return NodeFilter.FILTER_REJECT; return WM_RE.test(n.nodeValue)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_SKIP; }});
   const nodes=[]; while(tw.nextNode()) nodes.push(tw.currentNode);
   nodes.forEach(n=>{
-    const light=isLight(n.parentElement); const parts=n.nodeValue.split(/(survivor)/i); const frag=document.createDocumentFragment();
-    parts.forEach(pt=>{ if(/^survivor$/i.test(pt)){ const img=document.createElement('img'); img.className='wm in'; img.alt='Survivor'; img.src=light?'img/survivor-white.png':'img/survivor.png'; img.dataset.fb='<span class="wm-txt">SURVIVOR</span>'; frag.appendChild(img); } else if(pt) frag.appendChild(document.createTextNode(pt)); });
+    const light=isLight(n.parentElement); const parts=n.nodeValue.split(/(survivor|one shot)/i); const frag=document.createDocumentFragment();
+    parts.forEach(pt=>{ if(/^(survivor|one shot)$/i.test(pt)){ const b=BRANDS[brandOf(pt)]; const img=document.createElement('img'); img.className='wm in'; img.alt=b.alt; img.src=`img/${b.img}${light?'-white':''}.png`; img.dataset.fb=`<span class="wm-txt">${b.txt}</span>`; frag.appendChild(img); } else if(pt) frag.appendChild(document.createTextNode(pt)); });
     n.replaceWith(frag);
   });
 }
@@ -116,15 +119,17 @@ function unaccent(root){
 }
 const _obs=new MutationObserver(ms=>{ ms.forEach(m=>m.addedNodes.forEach(nd=>{ if(nd.nodeType===1){ wmify(nd); } else if(nd.nodeType===3 && nd.parentElement) wmify(nd.parentElement); })); });
 document.addEventListener('DOMContentLoaded',()=>{});
-const stripPrefix = n => String(n||'').replace(/^\s*survivor\s*(x\b)?\s*/i,'').trim();
-const fullName = rest => 'Survivor X '+stripPrefix(rest);
+const stripPrefix = n => String(n||'').replace(/^\s*(survivor|one\s*shot)\s*(x\b)?\s*/i,'').trim();
+const fmtBrand = f => f==='points' ? 'oneshot' : 'survivor';
+const fullName = (rest, f) => (f==='points'?'One Shot X ':'Survivor X ')+stripPrefix(rest);
+const splitBrand = name => { const m=String(name||'').match(/^\s*(survivor|one\s*shot)\b\s*(.*)$/i); return m?{k:brandOf(m[1]), rest:m[2]}:null; };
 const XI = () => `<img class="xm" src="img/x.png" data-fb="X" alt="X">`;
 const xify = h => { const m=String(h).match(/^\s*x(\s+|$)(.*)$/i); return m ? `${XI()}<span>${m[2]}</span>` : h; };
-const pfxInput = (id, cls, val, ph) => `<div class="pfx-in ${cls}"><span class="pfx">${WM()}${XI()}</span><input class="in ${cls}" id="${id}" maxlength="48" value="${esc(val||'')}" placeholder="${esc(ph)}"></div>`;
+const pfxInput = (id, cls, val, ph, k='survivor') => `<div class="pfx-in ${cls} ${k}"><span class="pfx">${WM(k)}${XI()}</span><input class="in ${cls}" id="${id}" maxlength="48" value="${esc(val||'')}" placeholder="${esc(ph)}"></div>`;
 function leagueTitle(name, cls=''){
   const n=String(name||'');
-  const m=n.match(/^\s*survivor\b\s*(.*)$/i);
-  if(m) return `<div class="ltitle ${cls}">${WM()}<span class="rest">${xify(esc(m[1]).toUpperCase())}</span></div>`;
+  const sb=splitBrand(n);
+  if(sb) return `<div class="ltitle ${cls}">${WM(sb.k)}<span class="rest">${xify(esc(sb.rest).toUpperCase())}</span></div>`;
   return `<div class="ltitle ${cls}"><span class="rest" style="margin-top:0">${esc(n).toUpperCase()}</span></div>`;
 }
 const titleImg = (file, text) => `<img class="big" src="img/${file}" data-fb="${esc('<span class="big">'+text+'</span>')}" alt="${esc(text)}">`;
@@ -515,11 +520,12 @@ const A = {
   newCat(v){ S.view.newCat=v; render(); },
   newFmt(v){ S.view.newFmt=v; render(); },
   setFmt(v){ const [lid,f]=v.split('|'); const lg=S.leagues[lid]; if(!lg) return;
-    writeLeague(lid, f==='points'?{scoring:'points', nRounds:+lg.nRounds||POINTS_N}:{scoring:'survivor'}).then(()=>toast(f==='points'?'Ligue passée au format « aux points ».':'Ligue passée au format Survivor.')); },
+    const name=fullName(stripPrefix(lg.name), f).slice(0,60);
+    writeLeague(lid, f==='points'?{scoring:'points', nRounds:+lg.nRounds||POINTS_N, name}:{scoring:'survivor', name}).then(()=>toast(f==='points'?'Ligue passée au format One Shot.':'Ligue passée au format Survivor.')); },
   createLeague(){
     const g=id=>document.getElementById(id);
-    const rest=stripPrefix(g('nl-name').value), name=fullName(rest), desc=g('nl-desc').value.trim(), d=g('nl-date').value, h=g('nl-time').value||'20:00';
-    if(rest.length<2) return toast('Complète le nom après « Survivor X ».',true);
+    const rest=stripPrefix(g('nl-name').value), name=fullName(rest, (cat(S.view.newCat).mode==='pick'&&S.view.newFmt==='points')?'points':'survivor'), desc=g('nl-desc').value.trim(), d=g('nl-date').value, h=g('nl-time').value||'20:00';
+    if(rest.length<2) return toast('Complète le nom de la ligue.',true);
     if(!d) return toast('Choisis la date de fin des inscriptions.',true);
     if(!S.isOwner && S.leagues[S.me]) return toast('Tu as déjà créé ta ligue.',true);
     if(guard()) return;
@@ -531,7 +537,7 @@ const A = {
   },
   saveInfo(lid){
     const g=id=>document.getElementById(id);
-    const rest=stripPrefix(g('ei-name').value); if(rest.length<2) return toast('Complète le nom après « Survivor X ».',true); const name=fullName(rest);
+    const rest=stripPrefix(g('ei-name').value); if(rest.length<2) return toast('Complète le nom de la ligue.',true); const name=fullName(rest, isPoints(S.leagues[lid])?'points':'survivor');
     const patch={name:name.slice(0,60),description:g('ei-desc').value.trim().slice(0,300)};
     const cf=compFromName(name), lgx=S.leagues[lid]; if(cf && cat(lgx.category).comps.includes(cf) && cf!==lgx.comp){ patch.comp=cf; S.view.comp=cf; loadFeed(cf); }
     const nrI=g('ei-nr'); if(nrI && !nrI.disabled && isPoints(lgx)) patch.nRounds=Math.min(38,Math.max(3,+nrI.value||POINTS_N));
@@ -1042,8 +1048,8 @@ function viewParis(){
     c.rounds.forEach(r=>{ const ri=c.info[r.k]||{}; const p=pickOf(S.me,c.lg.id,r.k); if(t(r.deadline)<=now() && p){ if(ri.state==='waiting') wait.push([c,r]); else if(ri.state==='done'||ri.state==='cancelled') hist.push([c,r,p,ri]); } });
   });
   next.sort((a,b)=>t(a[1].deadline)-t(b[1].deadline));
-  const hdr=(c,r)=>{ const n=(c.info[r.k]||{}).n; const m=c.lg.name.match(/^\s*survivor\b\s*(.*)$/i);
-    return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px"><span style="font-family:var(--bold);font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px;min-width:0">${m?`<span style="font-size:15px">${WM()}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-flex;align-items:center">${xify(esc(m[1]))}</span>`:esc(c.lg.name)}</span><span class="muted hdr-r" style="font-size:14px;white-space:nowrap">${c.pick?'JOURNÉE':'QUESTION'} ${n||''} · ${fmtD(r.deadline)}</span></div>`; };
+  const hdr=(c,r)=>{ const n=(c.info[r.k]||{}).n; const sb=splitBrand(c.lg.name), m=sb?[0,sb.rest]:null;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px"><span style="font-family:var(--bold);font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px;min-width:0">${m?`<span style="font-size:15px">${WM(sb.k)}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-flex;align-items:center">${xify(esc(m[1]))}</span>`:esc(c.lg.name)}</span><span class="muted hdr-r" style="font-size:14px;white-space:nowrap">${c.pick?'JOURNÉE':'QUESTION'} ${n||''} · ${fmtD(r.deadline)}</span></div>`; };
   h+=`<div class="sec" style="margin-top:4px">Prochaine journée (${next.length})</div>`;
   if(!next.length) h+=`<div class="card muted" style="text-align:center;font-size:15px">Rien à jouer pour le moment 👌</div>`;
   next.forEach(([c,r])=>{
@@ -1068,7 +1074,7 @@ function viewParis(){
 
 function fmtBlock(fmt, act, lid, nr, locked){
   const v=lid?lid+'|':'';
-  return `<label class="f">Format</label><div class="chips in" style="flex-wrap:wrap"><button class="chip sm ${fmt!=='points'?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}survivor"`}>Élimination</button><button class="chip sm ${fmt==='points'?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}points"`}>Aux points</button></div>`+
+  return `<label class="f">Format</label><div class="chips in" style="flex-wrap:wrap"><button class="chip sm fmtchip ${fmt!=='points'?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}survivor"`} aria-label="Survivor">${WM('survivor', fmt!=='points')}</button><button class="chip sm fmtchip ${fmt==='points'?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}points"`} aria-label="One Shot">${WM('oneshot', fmt==='points')}</button></div>`+
     (fmt==='points'?`<div class="help" style="margin:-4px 0 10px">Chaque journée, on choisit une équipe : victoire 3 pts, nul 1 pt, défaite 0. Jamais 2 fois la même équipe. À la fin, le 1er gagne et le dernier paie le cadeau.</div><label class="f">Nombre de journées</label><input class="in${lid?' w':''}" type="number" inputmode="numeric" min="3" max="38" id="${lid?'ei-nr':'nl-nr'}" value="${nr||POINTS_N}" ${locked?'disabled':''}>`
       :`<div class="help" style="margin:-4px 0 10px">Un mauvais pari et tu es éliminé. Le dernier en vie gagne.</div>`);
 }
@@ -1081,7 +1087,7 @@ function viewAdmin(){
     const d=new Date(now()+864e5); d.setHours(20,0,0,0);
     const k=S.view.newCat, cc=cat(k);
     h+=`<div class="card"><div class="ctitle" style="margin-bottom:18px">Créer une ligue</div>
-      <label class="f">Nom</label>${pfxInput('nl-name','','','Ligue des potes')}
+      <label class="f">Nom</label>${pfxInput('nl-name','','','Ligue des potes', (cc.mode==='pick'&&S.view.newFmt==='points')?'oneshot':'survivor')}
       <label class="f">Catégorie</label><div class="chips in">${Object.entries(CATS).map(([kk,v])=>`<button class="chip ${kk===k?'on':''}" data-a="newCat" data-v="${kk}">${esc(v.label)}</button>`).join('')}</div>
       <label class="f" style="margin-top:4px">Type de pari : ${cc.mode==='pick'?'un match par journée':'vote à la majorité'}</label>
       <div class="help" style="margin:0">${cc.mode==='pick'?`Chaque joueur choisit UN seul match par journée et parie dessus. Interdit de reprendre une équipe déjà jouée.${cc.draw&&S.view.newFmt!=='points'?' Le match nul peut être parié.':''}`:'Chaque question oppose 2 options : ceux qui votent comme la minorité sont éliminés.'}</div>
@@ -1109,7 +1115,7 @@ function viewManage(lid){
   // info
   const sd=new Date(lg.startAt);
   h+=`<div class="card"><div class="h-disp">NOM &amp; DESCRIPTION</div>
-    <label class="f">Nom de la ligue</label>${pfxInput('ei-name','w',stripPrefix(lg.name),'Ligue 1')}
+    <label class="f">Nom de la ligue</label>${pfxInput('ei-name','w',stripPrefix(lg.name),'Ligue 1', isPoints(lg)?'oneshot':'survivor')}
     <label class="f">Description</label><textarea class="in w" id="ei-desc" maxlength="300" placeholder="Quelques mots affichés sur la vignette de la ligue…">${esc(lg.description||'')}</textarea>
     ${c.status==='upcoming'?`<label class="f">Date de début (fin des inscriptions)</label><div class="row2"><input class="in w" type="date" id="ei-date" value="${dateIn(sd)}"><input class="in w" type="time" id="ei-time" value="${timeIn(sd)}"></div><div class="help">La ligue démarre le ${fmtDT(lg.startAt)}.</div>`:''}
     ${isPickMode(lg)?fmtBlock(isPoints(lg)?'points':'survivor','setFmt',lid,lg.nRounds,c.rounds.some(r=>t(r.deadline)<=now())):''}

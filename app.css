@@ -545,3 +545,6 @@ nav.bottom .nbadge{position:absolute;top:-6px;left:calc(50% + 6px);min-width:20p
 .hero.red .hero-h,.hero.red .hero-h span{color:#fff}
 .hero.red .hero-k{color:rgba(255,255,255,.75)}
 .hero.red .hero-ph:after{background:linear-gradient(90deg,rgba(229,73,58,.55),rgba(229,73,58,0) 60%)}
+
+.chip.fmtchip .wm{height:13px;width:auto;display:block}
+.pfx-in.oneshot .in{padding-left:158px}
