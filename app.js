@@ -25,6 +25,7 @@ const DEFAULT_RULES = {
 };
 
 const I = {
+  crop:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>',
   down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l7 7 4-4 7 7"/><path d="M15 16h6v-6"/></svg>',
   trophy:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 3h10v2h3a1 1 0 0 1 1 1v2a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V18h3v3H8v-3h3v-3.1A5 5 0 0 1 7.3 12H7a4 4 0 0 1-4-4V6a1 1 0 0 1 1-1h3V3zm10 4v3a2 2 0 0 0 2-2V7h-2zM5 7v1a2 2 0 0 0 2 2V7H5z"/></svg>',
   paris:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 13l4 4L16 7M10 15l2 2L22 7"/></svg>',
@@ -151,10 +152,37 @@ function coverKey(lg){
   let h=0; const id=String(lg.id||lg.name||''); for(let i=0;i<id.length;i++) h=(h*31+id.charCodeAt(i))>>>0;
   return PHOTOS[h%PHOTOS.length].k;
 }
+function coverFrame(p){ if(!p) return ''; const x=+p.x||50, y=+p.y||50, z=Math.max(1,+p.z||1); return `object-position:${x}% ${y}%;transform:scale(${z});transform-origin:${x}% ${y}%`; }
 function coverHtml(lg){
-  const k=coverKey(lg);
-  if(k.startsWith && k.startsWith('asset:')) return `<img src="${blobUrl(k.slice(6))}" alt="">`;
-  return coverImg(k, cat(lg.category).emo);
+  const k=coverKey(lg), st=coverFrame(lg.coverPos);
+  if(k.startsWith && k.startsWith('asset:')) return `<img src="${blobUrl(k.slice(6))}" alt=""${st?` style="${st}"`:''}>`;
+  const h=coverImg(k, cat(lg.category).emo);
+  return st ? h.replace('<img ',`<img style="${st}" `) : h;
+}
+// Recadrage de la couverture : on garde l'image entière et on mémorise le cadrage (point visé + zoom)
+function cropCover(lid){
+  const lg=S.leagues[lid]; if(!lg) return;
+  const p=lg.coverPos||{}; let x=+p.x||50, y=+p.y||50, z=Math.max(1,+p.z||1);
+  const d=document.createElement('div'); d.className='modal';
+  d.innerHTML=`<div class="sheet crop-sheet"><h3>RECADRER LA PHOTO</h3><div class="muted" style="font-size:14px">Fais glisser la photo et zoome : le cadrage s'applique à la vignette de la ligue.</div>
+    <div class="ccv-box">${coverHtml({...lg,coverPos:null})}</div>
+    <div class="crop-zoom"><span>−</span><input type="range" min="1" max="3" step="0.01" value="${z}"><span>+</span></div>
+    <div class="acts"><button class="btn ghost" data-x>ANNULER</button><button class="btn" data-ok>VALIDER</button></div></div>`;
+  document.body.appendChild(d);
+  const box=d.querySelector('.ccv-box'), img=box.querySelector('img'), range=d.querySelector('input[type=range]');
+  if(!img){ d.remove(); return toast('Pas de photo à recadrer.',true); }
+  const draw=()=>{ x=Math.min(100,Math.max(0,x)); y=Math.min(100,Math.max(0,y)); img.setAttribute('style',coverFrame({x,y,z})); };
+  draw();
+  let last=null;
+  box.addEventListener('pointerdown',e=>{ box.setPointerCapture(e.pointerId); last={x:e.clientX,y:e.clientY}; });
+  box.addEventListener('pointermove',e=>{ if(!last) return; const r=box.getBoundingClientRect(); x-=(e.clientX-last.x)/r.width*100/z; y-=(e.clientY-last.y)/r.height*100/z; last={x:e.clientX,y:e.clientY}; draw(); });
+  const up=()=>{ last=null; }; box.addEventListener('pointerup',up); box.addEventListener('pointercancel',up);
+  box.addEventListener('wheel',e=>{ e.preventDefault(); z=Math.min(3,Math.max(1,z*(e.deltaY<0?1.06:1/1.06))); range.value=z; draw(); },{passive:false});
+  range.addEventListener('input',()=>{ z=+range.value; draw(); });
+  d.addEventListener('click',e=>{
+    if(e.target===d||e.target.closest('[data-x]')){ d.remove(); return; }
+    if(e.target.closest('[data-ok]')){ d.remove(); writeLeague(lid,{coverPos:{x:Math.round(x*10)/10,y:Math.round(y*10)/10,z:Math.round(z*100)/100}}).then(()=>toast('Cadrage enregistré.')); }
+  });
 }
 function coverImg(k, emo){
   if(isPhoto(k)) return `<img src="img/covers/${k}.jpg" alt="">`;
@@ -556,8 +584,9 @@ const A = {
   },
   setCat(lid,k){ const cc=cat(k); writeLeague(lid,{category:k,mode:cc.mode,comp:cc.comps[0]||null}); S.view.comp=cc.comps[0]||null; if(S.view.comp) loadFeed(S.view.comp); },
   setComp(lid,k){ S.view.comp=k; loadFeed(k); writeLeague(lid,{comp:k}).then(()=>{ toast('Championnat : '+COMP_NAMES[k]); autoImport(lid); }); },
-  setCover(lid,k){ writeLeague(lid,{cover:k}).then(()=>toast('Photo mise à jour.')); },
-  uploadCover(lid){ pickFile(async f=>{ const a=await upload(f); if(a) writeLeague(lid,{cover:'asset:'+a.id}).then(()=>toast('Photo importée !')); }); },
+  setCover(lid,k){ writeLeague(lid,{cover:k,coverPos:null}).then(()=>toast('Photo mise à jour.')); },
+  uploadCover(lid){ pickFile(async f=>{ const a=await upload(f); if(a) writeLeague(lid,{cover:'asset:'+a.id,coverPos:null}).then(()=>toast('Photo importée !')); }); },
+  cropCover(lid){ if(guard()) return; cropCover(lid); },
   uploadAvatar(){ if(guard()) return; pickFile(async f=>{ const u=URL.createObjectURL(f); const b=await cropAvatar(u); URL.revokeObjectURL(u); if(!b) return; const a=await upload(b); if(a) writeMe({avatar:a.id}).then(()=>toast('Photo de profil mise à jour !')); }); },
   recropAvatar(){ if(guard()) return; const me=S.players[S.me]||{}; if(!me.avatar) return A.uploadAvatar(); if(S.mode==='demo') return toast('Indisponible en mode démo.',true);
     cropAvatar(blobUrl(me.avatar)).then(async b=>{ if(!b) return; const a=await upload(b); if(a) writeMe({avatar:a.id}).then(()=>toast('Photo recadrée !')); }); },
@@ -1196,7 +1225,7 @@ function viewManage(lid){
   h+=`<div class="card"><div class="h-disp" style="font-size:24px">PHOTO DE LA LIGUE</div><div class="bigcover">${coverHtml(lg)}</div>${isPhoto(shown)?`<div class="credit">${creditLine(shown)}</div>`:''}
     <div class="covers"><button class="auto ${cur==='auto'?'on':''}" data-a="setCover" data-v="${lid}|auto">${I.sparkle}AUTO</button>${PHOTOS.map(p=>`<button class="${cur===p.k?'on':''}" data-a="setCover" data-v="${lid}|${p.k}">${coverImg(p.k)}${esc(p.label)}</button>`).join('')}</div>
     <div class="help" style="margin:-4px 0 12px;font-size:13px">« Auto » attribue une de ces photos à la ligue.</div>
-    <button class="btn line full" data-a="uploadCover" data-v="${lid}">${I.image} IMPORTER UNE PHOTO</button></div>`;
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="btn line full" data-a="cropCover" data-v="${lid}">${I.crop} RECADRER</button><button class="btn line full" data-a="uploadCover" data-v="${lid}">${I.image} IMPORTER</button></div></div>`;
   // import
   if(c.pick && cc.comps.length){
     const comp=S.view.comp && cc.comps.includes(S.view.comp) ? S.view.comp : cc.comps[0];
