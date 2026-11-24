@@ -24,14 +24,20 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Survivor">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="stylesheet" href="app.css?v=202611241030">
-<link rel="stylesheet" href="login.css?v=202611241030">
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js">
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js">
+<link rel="preload" href="app.js?v=202611241032" as="script">
+<link rel="stylesheet" href="app.css?v=202611241032">
+<link rel="stylesheet" href="login.css?v=202611241032">
 </head>
 <body>
 <div id="app"><div class="spin"></div></div>
 <div id="toast"></div>
 <input type="file" id="filepick" accept="image/*" hidden>
-<script src="firebase-config.js?v=202611241030"></script>
-<script type="module" src="backend.js?v=202611241030"></script>
+<script src="firebase-config.js?v=202611241032"></script>
+<script type="module" src="backend.js?v=202611241032"></script>
 </body>
 </html>

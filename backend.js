@@ -9,7 +9,7 @@ import {
   signOut, updateProfile, setPersistence, browserLocalPersistence, connectAuthEmulator
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
-  getFirestore, doc, collection, onSnapshot, setDoc, deleteDoc, getDoc, getDocs,
+  getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, deleteDoc, getDoc, getDocs,
   query, where, writeBatch, connectFirestoreEmulator
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
@@ -26,7 +26,10 @@ if (!cfg.apiKey || /COLLE-ICI/.test(cfg.apiKey)) {
 
 const fbApp = initializeApp(cfg);
 const auth = getAuth(fbApp);
-const fs = getFirestore(fbApp);
+// Cache local (IndexedDB) : les visites suivantes s'affichent tout de suite, puis se mettent à jour
+let fs;
+try { fs = initializeFirestore(fbApp, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); }
+catch (e) { console.warn('cache local indisponible', e); fs = getFirestore(fbApp); }
 setPersistence(auth, browserLocalPersistence).catch(() => {});
 if (cfg.useEmulator) { connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true }); connectFirestoreEmulator(fs, '127.0.0.1', 8080); }
 
@@ -250,7 +253,6 @@ onAuthStateChanged(auth, async u => {
   }
   if (started) return;
   started = 'user';
-  appEl.innerHTML = '<div class="spin"></div>';
-  await ensurePlayer(u);
-  loadApp();
+  loadApp();          // le site se charge pendant qu'on vérifie le profil du joueur
+  ensurePlayer(u);
 });
