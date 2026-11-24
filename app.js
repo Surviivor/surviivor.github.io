@@ -821,11 +821,11 @@ function leagueCardNew(c){ let h='';
     const faces=c.mem.slice(0,3).map(u=>`<span class="nc-face">${(S.players[u]||{}).avatar?`<img src="${blobUrl(S.players[u].avatar)}" alt="">`:`<img src="${DEFAULT_AVATAR}" alt="">`}</span>`).join('');
     const info=c.points?`Objectif ${c.N} pts · leader à ${c.ranking[0]?c.ranking[0].pts:0}`:c.status==='upcoming'?`Début dans ${cd||'quelques instants'}`:`${c.alive.length} en vie sur ${c.mem.length}`;
     h+=`<div class="ncard"><button class="nc-cover" data-a="open" data-v="${lg.id}" aria-label="Ouvrir la ligue">${coverHtml(lg)}${pill}<span class="nc-cat">${catTag(lg.category)}</span></button>
-      <div class="nc-body">${leagueTitle(lg.name)}
+      <div class="nc-body"><button class="nc-main" data-a="open" data-v="${lg.id}">${leagueTitle(lg.name)}
         ${c.winners.length?`<div class="nc-win">🏆 ${[...c.winners,...(c.lastRule==='wins'?c.lasts:[])].map(w=>esc(nameOf(w))).join(' & ')}</div>`:''}
         ${c.lastRule==='drink'&&c.lasts.length?`<div class="nc-win">🍺 ${c.lasts.map(w=>esc(nameOf(w))).join(' & ')} ${c.lasts.length>1?'doivent':'doit'} un verre</div>`:''}
         ${c.lastRule&&c.status!=='finished'?`<div class="nc-opt">${LAST_RULES[c.lastRule].ico} ${LAST_RULES[c.lastRule].t}</div>`:''}
-        <div class="nc-info"><span>${c.points?I.chart:c.status==='upcoming'?I.clock:I.heart}${esc(info)}</span></div>
+        <div class="nc-info"><span>${c.points?I.chart:c.status==='upcoming'?I.clock:I.heart}${esc(info)}</span></div></button>
         <div class="nc-foot"><button class="nc-faces" data-a="openSurv" data-v="${lg.id}" aria-label="Voir les joueurs">${faces}<em>${c.mem.length} joueur${c.mem.length>1?'s':''}</em></button>${act}</div>
       </div></div>`;
   return h;

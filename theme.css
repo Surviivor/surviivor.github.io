@@ -497,3 +497,4 @@ nav.bottom .nbadge{font-size:11px;top:2px;left:auto;right:4px;border:2px solid v
 .how-card .how-sw button .wm{height:20px}
 .sl-bub{display:inline-flex;vertical-align:-4px;margin-right:6px;color:var(--on)}
 .sl-bub svg{width:22px;height:22px}
+.nc-main{display:block;width:100%;text-align:left;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}
