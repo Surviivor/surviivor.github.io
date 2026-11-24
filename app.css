@@ -529,3 +529,10 @@ nav.bottom .nbadge{position:absolute;top:-6px;left:calc(50% + 6px);min-width:20p
 .card.install .btn{margin-top:10px}
 .card.install .ishare svg{width:15px;height:15px;vertical-align:-2px}
 .card.install .ix{position:absolute;top:10px;right:12px;background:none;border:0;font-size:15px;color:#9CA3AF;cursor:pointer;padding:4px}
+
+.prize{display:flex;gap:8px;align-items:flex-start;background:#FEF3C7;color:#78350F;border-radius:12px;padding:8px 11px;font-size:12.5px;line-height:1.35;margin:8px 0 4px}
+.prize b{font-weight:700}
+.prize .pz-i{font-size:15px;line-height:1.1}
+.prize.big{font-size:14px;padding:12px 14px;margin:0 0 14px;border-radius:16px}
+.prize.big .pz-i{font-size:20px}
+.slide .hero-h.sm{font-size:24px;line-height:1.08}

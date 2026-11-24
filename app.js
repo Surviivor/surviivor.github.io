@@ -596,6 +596,12 @@ function statusPill(c){ if(c.status==='upcoming') return '<span class="pill gree
 const catTag = k => `<span class="tag">${I[cat(k).icon]}${esc(cat(k).label)}</span>`;
 const visible = lg => !lg.private || isMember(lg.id) || canManage(lg);
 
+
+/* Lot : maillot rétro du championnat (ligues de football) */
+function prizeBand(lg, cls){
+  if((lg.category||'football')!=='football' || !lg.comp || !COMP_NAMES[lg.comp]) return '';
+  return `<div class="prize ${cls||''}"><span class="pz-i">👕</span><span>Le dernier survivant de cette ligue gagne <b>un maillot rétro de ${esc(COMP_NAMES[lg.comp])}</b></span></div>`;
+}
 function viewHome(){
   const all=Object.values(S.leagues).filter(visible).map(l=>C(l.id)).filter(Boolean);
   const order={upcoming:0,live:1,finished:2};
@@ -618,7 +624,7 @@ function viewHome(){
     <div class="hero slide"><div class="hero-ph shot"><img src="img/slide-choix.jpg" alt=""></div><div class="hero-in"><div class="hero-k">1 / 4</div><div class="hero-h">CHOISIS<br><span>UNE</span><br>ÉQUIPE.</div><div class="hero-l">Chaque journée, mise sur l'équipe de ton choix.</div><button class="btn light" data-a="slide" data-v="1">SUIVANT ${I.arrow}</button></div></div>
     <div class="hero slide"><div class="hero-ph shot"><img src="img/slide-pari.jpg" alt=""></div><div class="hero-in"><div class="hero-k">2 / 4</div><div class="hero-h">BON PARI,<br><span>TU SURVIS.</span></div><div class="hero-l">Bon pari = tu survis.<br>Mauvais pari = éliminé.</div><button class="btn light" data-a="slide" data-v="2">SUIVANT ${I.arrow}</button></div></div>
     <div class="hero slide"><div class="hero-ph"><img src="img/covers/mur.jpg" alt=""></div><div class="hero-in"><div class="hero-k">3 / 4</div><div class="hero-h">JAMAIS<br><span>2 FOIS</span><br>LA MÊME.</div><div class="hero-l">Interdit de parier 2 fois<br>sur la même équipe.</div><button class="btn light" data-a="slide" data-v="3">SUIVANT ${I.arrow}</button></div></div>
-    <div class="hero slide"><div class="hero-ph trophy"><img src="img/covers/trophee.jpg" alt=""></div><div class="hero-in"><div class="hero-k">4 / 4</div><div class="hero-h">LE DERNIER<br><span>EN VIE</span><br>GAGNE…</div><div class="hero-l">…un maillot de foot rétro&nbsp;!</div><button class="btn brand hero-go" data-a="toLeagues">À TOI DE JOUER ${I.arrow}</button></div></div>
+    <div class="hero slide"><div class="hero-ph trophy"><img src="img/covers/trophee.jpg" alt=""></div><div class="hero-in"><div class="hero-k">4 / 4</div><div class="hero-h sm">LE DERNIER<br>EN VIE GAGNE<br><span>UN MAILLOT<br>DE FOOT RÉTRO.</span></div><button class="btn brand hero-go" data-a="toLeagues">À TOI DE JOUER ${I.arrow}</button></div></div>
   </div><div class="sdots">${[0,1,2,3].map(i=>`<button data-a="slide" data-v="${i}" aria-label="Écran ${i+1}"></button>`).join('')}</div></div>
   ${installCard('home')}
   <div class="sec" id="ligues" style="margin:26px 0 12px;scroll-margin-top:16px">Les ligues</div>`;
@@ -636,6 +642,7 @@ function viewHome(){
       <div class="tags">${catTag(lg.category)}${lg.private?'<span class="tag priv">Privée</span>':''}</div>
       <div class="tags">${statusPill(c)}</div>
       ${leagueTitle(lg.name)}
+      ${prizeBand(lg)}
       ${cd?`<div class="cd">Début dans ${cd}</div>`:''}
       ${c.winners.length?`<div class="win">🏆 ${c.winners.map(w=>esc(nameOf(w))).join(' & ')}</div>`:''}
       <div class="stats"><span>${I.users}<b>${c.mem.length}</b> joueurs</span><span>${I.heart}<b>${c.status==='upcoming'?c.mem.length:c.alive.length}</b> en vie</span></div>
@@ -878,6 +885,7 @@ function viewLeague(lid){
   if(mine && c.status!=='upcoming') pill = c.winners.includes(S.me)?'<span class="pill round" style="background:var(--brand)">🏆 GAGNANT</span>':alive?'<span class="pill round green"><span class="dot"></span>EN VIE</span>':'<span class="pill round red"><span class="dot"></span>ÉLIMINÉ</span>';
   else if(mine) pill='<span class="pill round green">INSCRIT</span>';
   let h=`<div class="lhead"><button class="cback" data-a="back" aria-label="Retour">${I.back}</button><div class="grow">${leagueTitle(lg.name)}</div>${pill}</div>`;
+  h+=prizeBand(lg,'big');
   if(canManage(lg)) h+=`<button class="link grey" style="margin:-4px 0 14px" data-a="manage" data-v="${lid}">${I.gear.replace('<svg','<svg width="18" height="18"')} Gérer la ligue</button>`;
   if(c.status==='finished') h+= c.winners.includes(S.me)?`<div class="banner win"><span class="ico">🏆</span>${c.winners.length>1?'Tu fais partie des 2 derniers survivants !':'Tu es le grand gagnant !'}</div>`:`<div class="banner dead"><span class="ico">🏁</span>Ligue terminée · ${c.winners.map(w=>esc(nameOf(w))).join(' & ')} ${c.winners.length>1?'gagnent':'gagne'}</div>`;
   else if(!mine) h+= c.status==='upcoming'?`<div class="banner info"><span class="ico">🎟️</span><div style="flex:1">Inscriptions ouvertes jusqu'au ${fmtDT(lg.startAt)}</div><button class="btn sm green" data-a="join" data-v="${lid}">JE M'INSCRIS</button></div>`:`<div class="banner info"><span class="ico">🔒</span>Inscriptions closes. Tu suis la ligue en spectateur.</div>`;
