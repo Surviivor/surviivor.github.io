@@ -827,7 +827,8 @@ function statusPill(c){ if(c.status==='upcoming') return '<span class="pill gree
 const catTag = k => `<span class="tag">${I[cat(k).icon]}${esc(cat(k).label)}</span>`;
 const HIDDEN_CATS=['tuprefere']; // « Tu préfères » désactivé pour le moment
 const shownL = lid => !HIDDEN_CATS.includes((S.leagues[lid]||{}).category);
-const visible = lg => !HIDDEN_CATS.includes(lg.category) && (!lg.private || isMember(lg.id) || canManage(lg));
+// Toutes les ligues (y compris celles créées par les joueurs) sont visibles par tout le monde
+const visible = lg => !HIDDEN_CATS.includes(lg.category);
 
 
 /* Lot : maillot rétro du championnat (ligues de football) */
@@ -1320,7 +1321,7 @@ function fmtBlock(fmt, act, lid, nr, locked){
 function viewAdmin(){
   if(S.view.manage) return viewManage(S.view.manage);
   const owner=S.isOwner;
-  let h=`<div class="ptitle">${owner?titleImg('title-admin.png','ADMIN'):titleImg('title-ma-ligue.png','MA LIGUE')}<div class="sub">${owner?'Crée et gère les ligues.':'Crée ta ligue privée et invite tes proches avec un code.'}</div></div>`;
+  let h=`<div class="ptitle">${owner?titleImg('title-admin.png','ADMIN'):titleImg('title-ma-ligue.png','MA LIGUE')}<div class="sub">${owner?'Crée et gère les ligues.':'Crée ta ligue : tous les joueurs la verront, et tu peux aussi inviter tes proches avec son code.'}</div></div>`;
   const mineL = (owner ? Object.values(S.leagues) : Object.values(S.leagues).filter(l=>l.id===S.me)).filter(l=>shownL(l.id));
   if(owner || !mineL.length){
     const d=new Date(now()+864e5); d.setHours(20,0,0,0);
