@@ -132,7 +132,7 @@ function leagueTitle(name, cls=''){
   if(sb) return `<div class="ltitle ${cls}">${WM(sb.k)}<span class="rest">${xify(esc(sb.rest).toUpperCase())}</span></div>`;
   return `<div class="ltitle ${cls}"><span class="rest" style="margin-top:0">${esc(n).toUpperCase()}</span></div>`;
 }
-const titleImg = (file, text) => `<img class="big" src="img/${file}" data-fb="${esc('<span class="big">'+text+'</span>')}" alt="${esc(text)}">`;
+const titleImg = (file, text) => `<img class="big" src="img/${file}?v=2" data-fb="${esc('<span class="big">'+text+'</span>')}" alt="${esc(text)}">`;
 
 const PHOTOS=[{k:'supporter',label:'Supporter'},{k:'ciseau',label:'Ciseau'},{k:'derby',label:'Derby'},{k:'trophee',label:'Trophée'},{k:'nuit',label:'Terrain de nuit'},{k:'tribune',label:'Tribune'},{k:'coupfranc',label:'Coup franc'},{k:'pause',label:'Pause'},{k:'volee',label:'Volée'},{k:'sprint',label:'Sprint'},{k:'mur',label:'Le mur'}];
 const isPhoto = k => PHOTOS.some(p=>p.k===k);
