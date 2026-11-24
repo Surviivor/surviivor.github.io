@@ -1190,7 +1190,7 @@ function viewLeague(lid){
   else h+=`<div class="banner dead"><span class="ico">☠️</span>Tu es éliminé. Tente ta chance dans une autre ligue…</div>`;
   h+=lastBanner(c);
   const tab=S.view.ltab;
-  h+=`<div class="seg"><button class="${tab==='paris'?'on':''}" data-a="ltab" data-v="paris">${c.pick?'Paris':'Vote'}</button><button class="${tab==='surv'?'on':''}" data-a="ltab" data-v="surv">${c.points?'Classement':'Survivants'}</button><button class="${tab==='hist'?'on':''}" data-a="ltab" data-v="hist">Historique</button></div>`;
+  h+=`<div class="seg"><button class="${tab==='paris'?'on':''}" data-a="ltab" data-v="paris">${c.pick?'Paris':'Vote'}</button><button class="${tab==='surv'?'on':''}" data-a="ltab" data-v="surv">${c.points?'Classement':'Survivants'}</button><button class="${tab==='hist'?'on':''}" data-a="ltab" data-v="hist">Stats</button></div>`;
   if(tab==='paris'){
     h+=rulesCard(lg)+statsCard(c);
     const open=c.rounds.filter(r=>t(r.deadline)>now()).slice(0,1);
@@ -1203,7 +1203,7 @@ function viewLeague(lid){
     }
   } else if(tab==='surv' && c.points){
     const lead=c.ranking[0];
-    h+=`<div class="card"><span class="ctitle">${I.chart}Statistiques</span><div class="statgrid" style="margin-bottom:0"><div class="stat" style="background:#fff"><b>${c.mem.length}</b><span>Joueurs</span></div><div class="stat" style="background:#fff"><b>${c.N}</b><span>Pts à atteindre</span></div><div class="stat" style="background:#fff"><b>${lead?lead.pts:0}</b><span>Pts du 1er</span></div></div></div>`;
+    h+=`<div class="card"><span class="ctitle">${I.chart}En chiffres</span><div class="statgrid" style="margin-bottom:0"><div class="stat" style="background:#fff"><b>${c.mem.length}</b><span>Joueurs</span></div><div class="stat" style="background:#fff"><b>${c.N}</b><span>Pts à atteindre</span></div><div class="stat" style="background:#fff"><b>${lead?lead.pts:0}</b><span>Pts du 1er</span></div></div></div>`;
     h+=`<div class="plist"><div class="sec">Classement</div><div class="ga-leg">Points · <span class="ga">GA</span> goal-average (départage en cas d'égalité)</div>`+c.ranking.map(x=>{
       const p=x.u, win=c.winners.includes(p), los=false;
       const sub=`${x.w} V · ${x.d} N · ${x.l} D${c.firsts.includes(p)?' · Vainqueur':''}`;
@@ -1214,7 +1214,7 @@ function viewLeague(lid){
     const shown=c.status==='upcoming'?c.mem:c.alive;
     if(c.status==='live') h+=`<div class="muted" style="text-align:center;font-family:var(--bold);font-weight:700;margin-bottom:4px">Vous n'êtes plus que ${c.alive.length} en vie !</div>`;
     const done=c.rounds.filter(r=>['done','cancelled'].includes((c.info[r.k]||{}).state)).length;
-    h+=`<div class="card"><span class="ctitle">${I.chart}Statistiques</span><div class="statgrid" style="margin-bottom:0"><div class="stat" style="background:#fff"><b>${c.mem.length}</b><span>Inscrits</span></div><div class="stat" style="background:#fff"><b>${done}</b><span>Journées</span></div><div class="stat" style="background:#fff"><b>${c.mem.length-c.alive.length}</b><span>Éliminés</span></div></div></div>`;
+    h+=`<div class="card"><span class="ctitle">${I.chart}En chiffres</span><div class="statgrid" style="margin-bottom:0"><div class="stat" style="background:#fff"><b>${c.mem.length}</b><span>Inscrits</span></div><div class="stat" style="background:#fff"><b>${done}</b><span>Journées</span></div><div class="stat" style="background:#fff"><b>${c.mem.length-c.alive.length}</b><span>Éliminés</span></div></div></div>`;
     h+=`<div class="plist"><div class="sec">Classement</div>`+standingRows(c).map(x=>{
       const p=x.u, dead=!c.alive.includes(p); const r=dead?c.lg.rounds[c.elimAt[p]]:null; const pk=r?pickOf(p,lid,c.elimAt[p]):null;
       const rk=r&&pk?pickRank(lg,{...r,k:c.elimAt[p]},pk):null;
