@@ -216,7 +216,11 @@ function loadFeedIndex(){
   fetch('data/feeds/index.json').then(r=>r.ok?r.json():null).then(j=>{ S.feedIndex=j||{comps:[]}; render(); }).catch(()=>{ S.feedIndex={comps:[]}; render(); });
 }
 const teamOf = (feed,id) => (feed && feed.teams && feed.teams[id]) || {n:'?'};
-function logoTag(side, cls='lg'){ return side && side.logo ? `<img class="${cls}" src="${esc(side.logo)}" data-fb="" alt="">` : ''; }
+// Logos corrigés (ESPN renvoie un mauvais logo ou aucun pour ces clubs de rugby)
+const LOGO_FIX={'Bayonne':'data/logos/rugby_fix_bayonne.png','Aviron Bayonnais':'data/logos/rugby_fix_bayonne.png','Perpignan':'data/logos/rugby_fix_perpignan.png','USA Perpignan':'data/logos/rugby_fix_perpignan.png','Vannes':'data/logos/rugby_fix_vannes.png','RC Vannes':'data/logos/rugby_fix_vannes.png','Section Paloise':'data/logos/rugby_teams_270567.png'};
+const BAD_LOGOS=/countries_(usa|van)\.png$/;
+function logoOf(side){ if(!side) return ''; return LOGO_FIX[side.n] || side.logo || ''; }
+function logoTag(side, cls='lg'){ const u=logoOf(side); return u ? `<img class="${cls}" src="${esc(u)}" data-fb="" alt="">` : ''; }
 
 /* ================================================================ Game logic */
 const isPickMode = lg => (lg.mode||cat(lg.category).mode)==='pick';
@@ -517,7 +521,7 @@ function buildRound(lg, comp, fr, nFallback){
   if(!evs.length) return null;
   const matches={};
   const rmap=rankMap(comp)||{};
-  evs.forEach((e,i)=>{ const h=teamOf(f,e.h), a=teamOf(f,e.a); const hs={n:h.n,id:e.h,logo:h.logo||''}, as={n:a.n,id:e.a,logo:a.logo||''}; if(rmap[e.h]) hs.rk=rmap[e.h]; if(rmap[e.a]) as.rk=rmap[e.a]; matches['m'+i+'_'+e.id]={h:hs,a:as,d:e.d,ev:e.id,comp,result:null}; });
+  evs.forEach((e,i)=>{ const h=teamOf(f,e.h), a=teamOf(f,e.a); const hs={n:h.n,id:e.h,logo:logoOf(h)}, as={n:a.n,id:e.a,logo:logoOf(a)}; if(rmap[e.h]) hs.rk=rmap[e.h]; if(rmap[e.a]) as.rk=rmap[e.a]; matches['m'+i+'_'+e.id]={h:hs,a:as,d:e.d,ev:e.id,comp,result:null}; });
   const n=fr.n || nFallback;
   return {rk:(comp+'_'+fr.k).replace(/[^A-Za-z0-9_-]/g,'_'), round:{n,deadline:evs[0].d,dl:Date.parse(evs[0].d),label:COMP_NAMES[comp]||'',matches}, count:evs.length};
 }
@@ -945,7 +949,7 @@ function tileHtml(c, r, m, side, opts){
   const used = side!=='D' && opts.used && opts.used.has(teamKey(sd));
   let cls='tile'; if(sel) cls+=' sel'; if(!can && !sel) cls+=' off'; if(used && !sel) cls+=' used';
   if(res){ if(res.r===side) cls+=' win'; else if(sel) cls+=' lose'; }
-  const bd = side==='D' ? 'N' : (sd.logo?`<img src="${esc(sd.logo)}" data-fb="${esc(initials(sd.n).slice(0,1))}" alt="">`:esc(initials(sd.n).slice(0,1)));
+  const bd = side==='D' ? 'N' : (logoOf(sd)?`<img src="${esc(logoOf(sd))}" data-fb="${esc(initials(sd.n).slice(0,1))}" alt="">`:esc(initials(sd.n).slice(0,1)));
   const name = side==='D' ? 'Match nul' : esc(sd.n);
   let pct=''; if(opts.dist){ const tot=opts.dist.tot; const k=m.k+'|'+side; pct=`<span class="pct">${tot?Math.round((opts.dist.c[k]||0)*100/tot):0}%</span>`; }
   const act = can && !used ? `data-a="pick" data-v="${lg.id}|${r.k}|${m.k}|${side}"` : 'disabled';
@@ -1086,7 +1090,7 @@ function standingsCard(lg, openDefault){
   if(f.missing || !f.standings || !f.standings.length) return '';
   const myTeams=new Set(); roundsOf(lg).forEach(r=>{ const p=pickOf(S.me,lg.id,r.k); if(p&&p.p!=='D'&&r.matches&&r.matches[p.m]){ const m=r.matches[p.m]; myTeams.add(String(p.p==='H'?m.h.id:m.a.id)); } });
   const groups=f.standings.map(g=>`<table class="tbl">${g.g&&f.standings.length>1?`<caption>${esc(g.g)}</caption>`:''}<thead><tr><th class="r">#</th><th>ÉQUIPE</th><th class="n">J</th><th class="n">DIFF</th><th class="n">${esc(f.ptsLabel||'PTS')}</th></tr></thead><tbody>`+
-    g.rows.map((row,i)=>{ const tm=teamOf(f,row.t); const gd=row.gd>0?'+'+row.gd:row.gd; return `<tr class="${myTeams.has(String(row.t))?'me':''}"><td class="r">${row.rank||i+1}</td><td><div class="team">${tm.logo?`<img src="${esc(tm.logo)}" data-fb="" alt="">`:''}<span>${esc(tm.n)}</span></div></td><td class="n">${row.gp??''}</td><td class="n">${gd??''}</td><td class="n pts">${row.pts??''}</td></tr>`; }).join('')+`</tbody></table>`).join('');
+    g.rows.map((row,i)=>{ const tm=teamOf(f,row.t); const gd=row.gd>0?'+'+row.gd:row.gd; return `<tr class="${myTeams.has(String(row.t))?'me':''}"><td class="r">${row.rank||i+1}</td><td><div class="team">${logoOf(tm)?`<img src="${esc(logoOf(tm))}" data-fb="" alt="">`:''}<span>${esc(tm.n)}</span></div></td><td class="n">${row.gp??''}</td><td class="n">${gd??''}</td><td class="n pts">${row.pts??''}</td></tr>`; }).join('')+`</tbody></table>`).join('');
   if(openDefault==='body') return `<div class="ssec"><div class="stitle">${I.chart}Classement ${esc(COMP_NAMES[key]||f.name||'')}</div>${groups}<div class="muted" style="font-size:12px;margin-top:10px">Mis à jour le ${fmtDT(f.updatedAt)}</div></div>`;
   return `<details class="card coll" ${(openDefault? S.open['st'+lg.id]!==false : S.open['st'+lg.id])?'open':''}><summary data-a="toggle" data-v="st${lg.id}"><span class="ctitle">${I.chart}Classement ${esc(COMP_NAMES[key]||f.name||'')}</span>${I.chev}</summary>${groups}<div class="muted" style="font-size:12px;margin-top:10px">Mis à jour le ${fmtDT(f.updatedAt)}</div></details>`;
 }
@@ -1100,7 +1104,7 @@ function teamForm(f){
   });
   return res;
 }
-function statRow(f, tid, right, sub){ const tm=teamOf(f,tid); return `<div class="srow">${tm.logo?`<img src="${esc(tm.logo)}" data-fb="" alt="">`:'<span class="sdot"></span>'}<div class="sn">${esc(tm.n)}${sub?`<small>${sub}</small>`:''}</div><div class="sv">${right}</div></div>`; }
+function statRow(f, tid, right, sub){ const tm=teamOf(f,tid); return `<div class="srow">${logoOf(tm)?`<img src="${esc(logoOf(tm))}" data-fb="" alt="">`:'<span class="sdot"></span>'}<div class="sn">${esc(tm.n)}${sub?`<small>${sub}</small>`:''}</div><div class="sv">${right}</div></div>`; }
 function formDots(arr){ return `<span class="fdots">${arr.slice(0,5).reverse().map(r=>`<i class="f${r}">${r==='W'?'V':r==='L'?'D':'N'}</i>`).join('')}</span>`; }
 function trendSection(c){
   const lg=c.lg;
@@ -1116,7 +1120,7 @@ function trendSection(c){
   const res=ri.res||{};
   const rows=Object.values(cnt).sort((a,b)=>b.n-a.n).slice(0,5).map(({p,n})=>{
     const pct=Math.round(n*100/tot); let logo='', ok='';
-    if(c.pick){ const m=(r.matches||{})[p.m]; const sd=m&&(p.p==='H'?m.h:p.p==='A'?m.a:null); if(sd&&sd.logo) logo=`<img src="${esc(sd.logo)}" data-fb="" alt="">`; if(res[p.m]) ok=res[p.m]===p.p?' ✓':' ✗'; }
+    if(c.pick){ const m=(r.matches||{})[p.m]; const sd=m&&(p.p==='H'?m.h:p.p==='A'?m.a:null); if(sd&&logoOf(sd)) logo=`<img src="${esc(logoOf(sd))}" data-fb="" alt="">`; if(res[p.m]) ok=res[p.m]===p.p?' ✓':' ✗'; }
     else if(ri.win){ ok=ri.win===p.p?' ✓':' ✗'; }
     return `<div class="trow">${logo||'<span class="sdot"></span>'}<div class="tn">${esc(pickLabel(lg,{...r,k:r.k},p))}${ok?`<span class="${ok.includes('✓')?'green':'red'}">${ok}</span>`:''}<div class="tbar"><span style="width:${pct}%"></span></div></div><div class="tp"><b>${pct}%</b><span>${n} joueur${n>1?'s':''}</span></div></div>`;
   }).join('');
@@ -1152,7 +1156,7 @@ function journeyData(c,u){
     const p=pickOf(u,lg.id,r.k); let ok=null;
     if(c.points){ const sc=(ri.pts||{})[u]; ok=sc===3?true:sc===1?'c':sc===0?false:null; }
     else if(ri.state==='done'||ri.state==='tiebreak') ok=!ri.out.includes(u); else if(ri.state==='cancelled') ok='c';
-    let logo=''; if(c.pick&&p&&r.matches&&r.matches[p.m]){ const m=r.matches[p.m]; const sd=p.p==='H'?m.h:p.p==='A'?m.a:null; logo=sd&&sd.logo||''; }
+    let logo=''; if(c.pick&&p&&r.matches&&r.matches[p.m]){ const m=r.matches[p.m]; const sd=p.p==='H'?m.h:p.p==='A'?m.a:null; logo=sd&&logoOf(sd)||''; }
     out.push({n:ri.n||r.n, label:p?pickLabel(lg,r,p):'Pas de choix', logo, ok, rk:c.pick?pickRank(lg,r,p):null});
   }
   return out;
@@ -1348,7 +1352,7 @@ function viewManage(lid){
       rs.forEach(r=>{
         const rk=(comp+'_'+r.k).replace(/[^A-Za-z0-9_-]/g,'_'); const done=lg.rounds&&lg.rounds[rk]; const started=t(r.s)<=now();
         h+=`<div class="imp"><div class="x"><b>${r.n?'J'+r.n+' · ':''}${esc(fmtShort(r.s))} → ${esc(fmtShort(r.e))}</b><span>${r.ev.length} matchs · <a data-a="peek" data-v="${esc(r.k)}">voir</a></span>
-          ${S.open['peek'+r.k]?`<ul class="imp-list">${r.ev.map(id=>{ const e=f.events[id]||{}; const a=teamOf(f,e.h), b=teamOf(f,e.a); return `<li>${a.logo?`<img src="${esc(a.logo)}" data-fb="" alt="">`:''}${esc(a.n)} – ${esc(b.n)}${b.logo?`<img src="${esc(b.logo)}" data-fb="" alt="">`:''}<span class="muted">${esc(fmtShort(e.d))}</span></li>`; }).join('')}</ul>`:''}</div>
+          ${S.open['peek'+r.k]?`<ul class="imp-list">${r.ev.map(id=>{ const e=f.events[id]||{}; const a=teamOf(f,e.h), b=teamOf(f,e.a); return `<li>${logoOf(a)?`<img src="${esc(logoOf(a))}" data-fb="" alt="">`:''}${esc(a.n)} – ${esc(b.n)}${logoOf(b)?`<img src="${esc(logoOf(b))}" data-fb="" alt="">`:''}<span class="muted">${esc(fmtShort(e.d))}</span></li>`; }).join('')}</ul>`:''}</div>
           ${done?'<span class="done">IMPORTÉE ✓</span>':started?'<span class="done" style="color:var(--muted)">COMMENCÉE</span>':`<button class="btn" data-a="importRound" data-v="${lid}|${esc(r.k)}">IMPORTER</button>`}</div>`;
       });
       h+=`<div class="muted" style="font-size:12px;margin-top:6px">Calendrier mis à jour le ${fmtDT(f.updatedAt)}</div>`;

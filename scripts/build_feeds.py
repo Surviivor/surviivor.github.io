@@ -26,6 +26,19 @@ os.makedirs(DST+'/feeds',exist_ok=True); os.makedirs(DST+'/logos',exist_ok=True)
 logo_files=set(LOGOS)
 used_logos=set()
 existing=set(os.listdir(DST+'/logos'))
+# Logos corrigés à la main (ESPN renvoie un mauvais logo ou aucun)
+LOGO_FIX={'top14':{'Bayonne':'data/logos/rugby_fix_bayonne.png','Aviron Bayonnais':'data/logos/rugby_fix_bayonne.png',
+  'Perpignan':'data/logos/rugby_fix_perpignan.png','USA Perpignan':'data/logos/rugby_fix_perpignan.png',
+  'Vannes':'data/logos/rugby_fix_vannes.png','RC Vannes':'data/logos/rugby_fix_vannes.png',
+  'Section Paloise':'data/logos/rugby_teams_270567.png'}}
+def fix_logos(key, o):
+    fx=LOGO_FIX.get(key)
+    if not fx: return
+    if isinstance(o,dict):
+        if isinstance(o.get('n'),str) and 'logo' in o and o['n'] in fx: o['logo']=fx[o['n']]
+        for v in o.values(): fix_logos(key, v)
+    elif isinstance(o,list):
+        for v in o: fix_logos(key, v)
 def logo_for(href):
     if not href: return ''
     path=href.split('espncdn.com')[-1].split('?')[0]
@@ -147,6 +160,7 @@ for key in NAMES:
     feed={'key':key,'name':NAMES[key],'sport':SPORT.get(key,'soccer'),'updatedAt':stamp,
           'teams':teams,'events':events,'rounds':rounds,'standings':groups}
     if key=='nba': feed['ptsLabel']='V'
+    fix_logos(key, feed)
     json.dump(feed,open(f'{DST}/feeds/{key}.json','w'),separators=(',',':'),ensure_ascii=False)
     index.append({'key':key,'name':NAMES[key],'rounds':len(rounds),'events':len(events)})
     print(key, len(events),'events', len(rounds),'rounds', sum(len(g['rows']) for g in groups),'rows', [ (r['k'],r.get('n'),len(r['ev'])) for r in rounds if r['e']>now.isoformat()][:3])
