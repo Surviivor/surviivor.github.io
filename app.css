@@ -548,3 +548,5 @@ nav.bottom .nbadge{position:absolute;top:-6px;left:calc(50% + 6px);min-width:20p
 
 .chip.fmtchip .wm{height:13px;width:auto;display:block}
 .pfx-in.oneshot .in{padding-left:158px}
+
+.card.coll{padding-top:17px;padding-bottom:17px}
