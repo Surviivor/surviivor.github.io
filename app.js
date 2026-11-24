@@ -357,7 +357,7 @@ function lastBanner(c){
 }
 function lastBlock(cur, act, lid, locked){
   const v=lid?lid+'|':'', opts=[['','Aucune option','Seul le gagnant compte.'],['wins','🏆 Le dernier gagne également','Le dernier au classement à la fin remporte aussi la ligue.'],['drink','🍺 Le dernier doit un verre au premier','Le dernier au classement à la fin paie un verre au gagnant.']];
-  return `<label class="f">Option fun</label><div class="lopt">${opts.map(([k,tt,d])=>`<button class="lopt-b ${(cur||'')===k?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}${k}"`}><i></i><span><b>${tt}</b><small>${d}</small></span></button>`).join('')}</div>${locked?'<div class="help" style="margin:-4px 0 10px">Option figée une fois la ligue commencée.</div>':''}`;
+  return `<label class="f">Option</label><div class="help" style="margin:-2px 0 10px">Pour du suspense à tous les étages.</div><div class="lopt">${opts.map(([k,tt,d])=>`<button class="lopt-b ${(cur||'')===k?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}${k}"`}><i></i><span><b>${tt}</b><small>${d}</small></span></button>`).join('')}</div>${locked?'<div class="help" style="margin:-4px 0 10px">Option figée une fois la ligue commencée.</div>':''}`;
 }
 function usedTeams(c, uid, rk){
   const set=new Set(); const r0=c.lg.rounds[rk]; if(!r0) return set;
