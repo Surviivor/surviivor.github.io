@@ -428,7 +428,7 @@ async function boot(){
 }
 
 /* ---------- Visiteurs non connectés ---------- */
-const GUEST_OK=new Set(['reload','fmt','lfmt','hview','toLeagues','slide','install','hideInstall','filter','open','back','ltab','toggle','comp','peek']);
+const GUEST_OK=new Set(['openSurv','reload','fmt','lfmt','hview','toLeagues','slide','install','hideInstall','filter','open','back','ltab','toggle','comp','peek']);
 function askLogin(a,v){
   const lg=v&&S.leagues[String(v).split('|')[0]];
   if(a==='join' && lg){ try{ sessionStorage.setItem('survivor-after-login',JSON.stringify({a:'join',v:lg.id})); }catch(e){} }
@@ -548,6 +548,7 @@ const A = {
   tab(v){ S.view.tab=v; S.view.league=null; S.view.manage=null; render(); scrollTo(0,0); },
   filter(v){ S.view.filter=v; render(); },
   open(v){ S.view.league=v; S.view.ltab='paris'; S.view.hv='days'; S.view.tab='ligues'; render(); scrollTo(0,0); celebrate(v); },
+  openSurv(v){ A.open(v); S.view.ltab='surv'; render(); scrollTo(0,0); },
   back(){ S.view.league=null; render(); scrollTo(0,0); },
   ltab(v){ S.view.ltab=v; S.view.hv='days'; render(); },
   manage(v){ S.view.manage=v; const lg=S.leagues[v]; S.view.comp=(lg&&lg.comp)||cat(lg&&lg.category).comps[0]||null; if(S.view.comp) loadFeed(S.view.comp); render(); scrollTo(0,0); },
@@ -813,7 +814,7 @@ function leagueCardNew(c){ let h='';
         ${c.lastRule==='drink'&&c.lasts.length?`<div class="nc-win">🍺 ${c.lasts.map(w=>esc(nameOf(w))).join(' & ')} ${c.lasts.length>1?'doivent':'doit'} un verre</div>`:''}
         ${c.lastRule&&c.status!=='finished'?`<div class="nc-opt">${LAST_RULES[c.lastRule].ico} ${LAST_RULES[c.lastRule].t}</div>`:''}
         <div class="nc-info"><span>${c.points?I.chart:c.status==='upcoming'?I.clock:I.heart}${esc(info)}</span></div>
-        <div class="nc-foot"><span class="nc-faces">${faces}<em>${c.mem.length} joueur${c.mem.length>1?'s':''}</em></span>${act}</div>
+        <div class="nc-foot"><button class="nc-faces" data-a="openSurv" data-v="${lg.id}" aria-label="Voir les joueurs">${faces}<em>${c.mem.length} joueur${c.mem.length>1?'s':''}</em></button>${act}</div>
       </div></div>`;
   return h;
 }
@@ -849,7 +850,7 @@ function viewHome(){
     ${nextDl?`<div class="nh-next">${I.clock}<span>${nextDl.done?`Modifiable · <b>${esc(nextDl.name)}</b>`:`Fais ton choix pour la <b>${esc(nextDl.name)}</b>`}</span><em class="cdl" data-t="${nextDl.t}">${cdText(nextDl.t)}</em></div>`:''}
   </div>
   <div class="how-card ${howOpen?'open':''}"><div class="how"><button class="how-t how-tg" data-a="toggle" data-v="howX" aria-expanded="${howOpen}"><span>Comment on joue&nbsp;?</span>${I.chev}</button>${howOpen?`
-    <div class="how-sw" role="tablist"><button role="tab" class="${fmt==='survivor'?'on':''}" data-a="fmt" data-v="survivor" aria-label="Survivor">${WM('survivor', fmt==='survivor')}</button><button role="tab" class="${fmt==='oneshot'?'on':''}" data-a="fmt" data-v="oneshot" aria-label="Race">${WM('oneshot', fmt==='oneshot')}</button></div></div>
+    <div class="how-sw" role="tablist"><button role="tab" class="${fmt==='survivor'?'on':''}" data-a="fmt" data-v="survivor" aria-label="Survivor">${WM('survivor', false)}</button><button role="tab" class="${fmt==='oneshot'?'on':''}" data-a="fmt" data-v="oneshot" aria-label="Race">${WM('oneshot', false)}</button></div></div>
   <div class="how-d">${fmt==='oneshot'?'– Cumule des points –':'– Le dernier en vie gagne –'}</div>
   <div class="slider"><div class="slides" id="slides">
 ${fmt==='oneshot'?`    <div class="sl slide "><div class="sl-ph"><div class="il il1b">
@@ -858,8 +859,8 @@ ${fmt==='oneshot'?`    <div class="sl slide "><div class="sl-ph"><div class="il 
 <div class="m1"><b><img src="data/logos/soccer_166.png" alt=""></b><em>N</em><b><img src="data/logos/soccer_180.png" alt=""></b></div>
 </div><span class="sl-k">1<small>/4</small></span></div><div class="sl-tx nobtn"><div class="sl-h">Chaque journée, choisis <mark>une équipe</mark>.</div></div></div>
     <div class="sl slide "><div class="sl-ph"><div class="il il-os2"><div class="os-r"><span class="sc"><img src="data/logos/soccer_176.png" alt=""><b>2-0</b><img src="data/logos/soccer_169.png" alt=""></span><em class="w">+3</em></div><div class="os-r"><span class="sc"><img src="data/logos/soccer_176.png" alt=""><b>1-1</b><img src="data/logos/soccer_169.png" alt=""></span><em class="d">+1</em></div><div class="os-r"><span class="sc"><img src="data/logos/soccer_176.png" alt=""><b>0-1</b><img src="data/logos/soccer_169.png" alt=""></span><em class="l">+0</em></div></div><span class="sl-k">2<small>/4</small></span></div><div class="sl-tx nobtn"><div class="sl-h">Gagne des points en fonction de <mark class="g">son résultat</mark>.</div></div></div>
-    <div class="sl slide yel"><div class="sl-ph"><div class="il il3"><div class="il3-big"><img src="data/logos/soccer_176.png" alt=""><span>Déjà joué</span></div><div class="il3-row"><b><img src="data/logos/soccer_160.png" alt=""></b><b><img src="data/logos/soccer_175.png" alt=""></b><b><img src="data/logos/soccer_167.png" alt=""></b><b><img src="data/logos/soccer_174.png" alt=""></b><b><img src="data/logos/soccer_166.png" alt=""></b></div></div><span class="sl-k">3<small>/4</small></span></div><div class="sl-tx nobtn"><div class="sl-h"><span class="sl-warn" aria-label="Attention"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3L2 20h20z"/><path d="M12 10v4M12 17h.01"/></svg></span>Tu ne pourras plus sélectionner cette équipe.</div></div></div>
-    <div class="sl slide "><div class="sl-ph"><div class="il il-os4"><div class="os-t"><i>1</i><span>Karim</span><b>20 pts 🏁</b></div><div class="os-t me"><i>2</i><span>Toi</span><b>16 pts</b></div><div class="os-t"><i>3</i><span>Léa</span><b>14 pts</b></div></div><span class="sl-k">4<small>/4</small></span></div><div class="sl-tx nobtn"><div class="sl-h">Le premier à <mark>20 points</mark> gagne la ligue.</div></div></div>
+    <div class="sl slide yel"><div class="sl-ph"><div class="il il3"><div class="il3-big"><img src="data/logos/soccer_176.png" alt=""><span>Déjà joué</span></div><div class="il3-row"><b><img src="data/logos/soccer_160.png" alt=""></b><b><img src="data/logos/soccer_175.png" alt=""></b><b><img src="data/logos/soccer_167.png" alt=""></b><b><img src="data/logos/soccer_174.png" alt=""></b><b><img src="data/logos/soccer_166.png" alt=""></b></div></div><span class="sl-k">3<small>/4</small></span></div><div class="sl-tx nobtn"><div class="sl-h">Mais tu ne pourras plus sélectionner cette équipe.</div></div></div>
+    <div class="sl slide "><div class="sl-ph"><div class="il il-os4"><div class="os-t"><i>1</i><span>Karim</span><b>20 pts 🏁</b></div><div class="os-t me"><i>2</i><span>Toi</span><b>16 pts</b></div><div class="os-t"><i>3</i><span>Léa</span><b>14 pts</b></div></div><span class="sl-k">4<small>/4</small></span></div><div class="sl-tx nobtn"><div class="sl-h">Le premier à <mark style="white-space:nowrap">20 points</mark><br>gagne la ligue.</div></div></div>
 `:`    <div class="sl slide "><div class="sl-ph"><div class="il il1b">
 <div class="m1"><b><img src="data/logos/soccer_6997.png" alt=""></b><em>N</em><b><img src="data/logos/soccer_6851.png" alt=""></b></div>
 <div class="m1 sel"><b class="on"><img src="data/logos/soccer_160.png" alt=""><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></i></b><em>N</em><b><img src="data/logos/soccer_273.png" alt=""></b></div>

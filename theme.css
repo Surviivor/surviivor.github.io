@@ -449,3 +449,35 @@ nav.bottom .nbadge{font-size:11px;top:2px;left:auto;right:4px;border:2px solid v
 .how-card.open .how-tg .chev{transform:rotate(180deg)}
 .how-tg{padding:2px}
 .how-card:not(.open) .how{margin-bottom:16px}
+/* slides : légende intégrée à l'illustration (plus de bande blanche) */
+.sl:not(.full) .sl-ph{border-radius:20px 20px 0 0}
+.sl:not(.full) .sl-tx.nobtn{background:var(--bg);border-radius:0 0 20px 20px;padding:4px 14px 16px;min-height:70px;justify-content:center;text-align:center}
+.sl.yel:not(.full) .sl-tx.nobtn{background:#FBE7A6}
+.sl.yel{background:var(--yel)}
+/* Comment on joue : encart blanc (v2) */
+.how-card{background:#fff;border-radius:26px;padding:14px 14px 12px;margin:4px 0 18px}
+.how-card .how{margin:0 0 8px}
+.how-card:not(.open) .how{margin:0}
+.how-card .how-tg{padding:2px 4px}
+.how-card .how-sw{background:var(--bg)}
+.how-card .sl{background:transparent;padding:0}
+.how-card .sl.yel{background:var(--yel);padding:6px}
+.how-card .sdots{margin-top:8px}
+/* slides : illustrations centrées (le badge 1/4 ne décale plus le contenu) */
+.sl:not(.full) .sl-ph{height:196px}
+.sl:not(.full) .sl-ph .il{padding:38px 16px 8px}
+.sl:not(.full) .sl-ph .il2{padding-top:38px}
+/* boutons Survivor / Race dans l'encart blanc : pas de fond gris */
+.how-card .how-sw{background:transparent;box-shadow:inset 0 0 0 1.5px rgba(22,24,29,.12);padding:4px}
+.how-card .how-sw button:not(.on) .wm{opacity:.4}
+/* v3 : slide 3 sans cadre jaune, contenu remonté */
+.how-card .sl.yel{background:transparent;padding:0}
+.sl:not(.full) .sl-ph{height:184px}
+.sl:not(.full) .sl-ph .il,.sl:not(.full) .sl-ph .il2{padding:22px 16px 10px}
+/* v3 : boutons Survivor / Race façon onglets soulignés */
+.how-card .how-sw{background:transparent;box-shadow:none;padding:0;gap:0;border-bottom:1.5px solid rgba(22,24,29,.08);border-radius:0}
+.how-card .how-sw button{background:transparent!important;border-radius:0;height:48px;position:relative}
+.how-card .how-sw button .wm{height:17px;opacity:.28;filter:none}
+.how-card .how-sw button.on .wm{opacity:1}
+.how-card .how-sw button.on::after{content:"";position:absolute;left:22%;right:22%;bottom:-1.5px;height:4px;border-radius:4px;background:#F6C343}
+.nc-faces{border:0;font:inherit;cursor:pointer}
