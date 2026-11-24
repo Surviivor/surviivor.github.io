@@ -18,7 +18,7 @@ const cat = k => CATS[k] || CATS.football;
 const COMP_RX=[['eng.1',/premi(e|è)re?\s*league|\bpl\b|angleterre/i],['esp.1',/\bliga\b|espagne/i],['ita.1',/serie\s*a|italie|calcio/i],['ger.1',/bundesliga|allemagne/i],['uefa.champions',/champions|\bldc\b|\bucl\b/i],['fra.2',/ligue\s*2|\bl2\b/i],['fra.1',/ligue\s*1|\bl1\b/i],['nba',/\bnba\b/i],['top14',/top\s*14/i]];
 const compFromName = n => { for(const [k,rx] of COMP_RX) if(rx.test(String(n||''))) return k; return null; };
 const POINTS_N = 18;
-const pointsRules = n => `Ligue aux points sur ${n} journées.\nÀ chaque journée, choisis UNE équipe parmi les matchs proposés.\nElle gagne : 3 points. Match nul : 1 point. Elle perd : 0 point. Pas de choix = 0 point.\nAttention : tu ne peux choisir qu'une seule fois la même équipe sur toute la ligue. Plus les journées avancent, moins tu as le choix !\nLes choix restent secrets jusqu'à l'heure limite.\nÀ la fin des ${n} journées, le 1er du classement gagne… et le dernier lui paie le cadeau !\nÉgalité de points : départage au nombre de victoires, puis à l'audace (équipes les moins bien classées choisies).`;
+const pointsRules = n => `Ligue aux points sur ${n} journées.\nÀ chaque journée, choisis UNE équipe parmi les matchs proposés.\nElle gagne : 3 points. Match nul : 1 point. Elle perd : 0 point. Pas de choix = 0 point.\nAttention : tu ne peux choisir qu'une seule fois la même équipe sur toute la ligue. Plus les journées avancent, moins tu as le choix !\nLes choix restent secrets jusqu'à l'heure limite.\nÀ la fin des ${n} journées, le 1er du classement gagne… et le dernier aussi ! Si tu es mal parti, vise la dernière place.\nÉgalité de points : départage au nombre de victoires, puis à l'audace (équipes les moins bien classées choisies).`;
 const DEFAULT_RULES = {
   pick:"À chaque journée, choisis UN seul match et parie sur l'équipe ou le résultat de ton choix.\nSi ton pari se réalise, tu restes en vie.\nSinon, tu es éliminé… (pas de pari = éliminé)\nLe dernier joueur en vie remporte la ligue.\nAttention : tu ne peux miser qu'une seule fois sur la même équipe. Les équipes sur lesquelles tu as déjà parié seront grisées pour les prochaines journées.\nLes choix restent secrets jusqu'à l'heure limite. Tu peux ensuite retrouver les choix de chacun dans l'onglet « HISTORIQUE ».\nSi tous les survivants tombent la même journée, ils sont départagés à l'audace : gagne celui qui a joué, en moyenne depuis le début, les équipes les moins bien classées avant chaque journée.",
   majority:"À chaque question, vote pour l'option de ton choix.\nTu restes en vie si tu votes comme la majorité des survivants.\nSi tu votes comme la minorité, ou si tu ne votes pas, tu es éliminé…\nLes votes restent secrets jusqu'à l'heure limite. Tu peux ensuite retrouver le résultat dans l'onglet « HISTORIQUE ».\nEn cas d'égalité parfaite entre les 2 options, personne parmi les votants n'est éliminé.\nLes 2 derniers survivants remportent la ligue."
@@ -295,10 +295,12 @@ function computePoints(lg, mem, rounds){
   const sorted=[...mem].sort((a,b)=>cmp(a,b)||nameOf(a).localeCompare(nameOf(b)));
   const ranking=sorted.map(u=>({u, pos:sorted.filter(v=>cmp(v,u)<0).length+1, tie:sorted.some(v=>v!==u&&cmp(v,u)===0), pts:pts[u], w:w[u], d:d[u], l:l[u]}));
   const lastPos=Math.max(0,...ranking.map(x=>x.pos));
-  const winners=finished?ranking.filter(x=>x.pos===1).map(x=>x.u):[];
-  const losers=finished&&mem.length>1?ranking.filter(x=>x.pos===lastPos&&x.pos!==1).map(x=>x.u):[];
+  // Le 1er gagne… et le dernier aussi
+  const firsts=finished?ranking.filter(x=>x.pos===1).map(x=>x.u):[];
+  const lasts=finished&&mem.length>1?ranking.filter(x=>x.pos===lastPos&&x.pos!==1).map(x=>x.u):[];
+  const winners=[...firsts,...lasts], losers=[];
   const rankOf={}; ranking.forEach(x=>rankOf[x.u]=x);
-  return {lg, mem, rounds, info, alive:[...mem], elimAt:{}, started, pick:true, points:true, N, pts, played, ranking, rankOf, losers,
+  return {lg, mem, rounds, info, alive:[...mem], elimAt:{}, started, pick:true, points:true, N, pts, played, ranking, rankOf, losers, firsts, lasts,
     status: !started?'upcoming':finished?'finished':'live', winners};
 }
 const C = lid => compute(lid);
@@ -952,7 +954,7 @@ function journeyData(c,u){
 }
 function journey(c,u,o={}){
   const items=journeyData(c,u);
-  const st=c.points?(c.winners.includes(u)?'🏆 Vainqueur':(c.losers||[]).includes(u)?'💸 Dernier : paie le cadeau':`${(c.rankOf[u]||{}).pos||'–'}${(c.rankOf[u]||{}).pos===1?'er':'e'} · ${c.pts[u]||0} pt${(c.pts[u]||0)>1?'s':''}`):c.winners.includes(u)?'🏆 Vainqueur':c.alive.includes(u)?'💚 Toujours en vie':`☠️ Éliminé à la J${(c.info[c.elimAt[u]]||{}).n||'?'}`;
+  const st=c.points?(c.firsts.includes(u)?'🏆 Vainqueur (1er)':c.lasts.includes(u)?'🏆 Vainqueur (dernier)':`${(c.rankOf[u]||{}).pos||'–'}${(c.rankOf[u]||{}).pos===1?'er':'e'} · ${c.pts[u]||0} pt${(c.pts[u]||0)>1?'s':''}`):c.winners.includes(u)?'🏆 Vainqueur':c.alive.includes(u)?'💚 Toujours en vie':`☠️ Éliminé à la J${(c.info[c.elimAt[u]]||{}).n||'?'}`;
   let h=`<div class="card jcard"><div class="jhead"><div>${o.title?`<div class="jt">${leagueTitle(c.lg.name)}</div>`:''}<div class="jst">${esc(nameOf(u))} · ${st}</div></div>${o.share?`<button class="btn sm ghost" data-a="shareJourney" data-v="${c.lg.id}">${I.share} PARTAGER</button>`:''}</div>`;
   if(!items.length) return h+`<div class="muted" style="margin-top:10px">Aucune journée jouée pour l'instant.</div></div>`;
   h+=`<div class="frise">${items.map(x=>`<div class="fj ${x.ok===true?'ok':x.ok===false?'ko':x.ok==='c'?'cx':'wait'}"><span class="fn">J${x.n}</span><span class="fl">${x.logo?`<img src="${esc(x.logo)}" data-fb="" alt="">`:esc(initials(x.label).slice(0,2))}</span><span class="fm">${x.ok===true?'✓':x.ok===false?'✗':x.ok==='c'?'=':'…'}</span><span class="ft">${esc(x.label)}${x.rk?` <em>${x.rk}e</em>`:''}</span></div>`).join('')}</div></div>`;
@@ -982,7 +984,7 @@ function viewLeague(lid){
   let h=`<div class="lhead"><button class="cback" data-a="back" aria-label="Retour">${I.back}</button><div class="grow">${leagueTitle(lg.name)}</div>${pill}</div>`;
   h+=prizeBand(lg,'big');
   if(canManage(lg)) h+=`<button class="link grey" style="margin:-4px 0 14px" data-a="manage" data-v="${lid}">${I.gear.replace('<svg','<svg width="18" height="18"')} Gérer la ligue</button>`;
-  if(c.points && c.status==='finished') h+= c.winners.includes(S.me)?`<div class="banner win"><span class="ico">🏆</span>${c.winners.length>1?'Tu termines 1er ex æquo !':'Tu remportes la ligue !'}</div>`:c.losers.includes(S.me)?`<div class="banner dead"><span class="ico">💸</span>Tu finis dernier : c'est toi qui paies le cadeau !</div>`:`<div class="banner dead"><span class="ico">🏁</span>Ligue terminée · ${c.winners.map(w=>esc(nameOf(w))).join(' & ')} ${c.winners.length>1?'gagnent':'gagne'}${c.losers.length?` · ${c.losers.map(w=>esc(nameOf(w))).join(' & ')} ${c.losers.length>1?'paient':'paie'} le cadeau`:''}</div>`;
+  if(c.points && c.status==='finished') h+= c.firsts.includes(S.me)?`<div class="banner win"><span class="ico">🏆</span>${c.firsts.length>1?'Tu termines 1er ex æquo : tu gagnes !':'Tu termines 1er : tu gagnes !'}</div>`:c.lasts.includes(S.me)?`<div class="banner win"><span class="ico">🎉</span>Tu termines dernier… et tu gagnes aussi !</div>`:`<div class="banner dead"><span class="ico">🏁</span>Ligue terminée · ${c.firsts.map(w=>esc(nameOf(w))).join(' & ')} (1er)${c.lasts.length?` et ${c.lasts.map(w=>esc(nameOf(w))).join(' & ')} (dernier)`:''} ${c.winners.length>1?'gagnent':'gagne'}</div>`;
   else if(c.points && mine && c.status==='live') h+=`<div class="banner alive"><span class="ico">📊</span>Tu es ${me_.pos}${me_.pos===1?'er':'e'}${me_.tie?' ex æquo':''} avec ${me_.pts} point${me_.pts>1?'s':''} · journée ${c.played}/${c.N}</div>`;
   else if(c.status==='finished') h+= c.winners.includes(S.me)?`<div class="banner win"><span class="ico">🏆</span>${c.winners.length>1?'Tu fais partie des 2 derniers survivants !':'Tu es le grand gagnant !'}</div>`:`<div class="banner dead"><span class="ico">🏁</span>Ligue terminée · ${c.winners.map(w=>esc(nameOf(w))).join(' & ')} ${c.winners.length>1?'gagnent':'gagne'}</div>`;
   else if(!mine) h+= c.status==='upcoming'?`<div class="banner info"><span class="ico">🎟️</span><div style="flex:1">Inscriptions ouvertes jusqu'au ${fmtDT(lg.startAt)}</div><button class="btn sm green" data-a="join" data-v="${lid}">JE M'INSCRIS</button></div>`:`<div class="banner info"><span class="ico">🔒</span>Inscriptions closes. Tu suis la ligue en spectateur.</div>`;
@@ -1005,8 +1007,8 @@ function viewLeague(lid){
     const lead=c.ranking[0];
     h+=`<div class="card"><span class="ctitle">${I.chart}Statistiques</span><div class="statgrid" style="margin-bottom:0"><div class="stat" style="background:#fff"><b>${c.mem.length}</b><span>Joueurs</span></div><div class="stat" style="background:#fff"><b>${c.played}/${c.N}</b><span>Journées</span></div><div class="stat" style="background:#fff"><b>${lead?lead.pts:0}</b><span>Pts du 1er</span></div></div></div>`;
     h+=`<div class="plist"><div class="sec">Classement</div>`+c.ranking.map(x=>{
-      const p=x.u, win=c.winners.includes(p), los=c.losers.includes(p);
-      const sub=`${x.w} V · ${x.d} N · ${x.l} D${win?' · Vainqueur':los?' · Paie le cadeau':''}`;
+      const p=x.u, win=c.winners.includes(p), los=false;
+      const sub=`${x.w} V · ${x.d} N · ${x.l} D${c.firsts.includes(p)?' · Vainqueur (1er)':c.lasts.includes(p)?' · Vainqueur (dernier)':''}`;
       return `<div class="prow"><div class="pos live">${x.pos}<sup>${x.pos===1?'er':'e'}</sup>${x.tie?'<i>ex æquo</i>':''}</div>${avatarOf(p)}<div class="nm">${esc(nameOf(p))}${p===S.me?'<span class="me-tag">TOI</span>':''}<small>${sub}</small></div><span class="pill ${win?'':los?'red':'green'}" ${win?'style="background:var(--brand)"':''}>${win?'🏆 ':los?'💸 ':''}${x.pts} pt${x.pts>1?'s':''}</span></div>`;
     }).join('')+'</div>';
   } else if(tab==='surv'){
@@ -1075,7 +1077,7 @@ function viewParis(){
 function fmtBlock(fmt, act, lid, nr, locked){
   const v=lid?lid+'|':'';
   return `<label class="f">Format</label><div class="chips in" style="flex-wrap:wrap"><button class="chip sm fmtchip ${fmt!=='points'?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}survivor"`} aria-label="Survivor">${WM('survivor', fmt!=='points')}</button><button class="chip sm fmtchip ${fmt==='points'?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}points"`} aria-label="One Shot">${WM('oneshot', fmt==='points')}</button></div>`+
-    (fmt==='points'?`<div class="help" style="margin:-4px 0 10px">Chaque journée, on choisit une équipe : victoire 3 pts, nul 1 pt, défaite 0. Jamais 2 fois la même équipe. À la fin, le 1er gagne et le dernier paie le cadeau.</div><label class="f">Nombre de journées</label><input class="in${lid?' w':''}" type="number" inputmode="numeric" min="3" max="38" id="${lid?'ei-nr':'nl-nr'}" value="${nr||POINTS_N}" ${locked?'disabled':''}>`
+    (fmt==='points'?`<div class="help" style="margin:-4px 0 10px">Chaque journée, on choisit une équipe : victoire 3 pts, nul 1 pt, défaite 0. Jamais 2 fois la même équipe. À la fin, le 1er gagne… et le dernier aussi !</div><label class="f">Nombre de journées</label><input class="in${lid?' w':''}" type="number" inputmode="numeric" min="3" max="38" id="${lid?'ei-nr':'nl-nr'}" value="${nr||POINTS_N}" ${locked?'disabled':''}>`
       :`<div class="help" style="margin:-4px 0 10px">Un mauvais pari et tu es éliminé. Le dernier en vie gagne.</div>`);
 }
 function viewAdmin(){
