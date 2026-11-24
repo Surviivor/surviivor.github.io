@@ -17,8 +17,8 @@ const COVERS = [
 const cat = k => CATS[k] || CATS.football;
 const COMP_RX=[['eng.1',/premi(e|è)re?\s*league|\bpl\b|angleterre/i],['esp.1',/\bliga\b|espagne/i],['ita.1',/serie\s*a|italie|calcio/i],['ger.1',/bundesliga|allemagne/i],['uefa.champions',/champions|\bldc\b|\bucl\b/i],['fra.2',/ligue\s*2|\bl2\b/i],['fra.1',/ligue\s*1|\bl1\b/i],['nba',/\bnba\b/i],['top14',/top\s*14/i]];
 const compFromName = n => { for(const [k,rx] of COMP_RX) if(rx.test(String(n||''))) return k; return null; };
-const POINTS_N = 18;
-const pointsRules = n => `Ligue aux points sur ${n} journées.\nÀ chaque journée, choisis UNE équipe parmi les matchs proposés.\nElle gagne : 3 points. Match nul : 1 point. Elle perd : 0 point. Pas de choix = 0 point.\nAttention : tu ne peux choisir qu'une seule fois la même équipe sur toute la ligue. Plus les journées avancent, moins tu as le choix !\nLes choix restent secrets jusqu'à l'heure limite.\nÀ la fin des ${n} journées, le 1er du classement gagne… et le dernier aussi ! Si tu es mal parti, vise la dernière place.\nÉgalité de points : départage au nombre de victoires, puis à l'audace (équipes les moins bien classées choisies).`;
+const POINTS_N = 20; // Race : points à atteindre par défaut
+const pointsRules = n => `Le premier joueur à atteindre ${n} points gagne la ligue.\nÀ chaque journée, choisis UNE équipe parmi les matchs proposés.\nElle gagne : 3 points. Match nul : 1 point. Elle perd : 0 point. Pas de choix = 0 point.\nAttention : tu ne peux choisir qu'une seule fois la même équipe sur toute la ligue.\nLes choix restent secrets jusqu'à l'heure limite.\nSi plusieurs joueurs atteignent ${n} points lors de la même journée, celui qui a le meilleur goal-average gagne (buts marqués moins buts encaissés par les équipes qu'il a choisies).`;
 const DEFAULT_RULES = {
   pick:"À chaque journée, choisis UN seul match et parie sur l'équipe ou le résultat de ton choix.\nSi ton pari se réalise, tu restes en vie.\nSinon, tu es éliminé… (pas de pari = éliminé)\nLe dernier joueur en vie remporte la ligue.\nAttention : tu ne peux miser qu'une seule fois sur la même équipe. Les équipes sur lesquelles tu as déjà parié seront grisées pour les prochaines journées.\nLes choix restent secrets jusqu'à l'heure limite. Tu peux ensuite retrouver les choix de chacun dans l'onglet « HISTORIQUE ».\nSi tous les survivants tombent la même journée, ils sont départagés à l'audace : gagne celui qui a joué, en moyenne depuis le début, les équipes les moins bien classées avant chaque journée.",
   majority:"À chaque question, vote pour l'option de ton choix.\nTu restes en vie si tu votes comme la majorité des survivants.\nSi tu votes comme la minorité, ou si tu ne votes pas, tu es éliminé…\nLes votes restent secrets jusqu'à l'heure limite. Tu peux ensuite retrouver le résultat dans l'onglet « HISTORIQUE ».\nEn cas d'égalité parfaite entre les 2 options, personne parmi les votants n'est éliminé.\nLes 2 derniers survivants remportent la ligue."
@@ -102,19 +102,19 @@ document.addEventListener('error', e=>{
   const el=e.target; if(el && el.tagName==='IMG' && el.dataset.fb!==undefined){ const span=document.createElement('span'); span.innerHTML=el.dataset.fb; el.replaceWith(...span.childNodes); }
 }, true);
 
-// Logos : « Survivor » (élimination) et « One Shot » (ligue aux points)
-const BRANDS = { survivor:{img:'survivor', txt:'SURVIVOR', alt:'Survivor'}, oneshot:{img:'oneshot', txt:'ONE SHOT', alt:'One Shot'} };
-const brandOf = s => /^one\s*shot$/i.test(String(s).trim()) ? 'oneshot' : 'survivor';
+// Logos : « Survivor » (élimination) et « Race » (ligue aux points)
+const BRANDS = { survivor:{img:'survivor', txt:'SURVIVOR', alt:'Survivor'}, oneshot:{img:'race', txt:'RACE', alt:'Race'} };
+const brandOf = s => /^(one\s*shot|race)$/i.test(String(s).trim()) ? 'oneshot' : 'survivor';
 const WM = (k='survivor', white=false) => { const b=BRANDS[k]||BRANDS.survivor; return `<img class="wm" src="img/${b.img}${white?'-white':''}.png" data-fb="${esc('<span class="wm-txt">'+b.txt+'</span>')}" alt="${b.alt}">`; };
-const WM_RE=/survivor|one shot/i;
+const WM_RE=/survivor|one shot|\bRACE\b|\bRace\b/i;
 function isLight(el){ try{ const c=getComputedStyle(el).color.match(/\d+(\.\d+)?/g); if(!c) return false; const [r,g,b]=c.map(Number); return (0.299*r+0.587*g+0.114*b)>160; }catch(e){ return false; } }
 function wmify(root){
   if(!root) return;
   const tw=document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {acceptNode:n=>{ const p=n.parentElement; if(!p||/^(SCRIPT|STYLE|OPTION|SELECT|TEXTAREA|TITLE)$/.test(p.tagName)||p.closest('.wm-txt')) return NodeFilter.FILTER_REJECT; return WM_RE.test(n.nodeValue)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_SKIP; }});
   const nodes=[]; while(tw.nextNode()) nodes.push(tw.currentNode);
   nodes.forEach(n=>{
-    const light=isLight(n.parentElement); const parts=n.nodeValue.split(/(survivor|one shot)/i); const frag=document.createDocumentFragment();
-    parts.forEach(pt=>{ if(/^(survivor|one shot)$/i.test(pt)){ const b=BRANDS[brandOf(pt)]; const img=document.createElement('img'); img.className='wm in'; img.alt=b.alt; img.src=`img/${b.img}${light?'-white':''}.png`; img.dataset.fb=`<span class="wm-txt">${b.txt}</span>`; frag.appendChild(img); } else if(pt) frag.appendChild(document.createTextNode(pt)); });
+    const light=isLight(n.parentElement); const parts=n.nodeValue.split(/(survivor|one shot|\bRACE\b|\bRace\b)/i); const frag=document.createDocumentFragment();
+    parts.forEach(pt=>{ if(/^(survivor|one shot|race)$/i.test(pt)){ const b=BRANDS[brandOf(pt)]; const img=document.createElement('img'); img.className='wm in'; img.alt=b.alt; img.src=`img/${b.img}${light?'-white':''}.png`; img.dataset.fb=`<span class="wm-txt">${b.txt}</span>`; frag.appendChild(img); } else if(pt) frag.appendChild(document.createTextNode(pt)); });
     n.replaceWith(frag);
   });
 }
@@ -127,10 +127,10 @@ function unaccent(root){
 }
 const _obs=new MutationObserver(ms=>{ ms.forEach(m=>m.addedNodes.forEach(nd=>{ if(nd.nodeType===1){ wmify(nd); } else if(nd.nodeType===3 && nd.parentElement) wmify(nd.parentElement); })); });
 document.addEventListener('DOMContentLoaded',()=>{});
-const stripPrefix = n => String(n||'').replace(/^\s*(survivor|one\s*shot)\s*(x\b)?\s*/i,'').trim();
+const stripPrefix = n => String(n||'').replace(/^\s*(survivor|one\s*shot|race)\s*(x\b)?\s*/i,'').trim();
 const fmtBrand = f => f==='points' ? 'oneshot' : 'survivor';
-const fullName = (rest, f) => (f==='points'?'One Shot X ':'Survivor X ')+stripPrefix(rest);
-const splitBrand = name => { const m=String(name||'').match(/^\s*(survivor|one\s*shot)\b\s*(.*)$/i); return m?{k:brandOf(m[1]), rest:m[2]}:null; };
+const fullName = (rest, f) => (f==='points'?'Race X ':'Survivor X ')+stripPrefix(rest);
+const splitBrand = name => { const m=String(name||'').match(/^\s*(survivor|one\s*shot|race)\b\s*(.*)$/i); return m?{k:brandOf(m[1]), rest:m[2]}:null; };
 const XI = () => `<img class="xm" src="img/x.png" data-fb="X" alt="X">`;
 const xify = h => { const m=String(h).match(/^\s*x(\s+|$)(.*)$/i); return m ? `${XI()}<span>${m[2]}</span>` : h; };
 const pfxInput = (id, cls, val, ph, k='survivor') => `<div class="pfx-in ${cls} ${k}"><span class="pfx">${WM(k)}${XI()}</span><input class="in ${cls}" id="${id}" maxlength="48" value="${esc(val||'')}" placeholder="${esc(ph)}"></div>`;
@@ -220,7 +220,7 @@ function logoTag(side, cls='lg'){ return side && side.logo ? `<img class="${cls}
 /* ================================================================ Game logic */
 const isPickMode = lg => (lg.mode||cat(lg.category).mode)==='pick';
 const isPoints = lg => !!lg && lg.scoring==='points' && isPickMode(lg);
-const nRoundsOf = lg => Math.max(1, +lg.nRounds || POINTS_N);
+const nRoundsOf = lg => Math.max(1, +lg.target || POINTS_N); // ici : points à atteindre
 const defaultRules = lg => isPoints(lg) ? pointsRules(nRoundsOf(lg)) : DEFAULT_RULES[isPickMode(lg)?'pick':'majority'];
 const allowDraw = lg => isPoints(lg) ? false : lg.allowDraw!==undefined ? lg.allowDraw : cat(lg.category).draw;
 const roundsOf = lg => Object.entries(lg.rounds||{}).map(([k,r])=>({...r,k})).sort((a,b)=>t(a.deadline)-t(b.deadline)||a.k.localeCompare(b.k));
@@ -237,7 +237,7 @@ function feedEvent(lg, m){
   return f.events[m.ev]||null;
 }
 function matchResult(lg, m){
-  if(m.result) return {r:m.result, manual:true};
+  if(m.result) return {r:m.result, manual:true, hs:m.hs??null, as:m.as??null};
   const e=feedEvent(lg,m);
   if(e && e.st==='post' && e.hs!=null && e.as!=null){ const hs=+e.hs, as=+e.as; return {r: hs>as?'H':hs<as?'A':'D', auto:true, hs, as}; }
   return null;
@@ -305,41 +305,60 @@ function compute(lid){
   return {lg, mem, rounds, info, alive:[...alive], elimAt, started, pick,
     status: !started?'upcoming':finished?'finished':'live', winners: finished?[...alive]:[]};
 }
-// Ligue aux points : 3 pts victoire, 1 pt nul, 0 défaite, sur N journées. Le 1er gagne, le dernier paie.
+// Race : 3 pts victoire, 1 pt nul, 0 défaite. Le premier à atteindre l'objectif gagne ; égalité → meilleur goal-average.
 function computePoints(lg, mem, rounds){
-  const lid=lg.id, N=nRoundsOf(lg), info={}, pts={}, w={}, d={}, l={};
-  mem.forEach(u=>{ pts[u]=0; w[u]=0; d[u]=0; l[u]=0; });
-  let played=0;
+  const lid=lg.id, N=nRoundsOf(lg), info={}, pts={}, w={}, d={}, l={}, ga={};
+  mem.forEach(u=>{ pts[u]=0; w[u]=0; d[u]=0; l[u]=0; ga[u]=0; });
+  let played=0, finished=false, firsts=[];
   rounds.forEach((r,i)=>{
-    const ri={n:r.n||i+1, idx:i+1, aliveBefore:[...mem], state:'open', out:[], pts:{}}; info[r.k]=ri;
-    if(i>=N){ ri.state='after'; return; }
+    const ri={n:r.n||i+1, idx:i+1, aliveBefore:[...mem], state:'open', out:[], pts:{}, ga:{}}; info[r.k]=ri;
+    if(finished){ ri.state='after'; return; }
     if(t(r.deadline)>now()) return;
-    const ms=matchesOf(r), res={}; let all=!!ms.length;
-    ms.forEach(m=>{ const x=matchResult(lg,m); if(x) res[m.k]=x.r; else all=false; });
+    const ms=matchesOf(r), res={}, sco={}; let all=!!ms.length;
+    ms.forEach(m=>{ const x=matchResult(lg,m); if(x){ res[m.k]=x.r; if(x.hs!=null) sco[m.k]=[+x.hs,+x.as]; } else all=false; });
     ri.res=res; ri.state=all?'done':'waiting'; if(all) played++;
     mem.forEach(u=>{ const p=pickOf(u,lid,r.k);
       if(!p){ if(all) ri.pts[u]=0; return; }
       const x=res[p.m]; if(!x) return;
-      const sc=x===p.p?3:x==='D'?1:0; ri.pts[u]=sc; pts[u]+=sc; if(sc===3) w[u]++; else if(sc===1) d[u]++; else l[u]++; });
-    if(all){ let bold=null, br=0; mem.forEach(u=>{ if(ri.pts[u]===3){ const rk=pickRank(lg,r,pickOf(u,lid,r.k)); if(rk&&rk>br){ br=rk; bold=u; } } }); if(bold) ri.bold={u:bold,rk:br}; }
+      const sc=x===p.p?3:x==='D'?1:0; ri.pts[u]=sc; pts[u]+=sc; if(sc===3) w[u]++; else if(sc===1) d[u]++; else l[u]++;
+      const g=sco[p.m]; const diff=g?(p.p==='H'?g[0]-g[1]:p.p==='A'?g[1]-g[0]:0):0; ri.ga[u]=diff; ga[u]+=diff; });
+    if(all){ let bold=null, br=0; mem.forEach(u=>{ if(ri.pts[u]===3){ const rk=pickRank(lg,r,pickOf(u,lid,r.k)); if(rk&&rk>br){ br=rk; bold=u; } } }); if(bold) ri.bold={u:bold,rk:br};
+      const reached=mem.filter(u=>pts[u]>=N);
+      if(reached.length){ finished=true; const best=Math.max(...reached.map(u=>ga[u])); firsts=reached.filter(u=>ga[u]===best); ri.finish=true; } }
   });
   const started=now()>=t(lg.startAt);
-  const finished=started && rounds.length>=N && rounds.slice(0,N).every(r=>info[r.k].state==='done');
-  const aud={}; mem.forEach(u=>aud[u]=audacity(lg,rounds,info,u)||0);
-  const key=u=>[pts[u], w[u], Math.round(aud[u]*100)];
-  const cmp=(a,b)=>{ const A=key(a), B=key(b); return B[0]-A[0]||B[1]-A[1]||B[2]-A[2]; };
+  const key=u=>[firsts.includes(u)?1:0, pts[u], ga[u], w[u]];
+  const cmp=(a,b)=>{ const A=key(a), B=key(b); return B[0]-A[0]||B[1]-A[1]||B[2]-A[2]||B[3]-A[3]; };
   const sorted=[...mem].sort((a,b)=>cmp(a,b)||nameOf(a).localeCompare(nameOf(b)));
-  const ranking=sorted.map(u=>({u, pos:sorted.filter(v=>cmp(v,u)<0).length+1, tie:sorted.some(v=>v!==u&&cmp(v,u)===0), pts:pts[u], w:w[u], d:d[u], l:l[u]}));
-  const lastPos=Math.max(0,...ranking.map(x=>x.pos));
-  // Le 1er gagne… et le dernier aussi
-  const firsts=finished?ranking.filter(x=>x.pos===1).map(x=>x.u):[];
-  const lasts=finished&&mem.length>1?ranking.filter(x=>x.pos===lastPos&&x.pos!==1).map(x=>x.u):[];
-  const winners=[...firsts,...lasts], losers=[];
+  const ranking=sorted.map(u=>({u, pos:sorted.filter(v=>cmp(v,u)<0).length+1, tie:sorted.some(v=>v!==u&&cmp(v,u)===0), pts:pts[u], w:w[u], d:d[u], l:l[u], ga:ga[u]}));
   const rankOf={}; ranking.forEach(x=>rankOf[x.u]=x);
-  return {lg, mem, rounds, info, alive:[...mem], elimAt:{}, started, pick:true, points:true, N, pts, played, ranking, rankOf, losers, firsts, lasts,
-    status: !started?'upcoming':finished?'finished':'live', winners};
+  return {lg, mem, rounds, info, alive:[...mem], elimAt:{}, started, pick:true, points:true, N, pts, ga, played, ranking, rankOf, losers:[], firsts, lasts:[],
+    status: !started?'upcoming':finished?'finished':'live', winners: started&&finished?firsts:[]};
 }
-const C = lid => compute(lid);
+// Option « le dernier » (ligues privées) : lastRule = 'wins' (le dernier gagne aussi) | 'drink' (le dernier doit un verre au premier)
+function lastsOf(c){
+  if(c.mem.length<2 || c.status!=='finished') return [];
+  if(c.points){ const rest=c.ranking.filter(x=>!c.firsts.includes(x.u)); if(!rest.length) return [];
+    const lo=rest[rest.length-1]; return rest.filter(x=>x.pts===lo.pts&&x.ga===lo.ga).map(x=>x.u); }
+  for(const r of c.rounds){ const ri=c.info[r.k]; if(ri&&ri.out&&ri.out.length) return ri.out.filter(u=>!c.winners.includes(u)); }
+  return [];
+}
+const LAST_RULES={wins:{ico:'🏆',t:'Le dernier gagne également'}, drink:{ico:'🍺',t:'Le dernier doit un verre au premier'}};
+const C = lid => { const c=compute(lid); if(!c) return c; c.lastRule=LAST_RULES[c.lg.lastRule]?c.lg.lastRule:null; c.lasts=c.lastRule?lastsOf(c):[]; c.firstsW=c.points?c.firsts:c.winners; return c; };
+const wonBy=(c,u)=>c.winners.includes(u)||(c.lastRule==='wins'&&c.lasts.includes(u));
+function lastBanner(c){
+  if(!c.lastRule) return '';
+  const nm=a=>a.map(u=>u===S.me?'toi':esc(nameOf(u))).join(' & ');
+  if(c.status!=='finished'||!c.lasts.length) return '';
+  if(c.lastRule==='wins') return c.lasts.includes(S.me)?`<div class="banner win"><span class="ico">🏆</span>Tu finis à la dernière place… et tu gagnes quand même !</div>`:`<div class="banner info"><span class="ico">🏆</span>${nm(c.lasts)} ${c.lasts.length>1?'finissent à la dernière place et gagnent':'finit à la dernière place et gagne'} aussi !</div>`;
+  if(c.lasts.includes(S.me)) return `<div class="banner dead"><span class="ico">🍺</span>Tu finis à la dernière place : tu dois un verre à ${nm(c.firstsW)} !</div>`;
+  if(c.firstsW.includes(S.me)) return `<div class="banner win"><span class="ico">🍺</span>${nm(c.lasts)} ${c.lasts.length>1?'te doivent':'te doit'} un verre !</div>`;
+  return `<div class="banner info"><span class="ico">🍺</span>${nm(c.lasts)} ${c.lasts.length>1?'doivent':'doit'} un verre à ${nm(c.firstsW)}.</div>`;
+}
+function lastBlock(cur, act, lid, locked){
+  const v=lid?lid+'|':'', opts=[['','Aucune option','Seul le gagnant compte.'],['wins','🏆 Le dernier gagne également','Le premier éliminé (ou le dernier au classement) remporte aussi la ligue.'],['drink','🍺 Le dernier doit un verre au premier','Le premier éliminé (ou le dernier au classement) paie un verre au gagnant.']];
+  return `<label class="f">Option fun</label><div class="lopt">${opts.map(([k,tt,d])=>`<button class="lopt-b ${(cur||'')===k?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}${k}"`}><i></i><span><b>${tt}</b><small>${d}</small></span></button>`).join('')}</div>${locked?'<div class="help" style="margin:-4px 0 10px">Option figée une fois la ligue commencée.</div>':''}`;
+}
 function usedTeams(c, uid, rk){
   const set=new Set(); const r0=c.lg.rounds[rk]; if(!r0) return set;
   c.rounds.forEach(r=>{ if(r.k===rk || t(r.deadline)>=t(r0.deadline)) return; const p=pickOf(uid,c.lg.id,r.k); if(!p||p.p==='D') return; const m=(r.matches||{})[p.m]; if(m) set.add(teamKey(p.p==='H'?m.h:m.a)); });
@@ -409,7 +428,7 @@ async function boot(){
 }
 
 /* ---------- Visiteurs non connectés ---------- */
-const GUEST_OK=new Set(['reload','hview','toLeagues','slide','install','hideInstall','filter','open','back','ltab','toggle','comp','peek']);
+const GUEST_OK=new Set(['reload','fmt','lfmt','hview','toLeagues','slide','install','hideInstall','filter','open','back','ltab','toggle','comp','peek']);
 function askLogin(a,v){
   const lg=v&&S.leagues[String(v).split('|')[0]];
   if(a==='join' && lg){ try{ sessionStorage.setItem('survivor-after-login',JSON.stringify({a:'join',v:lg.id})); }catch(e){} }
@@ -447,13 +466,15 @@ function startDemo(){
       rounds:{q1:{n:1,deadline:iso(n-3*D),q:'Le meilleur de l\'histoire ?',a:{n:'Pelé'},b:{n:'Maradona'}},q2:{n:2,deadline:iso(n+D),q:'Tu préfères ?',a:{n:'Zidane'},b:{n:'Henry'}}}},
     L4:{id:'L4',name:'Survivor X NBA',category:'basket',mode:'pick',comp:'nba',startAt:iso(n+D+6*H),createdAt:iso(n-D),code:'NBA777',private:false,cover:'auto',rounds:{}}
   };
+  { const r12=S.leagues.L1.rounds.r12.matches; const sc=[[2,0],[1,1],[0,2]]; Object.keys(r12).sort().forEach((k,i)=>{ if(sc[i]){ r12[k].hs=sc[i][0]; r12[k].as=sc[i][1]; } }); }
+  S.leagues.L5={...S.leagues.L1, id:'L5', name:'Race X Ligue 2', scoring:'points', target:20, private:true, lastRule:'drink', code:'RACE20', cover:'trophee', createdAt:iso(n-11*D)};
   const P=(id,pseudo,lg,picks)=>({id,pseudo,leagues:Object.fromEntries(lg.map(l=>[l,iso(n-10*D)])),picks});
   S.players={
-    moi:P('moi','Rémy',['L1','L2','L3'],{L1:{r12:{m:'r12m0',p:'H'},r13:{m:'r13m0',p:'H'}},L2:{t1:{m:'t1m2',p:'H'}},L3:{q1:{p:'A'}}}),
-    p1:P('p1','Karim',['L1','L3'],{L1:{r12:{m:'r12m1',p:'D'},r13:{m:'r13m2',p:'A'}},L3:{q1:{p:'A'},q2:{p:'B'}}}),
-    p2:P('p2','Léa',['L1','L3','L4'],{L1:{r12:{m:'r12m2',p:'A'}},L3:{q1:{p:'B'}}}),
+    moi:P('moi','Rémy',['L1','L2','L3','L5'],{L1:{r12:{m:'r12m0',p:'H'},r13:{m:'r13m0',p:'H'}},L2:{t1:{m:'t1m2',p:'H'}},L3:{q1:{p:'A'}},L5:{r12:{m:'r12m0',p:'H'}}}),
+    p1:P('p1','Karim',['L1','L3','L5'],{L1:{r12:{m:'r12m1',p:'D'},r13:{m:'r13m2',p:'A'}},L3:{q1:{p:'A'},q2:{p:'B'}},L5:{r12:{m:'r12m1',p:'H'}}}),
+    p2:P('p2','Léa',['L1','L3','L4','L5'],{L1:{r12:{m:'r12m2',p:'A'}},L3:{q1:{p:'B'}},L5:{r12:{m:'r12m2',p:'A'}}}),
     p3:P('p3','Hugo',['L1'],{L1:{r12:{m:'r12m0',p:'A'}}}),
-    p4:P('p4','Inès',['L1','L3'],{L1:{r12:{m:'r12m0',p:'H'},r13:{m:'r13m3',p:'H'}},L3:{q1:{p:'A'}}})
+    p4:P('p4','Inès',['L1','L3','L5'],{L1:{r12:{m:'r12m0',p:'H'},r13:{m:'r13m3',p:'H'}},L3:{q1:{p:'A'}},L5:{r12:{m:'r12m0',p:'A'}}})
   };
   afterData(); render(); setInterval(render,30000);
 }
@@ -497,7 +518,7 @@ function autoImport(lid){
   const f=S.feeds[lg.comp]; if(!f){ loadFeed(lg.comp); return; } if(f.missing||!f.rounds) return;
   const start=t(lg.startAt), horizon=now()+AUTO_DAYS*864e5;
   let n=Object.keys(lg.rounds||{}).length; const add={};
-  const cap=isPoints(lg)?nRoundsOf(lg):Infinity;
+  const cap=Infinity;
   f.rounds.filter(r=>t(r.s)>now() && t(r.s)>=start && t(r.s)<=horizon).forEach(fr=>{
     if(n>=cap) return;
     const b=buildRound(lg, lg.comp, fr, n+1); if(!b) return;
@@ -518,6 +539,8 @@ const A = {
   hview(v){ S.view.hview=v; S.view.hv=v; render(); },
   toLeagues(){ const el=document.getElementById('ligues'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); },
   reload(){ location.reload(); },
+  lfmt(v){ S.view.lfmt=v; S.view.filter='all'; render(); },
+  fmt(v){ S.view.fmt=v; S.view.filter='all'; S.slide=0; const el=document.getElementById('slides'); if(el) el.scrollLeft=0; render(); },
   slide(i){ slideClock=Date.now(); const el=document.getElementById('slides'); if(el) el.scrollTo({left:el.clientWidth*(+i),behavior:'smooth'}); },
   install(){ if(!installEvt) return; installEvt.prompt(); installEvt.userChoice.finally(()=>{ installEvt=null; render(); }); },
   hideInstall(){ try{ localStorage.setItem('survivor-install-hide','1'); }catch(e){} render(); },
@@ -538,7 +561,7 @@ const A = {
   joinCode(){
     modal(`<h3>REJOINDRE UNE LIGUE</h3><div class="muted" style="font-size:15px">Entre le code à 6 caractères donné par le créateur.</div><input class="in" id="jc" maxlength="6" style="margin-top:14px;text-transform:uppercase;letter-spacing:6px;font-size:24px;text-align:center" placeholder="ABC123">`,'REJOINDRE',()=>{
       const code=(document.getElementById('jc').value||'').trim().toUpperCase();
-      const lg=Object.values(S.leagues).find(l=>(l.code||'').toUpperCase()===code);
+      const lg=Object.values(S.leagues).find(l=>(l.code||'').toUpperCase()===code && shownL(l.id));
       if(!lg){ toast('Code inconnu.',true); return false; }
       if(isMember(lg.id)){ A.open(lg.id); return; }
       const c=C(lg.id); if(c.started){ toast('Cette ligue a déjà commencé.',true); return false; }
@@ -555,30 +578,32 @@ const A = {
     writeMe({picks:{[lid]:{[rk]:{m:mk||null,p,at:new Date().toISOString()}}}}).then(()=>toast(cur?'Choix modifié !':'Choix enregistré !'));
   },
   toggle(v){ S.open[v]=!S.open[v]; render(); },
-  newCat(v){ S.view.newCat=v; render(); },
+  newCat(v){ if(HIDDEN_CATS.includes(v)) return; S.view.newCat=v; render(); },
   newFmt(v){ S.view.newFmt=v; render(); },
+  newLast(v){ S.view.newLast=v; render(); },
+  setLast(v){ const [lid,k]=v.split('|'); if(!S.leagues[lid]) return; writeLeague(lid,{lastRule:k||null}).then(()=>toast(k?'Option activée : '+LAST_RULES[k].t.toLowerCase()+'.':'Option désactivée.')); },
   setFmt(v){ const [lid,f]=v.split('|'); const lg=S.leagues[lid]; if(!lg) return;
     const name=fullName(stripPrefix(lg.name), f).slice(0,60);
-    writeLeague(lid, f==='points'?{scoring:'points', nRounds:+lg.nRounds||POINTS_N, name}:{scoring:'survivor', name}).then(()=>toast(f==='points'?'Ligue passée au format One Shot.':'Ligue passée au format Survivor.')); },
+    writeLeague(lid, f==='points'?{scoring:'points', target:+lg.target||POINTS_N, name}:{scoring:'survivor', name}).then(()=>toast(f==='points'?'Ligue passée au format Race.':'Ligue passée au format Survivor.')); },
   createLeague(){
     const g=id=>document.getElementById(id);
-    const rest=stripPrefix(g('nl-name').value), name=fullName(rest, (cat(S.view.newCat).mode==='pick'&&S.view.newFmt==='points')?'points':'survivor'), desc=g('nl-desc').value.trim(), d=g('nl-date').value, h=g('nl-time').value||'20:00';
+    const rest=stripPrefix(g('nl-name').value), name=fullName(rest, (cat(S.view.newCat).mode==='pick'&&S.view.newFmt==='points')?'points':'survivor'), d=g('nl-date').value, h=g('nl-time').value||'20:00';
     if(rest.length<2) return toast('Complète le nom de la ligue.',true);
     if(!d) return toast('Choisis la date de fin des inscriptions.',true);
     if(!S.isOwner && S.leagues[S.me]) return toast('Tu as déjà créé ta ligue.',true);
     if(guard()) return;
     const k=S.view.newCat, cc=cat(k);
     const id=S.isOwner ? 'l'+rid() : S.me;
-    const pts=cc.mode==='pick'&&S.view.newFmt==='points'; const nr=Math.min(38,Math.max(3,+((g('nl-nr')||{}).value)||POINTS_N));
-    const lg={...(pts?{scoring:'points',nRounds:nr}:{}),name:name.slice(0,60),description:desc.slice(0,300),category:k,mode:cc.mode,comp:(cc.comps.includes(compFromName(name))?compFromName(name):cc.comps[0])||null,startAt:new Date(d+'T'+h).toISOString(),createdAt:new Date().toISOString(),createdBy:S.me,private:!S.isOwner,code:genCode(),cover:'auto',rules:'',rounds:{}};
+    const pts=cc.mode==='pick'&&S.view.newFmt==='points'; const nr=Math.min(40,Math.max(10,+((g('nl-nr')||{}).value)||POINTS_N));
+    const lg={...(pts?{scoring:'points',target:nr}:{}),name:name.slice(0,60),category:k,mode:cc.mode,comp:(cc.comps.includes(compFromName(name))?compFromName(name):cc.comps[0])||null,startAt:new Date(d+'T'+h).toISOString(),createdAt:new Date().toISOString(),createdBy:S.me,private:!S.isOwner,...(S.view.newLast&&LAST_RULES[S.view.newLast]&&(!S.isOwner||S.mode==='demo')?{lastRule:S.view.newLast}:{}),code:genCode(),cover:'auto',rules:'',rounds:{}};
     writeLeague(id,lg,'set').then(()=>{ if(!isMember(id)) writeMe({leagues:{[id]:new Date().toISOString()}}); toast('Ligue créée ! Code : '+lg.code); A.manage(id); setTimeout(()=>autoImport(id),400); });
   },
   saveInfo(lid){
     const g=id=>document.getElementById(id);
     const rest=stripPrefix(g('ei-name').value); if(rest.length<2) return toast('Complète le nom de la ligue.',true); const name=fullName(rest, isPoints(S.leagues[lid])?'points':'survivor');
-    const patch={name:name.slice(0,60),description:g('ei-desc').value.trim().slice(0,300)};
+    const patch={name:name.slice(0,60)};
     const cf=compFromName(name), lgx=S.leagues[lid]; if(cf && cat(lgx.category).comps.includes(cf) && cf!==lgx.comp){ patch.comp=cf; S.view.comp=cf; loadFeed(cf); }
-    const nrI=g('ei-nr'); if(nrI && !nrI.disabled && isPoints(lgx)) patch.nRounds=Math.min(38,Math.max(3,+nrI.value||POINTS_N));
+    const nrI=g('ei-nr'); if(nrI && !nrI.disabled && isPoints(lgx)) patch.target=Math.min(40,Math.max(10,+nrI.value||POINTS_N));
     const d=g('ei-date'), h=g('ei-time'); if(d && d.value) patch.startAt=new Date(d.value+'T'+(h.value||'20:00')).toISOString();
     writeLeague(lid,patch).then(()=>{ toast('Ligue mise à jour.'); autoImport(lid); });
   },
@@ -762,7 +787,9 @@ function celebrate(lid){
 /* ================================================================ Views */
 function statusPill(c){ if(c.status==='upcoming') return '<span class="pill green">À venir</span>'; if(c.status==='finished') return '<span class="pill grey">Terminée</span>'; return '<span class="pill">En cours</span>'; }
 const catTag = k => `<span class="tag">${I[cat(k).icon]}${esc(cat(k).label)}</span>`;
-const visible = lg => !lg.private || isMember(lg.id) || canManage(lg);
+const HIDDEN_CATS=['tuprefere']; // « Tu préfères » désactivé pour le moment
+const shownL = lid => !HIDDEN_CATS.includes((S.leagues[lid]||{}).category);
+const visible = lg => !HIDDEN_CATS.includes(lg.category) && (!lg.private || isMember(lg.id) || canManage(lg));
 
 
 /* Lot : maillot rétro du championnat (ligues de football) */
@@ -771,14 +798,38 @@ function prizeBand(lg, cls){
   if((lg.category||'football')!=='football' || !lg.comp || !COMP_NAMES[lg.comp]) return '';
   return `<div class="prize ${cls||''}"><span class="pz-i">👕</span><span>Le dernier survivant de cette ligue gagne <b>un maillot rétro de ${esc(COMP_NAMES[lg.comp])}</b></span></div>`;
 }
+function leagueCardNew(c){ let h='';
+    const lg=c.lg, mine=isMember(lg.id), cd=c.status==='upcoming'?until(lg.startAt):null;
+    let act;
+    if(c.status==='upcoming') act = mine?`<button class="nc-btn ok" data-a="open" data-v="${lg.id}">Inscrit ✓</button>`:`<button class="nc-btn go" data-a="join" data-v="${lg.id}">Je m'inscris</button>`;
+    else if(c.status==='live' && mine && c.alive.includes(S.me)) act=`<button class="nc-btn dark" data-a="open" data-v="${lg.id}">Parier</button>`;
+    else act=`<button class="nc-btn" data-a="open" data-v="${lg.id}">Voir</button>`;
+    const pill=c.status==='upcoming'?`<span class="nc-pill up">À venir</span>`:c.status==='finished'?`<span class="nc-pill end">Terminée</span>`:`<span class="nc-pill live">En cours</span>`;
+    const faces=c.mem.slice(0,3).map(u=>`<span class="nc-face">${(S.players[u]||{}).avatar?`<img src="${blobUrl(S.players[u].avatar)}" alt="">`:`<img src="${DEFAULT_AVATAR}" alt="">`}</span>`).join('');
+    const info=c.points?`Objectif ${c.N} pts · leader à ${c.ranking[0]?c.ranking[0].pts:0}`:c.status==='upcoming'?`Début dans ${cd||'quelques instants'}`:`${c.alive.length} en vie sur ${c.mem.length}`;
+    h+=`<div class="ncard"><button class="nc-cover" data-a="open" data-v="${lg.id}" aria-label="Ouvrir la ligue">${coverHtml(lg)}${pill}<span class="nc-cat">${catTag(lg.category)}</span></button>
+      <div class="nc-body">${leagueTitle(lg.name)}
+        ${c.winners.length?`<div class="nc-win">🏆 ${[...c.winners,...(c.lastRule==='wins'?c.lasts:[])].map(w=>esc(nameOf(w))).join(' & ')}</div>`:''}
+        ${c.lastRule==='drink'&&c.lasts.length?`<div class="nc-win">🍺 ${c.lasts.map(w=>esc(nameOf(w))).join(' & ')} ${c.lasts.length>1?'doivent':'doit'} un verre</div>`:''}
+        ${c.lastRule&&c.status!=='finished'?`<div class="nc-opt">${LAST_RULES[c.lastRule].ico} ${LAST_RULES[c.lastRule].t}</div>`:''}
+        <div class="nc-info"><span>${c.points?I.chart:c.status==='upcoming'?I.clock:I.heart}${esc(info)}</span></div>
+        <div class="nc-foot"><span class="nc-faces">${faces}<em>${c.mem.length} joueur${c.mem.length>1?'s':''}</em></span>${act}</div>
+      </div></div>`;
+  return h;
+}
 function viewHome(){
   const all=Object.values(S.leagues).filter(visible).map(l=>C(l.id)).filter(Boolean);
   const order={upcoming:0,live:1,finished:2};
   all.sort((a,b)=>(+(b.lg.pin||0))-(+(a.lg.pin||0)) || order[a.status]-order[b.status] || (a.status==='upcoming'?t(a.lg.startAt)-t(b.lg.startAt):t(b.lg.createdAt)-t(a.lg.createdAt)));
-  const cats=[...new Set(all.map(c=>c.lg.category||'football'))];
+  const fmt=S.view.fmt||'survivor';
+  const DESC={survivor:'Un mauvais pari et tu es éliminé. Le dernier en vie gagne.', oneshot:'Pas d’élimination : cumule des points pour gagner la ligue.'};
+  const nOs=all.filter(c=>c.points).length, nSv=all.length-nOs;
+  const lfmt=S.view.lfmt||'survivor';
+  const allF=all.filter(c=>lfmt==='oneshot'?c.points:!c.points);
+  const cats=[...new Set(allF.map(c=>c.lg.category||'football'))];
   const f=S.view.filter;
-  const list=all.filter(c=> f==='all'?true : f==='mine'?isMember(c.lg.id) : (c.lg.category||'football')===f);
-  const myL=Object.keys(S.leagues).filter(isMember).map(C).filter(Boolean);
+  const list=allF.filter(c=> f==='all'?true : f==='mine'?isMember(c.lg.id) : (c.lg.category||'football')===f);
+  const myL=Object.keys(S.leagues).filter(lid=>isMember(lid)&&shownL(lid)).map(C).filter(Boolean);
   const aliveIn=myL.filter(c=>c.status==='live'&&c.alive.includes(S.me)).length, soon=myL.filter(c=>c.status==='upcoming').length, todo=countTodo();
   const me=S.players[S.me]||{}, nm=nameOf(S.me);
   let line, cta;
@@ -788,35 +839,52 @@ function viewHome(){
     line=(bits.length?'Tu es '+bits.join(' · '):'Aucune ligue en cours pour toi.')+(todo?` · <b class="hot">${todo} choix à faire</b>`:'');
     cta=`<button class="btn ${todo?'brand':'light'}" data-a="tab" data-v="paris">${todo?'À TOI DE JOUER':'MES PARIS'} ${I.arrow}</button>`;
   }
-  let h=`<div class="topbar"><span class="tb-logo">${WM()}</span><button class="tb-av" data-a="tab" data-v="profil" aria-label="Profil">${me.avatar?`<img src="${blobUrl(me.avatar)}" data-fb="${esc(initials(nm))}" alt="">`:esc(initials(nm))}</button></div>
+  let nextDl=null; myL.forEach(c=>{ if(c.status==='finished'||!c.alive.includes(S.me)) return; const r=c.rounds.find(r=>t(r.deadline)>now()); if(!r) return; const done=!!pickOf(S.me,c.lg.id,r.k); const cand={t:t(r.deadline), name:stripPrefix(c.lg.name), done};
+    if(!nextDl || (nextDl.done && !done) || (nextDl.done===done && cand.t<nextDl.t)) nextDl=cand; });
+  const avImg=`<img src="${me.avatar?blobUrl(me.avatar):DEFAULT_AVATAR}" data-fb="${esc(initials(nm))}" alt="">`;
+  let h=`<div class="nh-top"><button class="nh-av" data-a="tab" data-v="profil" aria-label="Profil">${avImg}</button><div class="nh-hi"><small>Salut,</small><b>${esc(nm)}</b></div><span class="nh-logo">${WM()}</span></div>
+  <div class="nh-card2">
+    <div class="nh-l"><b>${aliveIn}</b><span>ligue${aliveIn>1?'s':''} où tu es<br>encore en vie</span></div>
+    <button class="nh-todo ${todo?'':'zero'}" data-a="tab" data-v="paris"><b>${todo}</b><span>pari${todo>1?'s':''} à valider</span><i>${I.arrow}</i></button>
+    ${nextDl?`<div class="nh-next">${I.clock}<span>${nextDl.done?`Modifiable · <b>${esc(nextDl.name)}</b>`:`Fais ton choix pour la <b>${esc(nextDl.name)}</b>`}</span><em class="cdl" data-t="${nextDl.t}">${cdText(nextDl.t)}</em></div>`:''}
+  </div>
+  <div class="how"><div class="how-t">Comment on joue&nbsp;?</div>
+    <div class="how-sw" role="tablist"><button role="tab" class="${fmt==='survivor'?'on':''}" data-a="fmt" data-v="survivor" aria-label="Survivor">${WM('survivor', fmt==='survivor')}</button><button role="tab" class="${fmt==='oneshot'?'on':''}" data-a="fmt" data-v="oneshot" aria-label="Race">${WM('oneshot', fmt==='oneshot')}</button></div></div>
+  <div class="how-d">${fmt==='oneshot'?'– Cumule des points –':'– Le dernier en vie gagne –'}</div>
   <div class="slider"><div class="slides" id="slides">
-    <div class="hero slide"><div class="hero-ph shot"><img src="img/slide-pari.jpg" alt=""></div><div class="hero-in"><div class="hero-k">1 / 4</div><div class="hero-h sm">CHAQUE<br>JOURNÉE,<br>PARIE SUR<br><span>L'ÉQUIPE<br>DE TON CHOIX.</span></div><button class="btn light" data-a="slide" data-v="1">SUIVANT ${I.arrow}</button></div></div>
-    <div class="hero slide"><div class="hero-ph" style="--op:50% 20%"><img src="img/slide-supporter.jpg" alt=""></div><div class="hero-in"><div class="hero-k">2 / 4</div><div class="hero-h sm">ELLE GAGNE&nbsp;→<br><span>TU SURVIS.</span><br>SINON,<br><span>TU ES ÉLIMINÉ.</span></div><button class="btn light" data-a="slide" data-v="2">SUIVANT ${I.arrow}</button></div></div>
-    <div class="hero slide red"><div class="hero-ph" style="--op:52% 30%"><img src="img/slide-dembele.jpg" alt=""></div><div class="hero-in"><div class="hero-k">3 / 4</div><div class="hero-h sm">INTERDIT DE<br>PARIER 2 FOIS<br>SUR LA MÊME<br>ÉQUIPE.</div><button class="btn light" data-a="slide" data-v="3">SUIVANT ${I.arrow}</button></div></div>
-    <div class="hero slide"><div class="hero-ph trophy"><img src="img/covers/trophee.jpg" alt=""></div><div class="hero-in"><div class="hero-k">4 / 4</div><div class="hero-h sm">LE DERNIER<br>EN VIE GAGNE<br><span>UN MAILLOT<br>DE FOOT RÉTRO.</span></div><button class="btn brand hero-go" data-a="toLeagues">À TOI DE JOUER ${I.arrow}</button></div></div>
-  </div><div class="sdots">${[0,1,2,3].map(i=>`<button data-a="slide" data-v="${i}" aria-label="Écran ${i+1}"></button>`).join('')}</div></div>
+${fmt==='oneshot'?`    <div class="sl slide "><div class="sl-ph"><div class="il il1b">
+<div class="m1"><b><img src="data/logos/soccer_2502.png" alt=""></b><em>N</em><b><img src="data/logos/soccer_179.png" alt=""></b></div>
+<div class="m1 sel"><b class="on"><img src="data/logos/soccer_176.png" alt=""><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></i></b><em>N</em><b><img src="data/logos/soccer_169.png" alt=""></b></div>
+<div class="m1"><b><img src="data/logos/soccer_166.png" alt=""></b><em>N</em><b><img src="data/logos/soccer_180.png" alt=""></b></div>
+</div><span class="sl-k">1<small>/4</small></span></div><div class="sl-tx"><div class="sl-h">Chaque journée, choisis <mark>une équipe</mark>.</div><button class="sl-btn" data-a="slide" data-v="1">Suivant ${I.arrow}</button></div></div>
+    <div class="sl slide "><div class="sl-ph"><div class="il il-os2"><div class="os-r"><span class="sc"><img src="data/logos/soccer_176.png" alt=""><b>2-0</b><img src="data/logos/soccer_169.png" alt=""></span><em class="w">+3</em></div><div class="os-r"><span class="sc"><img src="data/logos/soccer_176.png" alt=""><b>1-1</b><img src="data/logos/soccer_169.png" alt=""></span><em class="d">+1</em></div><div class="os-r"><span class="sc"><img src="data/logos/soccer_176.png" alt=""><b>0-1</b><img src="data/logos/soccer_169.png" alt=""></span><em class="l">+0</em></div></div><span class="sl-k">2<small>/4</small></span></div><div class="sl-tx"><div class="sl-h">Gagne des points en fonction de <mark class="g">son résultat</mark>.</div><button class="sl-btn" data-a="slide" data-v="2">Suivant ${I.arrow}</button></div></div>
+    <div class="sl slide yel"><div class="sl-ph"><div class="il il3"><div class="il3-big"><img src="data/logos/soccer_176.png" alt=""><span>Déjà joué</span></div><div class="il3-row"><b><img src="data/logos/soccer_160.png" alt=""></b><b><img src="data/logos/soccer_175.png" alt=""></b><b><img src="data/logos/soccer_167.png" alt=""></b><b><img src="data/logos/soccer_174.png" alt=""></b><b><img src="data/logos/soccer_166.png" alt=""></b></div></div><span class="sl-k">3<small>/4</small></span></div><div class="sl-tx"><div class="sl-h"><span class="sl-warn" aria-label="Attention"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3L2 20h20z"/><path d="M12 10v4M12 17h.01"/></svg></span>Tu ne pourras plus sélectionner cette équipe.</div><button class="sl-btn" data-a="slide" data-v="3">Suivant ${I.arrow}</button></div></div>
+    <div class="sl slide "><div class="sl-ph"><div class="il il-os4"><div class="os-t"><i>1</i><span>Karim</span><b>20 pts 🏁</b></div><div class="os-t me"><i>2</i><span>Toi</span><b>16 pts</b></div><div class="os-t"><i>3</i><span>Léa</span><b>14 pts</b></div></div><span class="sl-k">4<small>/4</small></span></div><div class="sl-tx"><div class="sl-h">Le premier à <mark>20 points</mark> gagne la ligue.</div><button class="sl-btn go" data-a="toLeagues">À toi de jouer ${I.arrow}</button></div></div>
+`:`    <div class="sl slide "><div class="sl-ph"><div class="il il1b">
+<div class="m1"><b><img src="data/logos/soccer_6997.png" alt=""></b><em>N</em><b><img src="data/logos/soccer_6851.png" alt=""></b></div>
+<div class="m1 sel"><b class="on"><img src="data/logos/soccer_160.png" alt=""><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></i></b><em>N</em><b><img src="data/logos/soccer_273.png" alt=""></b></div>
+<div class="m1"><b><img src="data/logos/soccer_7868.png" alt=""></b><em>N</em><b><img src="data/logos/soccer_175.png" alt=""></b></div>
+</div><span class="sl-k">1<small>/4</small></span></div><div class="sl-tx"><div class="sl-h">Chaque journée, choisis <mark>une équipe</mark>.</div><button class="sl-btn" data-a="slide" data-v="1">Suivant ${I.arrow}</button></div></div>
+    <div class="sl slide "><div class="sl-ph"><div class="il il2"><div class="il-res ok"><div class="il-sc"><img src="data/logos/soccer_160.png" alt=""><b>2 - 0</b><img src="data/logos/soccer_273.png" alt=""></div><div class="il-st"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-8.5-5.2-9.8-10.6C1.4 6.9 3.6 4 6.9 4c2 0 3.6 1.1 5.1 3 1.5-1.9 3.1-3 5.1-3 3.3 0 5.5 2.9 4.7 6.4C20.5 15.8 12 21 12 21z"/></svg>En vie</div></div>
+<div class="il-res ko"><div class="il-sc"><img src="data/logos/soccer_160.png" alt=""><b>0 - 1</b><img src="data/logos/soccer_273.png" alt=""></div><div class="il-st"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>Éliminé</div></div></div><span class="sl-k">2<small>/4</small></span></div><div class="sl-tx"><div class="sl-h">Ton équipe gagne&nbsp;: <mark class="g">tu survis</mark>. Sinon&nbsp;: tu es éliminé.</div><button class="sl-btn" data-a="slide" data-v="2">Suivant ${I.arrow}</button></div></div>
+    <div class="sl slide yel"><div class="sl-ph"><div class="il il3"><div class="il3-big"><img src="data/logos/soccer_160.png" alt=""><span>Déjà joué</span></div><div class="il3-row"><b><img src="data/logos/soccer_176.png" alt=""></b><b><img src="data/logos/soccer_175.png" alt=""></b><b><img src="data/logos/soccer_167.png" alt=""></b><b><img src="data/logos/soccer_174.png" alt=""></b><b><img src="data/logos/soccer_166.png" alt=""></b></div></div><span class="sl-k">3<small>/4</small></span></div><div class="sl-tx"><div class="sl-h">Mais tu ne pourras plus sélectionner cette équipe.</div><button class="sl-btn" data-a="slide" data-v="3">Suivant ${I.arrow}</button></div></div>
+    <div class="sl slide dark mid full"><img class="sl-bgimg" src="img/slide-supporter.jpg" alt=""><div class="sl-ph"><div class="il il4p"></div><span class="sl-k">4<small>/4</small></span></div><div class="sl-tx"><div class="sl-h">Le dernier en vie <mark>gagne</mark>.</div><button class="sl-btn go" data-a="toLeagues">À toi de jouer ${I.arrow}</button></div></div>
+`}  </div><div class="sdots">${[0,1,2,3].map(i=>`<button data-a="slide" data-v="${i}" aria-label="Écran ${i+1}"></button>`).join('')}</div></div>
   ${installCard('home')}
-  <div class="sec" id="ligues" style="margin:26px 0 12px;scroll-margin-top:16px">Les ligues</div>`;
-  h+=`<div class="chips"><button class="chip ${f==='all'?'on':''}" data-a="filter" data-v="all">Toutes</button><button class="chip ${f==='mine'?'on':''}" data-a="filter" data-v="mine">Mes ligues</button>`+cats.map(k=>`<button class="chip ${f===k?'on':''}" data-a="filter" data-v="${k}">${esc(cat(k).label)}</button>`).join('')+`</div>`;
+  <div class="nh-sec" id="ligues"><span>Les ligues</span><small>${list.length} ligue${list.length>1?'s':''}</small></div>`;
+  h+=`<div class="lsw2 ${lfmt}"><div class="lsw2-tabs" role="tablist"><button role="tab" class="${lfmt==='survivor'?'on':''}" data-a="lfmt" data-v="survivor" aria-label="Ligues Survivor">${WM('survivor', lfmt==='survivor')}<em>${nSv}</em></button><button role="tab" class="${lfmt==='oneshot'?'on':''}" data-a="lfmt" data-v="oneshot" aria-label="Ligues Race">${WM('oneshot', false)}<em>${nOs}</em></button></div></div>`;
+  const fl=[['all','Toutes'],...(S.guest?[]:[['mine','Mes ligues']]),...cats.map(k=>[k,cat(k).label])];
+  h+=`<div class="ftabs" role="tablist">`+fl.map(([k,l])=>`<button role="tab" class="${f===k?'on':''}" data-a="filter" data-v="${k}">${esc(l)}</button>`).join('')+`</div>`;
   if(!list.length){
-    h+=`<div class="empty"><div class="ico">${f==='mine'?'🎟️':'🏟️'}</div><h3>${f==='mine'?'AUCUNE LIGUE':'PAS ENCORE DE LIGUE'}</h3><p>${f==='mine'?'Inscris-toi à une ligue ou entre un code privé.':'Crée la première ligue !'}</p></div>`;
+    h+=`<div class="empty"><div class="ico">${f==='mine'?'🎟️':'🏟️'}</div><h3>${f==='mine'?'AUCUNE LIGUE':'PAS ENCORE DE LIGUE'}</h3>${f==='mine'?'<p>Inscris-toi à une ligue ou entre un code privé.</p></div>':'</div><button class="nc-join" style="margin-bottom:10px" data-a="tab" data-v="admin">'+I.plus+' Créer la première ligue</button>'}`;
   }
-  list.forEach(c=>{
-    const lg=c.lg, mine=isMember(lg.id), cd=c.status==='upcoming'?until(lg.startAt):null;
-    let act='';
-    if(c.status==='upcoming') act = mine?`<button class="btn sm" data-a="open" data-v="${lg.id}">INSCRIT ✓</button>`:`<button class="btn sm green" data-a="join" data-v="${lg.id}">JE M'INSCRIS</button>`;
-    else act=`<button class="btn" data-a="open" data-v="${lg.id}">VOIR ${I.arrow}</button>`;
-    if(c.status==='upcoming') act+=`<button class="btn sm ghost" data-a="open" data-v="${lg.id}">VOIR</button>`;
-    h+=`<div class="lcard"><div class="cover">${coverHtml(lg)}</div><div class="body">
-      <div class="tags">${catTag(lg.category)}${lg.private?'<span class="tag priv">Privée</span>':''}</div>
-      <div class="tags">${statusPill(c)}</div>
-      ${leagueTitle(lg.name)}
-      ${cd?`<div class="cd">Début dans ${cd}</div>`:''}
-      ${c.winners.length?`<div class="win">🏆 ${c.winners.map(w=>esc(nameOf(w))).join(' & ')}</div>`:''}
-      <div class="stats"><span>${I.users}<b>${c.mem.length}</b> joueurs</span>${c.points?`<span>${I.chart}<b>${c.played}/${c.N}</b> journées</span>`:`<span>${I.heart}<b>${c.status==='upcoming'?c.mem.length:c.alive.length}</b> en vie</span>`}</div>
-      <div class="actions">${act}</div></div></div>`;
+  const grp={survivor:list.filter(c=>!c.points), oneshot:list.filter(c=>c.points)};
+  const order2=[lfmt];
+  order2.forEach(g=>{ const L2=grp[g]; if(!L2.length) return;
+    L2.forEach(c=>{ h+=leagueCardNew(c); });
   });
-  h+=`<button class="btn line full" style="margin-top:6px" data-a="joinCode">${I.key} REJOINDRE UNE LIGUE PRIVÉE</button>`;
+  h+=`<button class="nc-join" data-a="joinCode">${I.key} Rejoindre une ligue privée avec un code</button>`;
+  h+=`<button class="nc-join nc-create" data-a="tab" data-v="admin">${I.plus} Créer une ligue et invite tes amis</button>`;
   return h;
 }
 
@@ -965,10 +1033,33 @@ function duelHtml(c,r,o){
 }
 function roundVotes(c,r){ let A=0,B=0; ((c.info[r.k]||{}).aliveBefore||c.mem).forEach(u=>{ const p=pickOf(u,c.lg.id,r.k); if(p&&p.p==='A') A++; if(p&&p.p==='B') B++; }); return {A,B}; }
 
+
+/* Règles en images (nouveau design) */
+function rulesPics(lg){
+  if(!isPickMode(lg)) return '';
+  const pick=`<div class="rp-il"><div class="rp-m"><b class="on"><img src="data/logos/soccer_160.png" alt=""><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></i></b><em>N</em><b><img src="data/logos/soccer_273.png" alt=""></b></div></div>`;
+  const once=`<div class="rp-il"><div class="rp-once"><b class="used"><img src="data/logos/soccer_160.png" alt=""></b><b><img src="data/logos/soccer_176.png" alt=""></b><b><img src="data/logos/soccer_175.png" alt=""></b></div></div>`;
+  if(isPoints(lg)){
+    const pts=`<div class="rp-il"><div class="rp-pts"><span class="w">3</span><span class="d">1</span><span class="l">0</span></div></div>`;
+    const both=`<div class="rp-il dark"><div class="rp-faces"><i>·</i><i class="win"><s><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 7l5 4 4-7 4 7 5-4-2 12H5z"/></svg></s>20</i><i>·</i></div></div>`;
+    return `<div class="rpics">`+
+      `<div class="rp">${pick}<p>Chaque journée, choisis <b>une équipe</b></p></div>`+
+      `<div class="rp">${pts}<p>Victoire <b>3 pts</b>, nul <b>1 pt</b>, défaite <b>0</b></p></div>`+
+      `<div class="rp yel">${once}<p><b>Une seule fois</b> par équipe</p></div>`+
+      `<div class="rp">${both}<p>Le <b>1er à l’objectif</b> gagne</p></div></div>`;
+  }
+  const win=`<div class="rp-il"><div class="rp-res"><span class="ok"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-8.5-5.2-9.8-10.6C1.4 6.9 3.6 4 6.9 4c2 0 3.6 1.1 5.1 3 1.5-1.9 3.1-3 5.1-3 3.3 0 5.5 2.9 4.7 6.4C20.5 15.8 12 21 12 21z"/></svg>En vie</span><span class="ko"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>Éliminé</span></div></div>`;
+  const last=`<div class="rp-il dark"><div class="rp-faces"><i>·</i><i class="win"><s><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 7l5 4 4-7 4 7 5-4-2 12H5z"/></svg></s>1</i><i>·</i></div></div>`;
+  return `<div class="rpics">`+
+    `<div class="rp">${pick}<p>Chaque journée, choisis <b>une équipe</b></p></div>`+
+    `<div class="rp">${win}<p>Elle gagne : <b>tu survis</b>. Sinon, éliminé</p></div>`+
+    `<div class="rp yel">${once}<p><b>Une seule fois</b> par équipe</p></div>`+
+    `<div class="rp">${last}<p>Le <b>dernier en vie</b> gagne</p></div></div>`;
+}
 function rulesCard(lg){
   const txt=(lg.rules||'').trim()||defaultRules(lg);
-  const extra=lg.description?`<p><b>${esc(lg.description)}</b></p>`:'';
-  return `<details class="card coll" ${S.open['rules'+lg.id]?'open':''}><summary data-a="toggle" data-v="rules${lg.id}"><span class="ctitle">${I.book}Règles du jeu</span>${I.chev}</summary><div class="rules-body">${extra}${txt.split(/\n+/).map(p=>`<p>${esc(p)}</p>`).join('')}</div></details>`;
+  const extra=(LAST_RULES[lg.lastRule]?`<p class="lrule">${LAST_RULES[lg.lastRule].ico} <b>Option de la ligue :</b> ${LAST_RULES[lg.lastRule].t.toLowerCase()}${isPoints(lg)?' (le dernier au classement à la fin)':' (le premier éliminé)'}.</p>`:'');
+  return `<details class="card coll" ${S.open['rules'+lg.id]?'open':''}><summary data-a="toggle" data-v="rules${lg.id}"><span class="ctitle">${I.book}Règles du jeu</span>${I.chev}</summary><div class="rules-body">${rulesPics(lg)}${extra}${txt.split(/\n+/).map(p=>`<p>${esc(p)}</p>`).join('')}</div></details>`;
 }
 function standingsCard(lg, openDefault){
   const key=lg.comp; if(!key) return '';
@@ -1049,7 +1140,7 @@ function journeyData(c,u){
 }
 function journey(c,u,o={}){
   const items=journeyData(c,u);
-  const st=c.points?(c.firsts.includes(u)?'🏆 Vainqueur (1er)':c.lasts.includes(u)?'🏆 Vainqueur (dernier)':`${(c.rankOf[u]||{}).pos||'–'}${(c.rankOf[u]||{}).pos===1?'er':'e'} · ${c.pts[u]||0} pt${(c.pts[u]||0)>1?'s':''}`):c.winners.includes(u)?'🏆 Vainqueur':c.alive.includes(u)?'💚 Toujours en vie':`☠️ Éliminé à la J${(c.info[c.elimAt[u]]||{}).n||'?'}`;
+  const st=c.points?(c.firsts.includes(u)?'🏆 Vainqueur':(c.lastRule==='wins'&&c.lasts.includes(u))?'🏆 Vainqueur (dernier)':(c.lastRule==='drink'&&c.lasts.includes(u))?'🍺 Dernier · doit un verre':`${(c.rankOf[u]||{}).pos||'–'}${(c.rankOf[u]||{}).pos===1?'er':'e'} · ${c.pts[u]||0} pt${(c.pts[u]||0)>1?'s':''}`):c.winners.includes(u)?'🏆 Vainqueur':c.alive.includes(u)?'💚 Toujours en vie':`☠️ Éliminé à la J${(c.info[c.elimAt[u]]||{}).n||'?'}`;
   let h=`<div class="card jcard"><div class="jhead"><div>${o.title?`<div class="jt">${leagueTitle(c.lg.name)}</div>`:''}<div class="jst">${esc(nameOf(u))} · ${st}</div></div>${o.share?`<button class="btn sm ghost" data-a="shareJourney" data-v="${c.lg.id}">${I.share} PARTAGER</button>`:''}</div>`;
   if(!items.length) return h+`<div class="muted" style="margin-top:10px">Aucune journée jouée pour l'instant.</div></div>`;
   h+=`<div class="frise">${items.map(x=>`<div class="fj ${x.ok===true?'ok':x.ok===false?'ko':x.ok==='c'?'cx':'wait'}"><span class="fn">J${x.n}</span><span class="fl">${x.logo?`<img src="${esc(x.logo)}" data-fb="" alt="">`:esc(initials(x.label).slice(0,2))}</span><span class="fm">${x.ok===true?'✓':x.ok===false?'✗':x.ok==='c'?'=':'…'}</span><span class="ft">${esc(x.label)}${x.rk?` <em>${x.rk}e</em>`:''}</span></div>`).join('')}</div></div>`;
@@ -1073,18 +1164,19 @@ function viewLeague(lid){
   const lg=c.lg, mine=isMember(lid), alive=c.alive.includes(S.me);
   let pill='';
   const me_=c.points&&c.rankOf[S.me];
-  if(c.points && mine && c.status!=='upcoming') pill = c.winners.includes(S.me)?'<span class="pill round" style="background:var(--brand)">🏆 GAGNANT</span>':`<span class="pill round">${me_.pos}${me_.pos===1?'er':'e'} · ${me_.pts} PT${me_.pts>1?'S':''}</span>`;
-  else if(mine && c.status!=='upcoming') pill = c.winners.includes(S.me)?'<span class="pill round" style="background:var(--brand)">🏆 GAGNANT</span>':alive?'<span class="pill round green"><span class="dot"></span>EN VIE</span>':'<span class="pill round red"><span class="dot"></span>ÉLIMINÉ</span>';
+  if(c.points && mine && c.status!=='upcoming') pill = wonBy(c,S.me)?'<span class="pill round" style="background:var(--brand)">🏆 GAGNANT</span>':`<span class="pill round">${me_.pos}${me_.pos===1?'er':'e'} · ${me_.pts} PT${me_.pts>1?'S':''}</span>`;
+  else if(mine && c.status!=='upcoming') pill = wonBy(c,S.me)?'<span class="pill round" style="background:var(--brand)">🏆 GAGNANT</span>':alive?'<span class="pill round green"><span class="dot"></span>EN VIE</span>':'<span class="pill round red"><span class="dot"></span>ÉLIMINÉ</span>';
   else if(mine) pill='<span class="pill round green">INSCRIT</span>';
   let h=`<div class="lhead"><button class="cback" data-a="back" aria-label="Retour">${I.back}</button><div class="grow">${leagueTitle(lg.name)}</div>${pill}</div>`;
   if(canManage(lg)) h+=`<button class="link grey" style="margin:-4px 0 14px" data-a="manage" data-v="${lid}">${I.gear.replace('<svg','<svg width="18" height="18"')} Gérer la ligue</button>`;
-  if(c.points && c.status==='finished') h+= c.firsts.includes(S.me)?`<div class="banner win"><span class="ico">🏆</span>${c.firsts.length>1?'Tu termines 1er ex æquo : tu gagnes !':'Tu termines 1er : tu gagnes !'}</div>`:c.lasts.includes(S.me)?`<div class="banner win"><span class="ico">🎉</span>Tu termines dernier… et tu gagnes aussi !</div>`:`<div class="banner dead"><span class="ico">🏁</span>Ligue terminée · ${c.firsts.map(w=>esc(nameOf(w))).join(' & ')} (1er)${c.lasts.length?` et ${c.lasts.map(w=>esc(nameOf(w))).join(' & ')} (dernier)`:''} ${c.winners.length>1?'gagnent':'gagne'}</div>`;
-  else if(c.points && mine && c.status==='live') h+=`<div class="banner alive"><span class="ico">📊</span>Tu es ${me_.pos}${me_.pos===1?'er':'e'}${me_.tie?' ex æquo':''} avec ${me_.pts} point${me_.pts>1?'s':''} · journée ${c.played}/${c.N}</div>`;
+  if(c.points && c.status==='finished') h+= c.firsts.includes(S.me)?`<div class="banner win"><span class="ico">🏆</span>Tu es le premier à ${c.N} points : tu gagnes la ligue !</div>`:`<div class="banner dead"><span class="ico">🏁</span>Ligue terminée · ${c.firsts.map(w=>esc(nameOf(w))).join(' & ')} ${c.firsts.length>1?'gagnent':'gagne'} en atteignant ${c.N} points</div>`;
+  else if(c.points && mine && c.status==='live') h+=`<div class="banner alive"><span class="ico">📊</span>Tu es ${me_.pos}${me_.pos===1?'er':'e'} avec ${me_.pts} pt${me_.pts>1?'s':''} sur ${c.N} · goal-average ${me_.ga>0?'+':''}${me_.ga}</div>`;
   else if(c.status==='finished') h+= c.winners.includes(S.me)?`<div class="banner win"><span class="ico">🏆</span>${c.winners.length>1?'Tu fais partie des 2 derniers survivants !':'Tu es le grand gagnant !'}</div>`:`<div class="banner dead"><span class="ico">🏁</span>Ligue terminée · ${c.winners.map(w=>esc(nameOf(w))).join(' & ')} ${c.winners.length>1?'gagnent':'gagne'}</div>`;
   else if(!mine) h+= c.status==='upcoming'?`<div class="banner info"><span class="ico">🎟️</span><div style="flex:1">Inscriptions ouvertes jusqu'au ${fmtDT(lg.startAt)}</div><button class="btn sm green" data-a="join" data-v="${lid}">JE M'INSCRIS</button></div>`:`<div class="banner info"><span class="ico">🔒</span>Inscriptions closes. Tu suis la ligue en spectateur.</div>`;
   else if(c.status==='upcoming') h+=`<div class="banner alive"><span class="ico svgico">${I.clock}</span>Inscrit ! Début de la ligue dans ${untilJH(lg.startAt)}</div>`;
   else if(alive) h+=`<div class="banner alive"><span class="ico">💚</span>${c.alive.length===1?'Tu es le dernier survivant !':`Tu es dans les ${c.alive.length} survivants !`}</div>`;
   else h+=`<div class="banner dead"><span class="ico">☠️</span>Tu es éliminé. Tente ta chance dans une autre ligue…</div>`;
+  h+=lastBanner(c);
   const tab=S.view.ltab;
   h+=`<div class="seg"><button class="${tab==='paris'?'on':''}" data-a="ltab" data-v="paris">${c.pick?'Paris':'Vote'}</button><button class="${tab==='surv'?'on':''}" data-a="ltab" data-v="surv">${c.points?'Classement':'Survivants'}</button><button class="${tab==='hist'?'on':''}" data-a="ltab" data-v="hist">Historique</button></div>`;
   if(tab==='paris'){
@@ -1099,11 +1191,11 @@ function viewLeague(lid){
     }
   } else if(tab==='surv' && c.points){
     const lead=c.ranking[0];
-    h+=`<div class="card"><span class="ctitle">${I.chart}Statistiques</span><div class="statgrid" style="margin-bottom:0"><div class="stat" style="background:#fff"><b>${c.mem.length}</b><span>Joueurs</span></div><div class="stat" style="background:#fff"><b>${c.played}/${c.N}</b><span>Journées</span></div><div class="stat" style="background:#fff"><b>${lead?lead.pts:0}</b><span>Pts du 1er</span></div></div></div>`;
-    h+=`<div class="plist"><div class="sec">Classement</div>`+c.ranking.map(x=>{
+    h+=`<div class="card"><span class="ctitle">${I.chart}Statistiques</span><div class="statgrid" style="margin-bottom:0"><div class="stat" style="background:#fff"><b>${c.mem.length}</b><span>Joueurs</span></div><div class="stat" style="background:#fff"><b>${c.N}</b><span>Pts à atteindre</span></div><div class="stat" style="background:#fff"><b>${lead?lead.pts:0}</b><span>Pts du 1er</span></div></div></div>`;
+    h+=`<div class="plist"><div class="sec">Classement</div><div class="ga-leg">Points · <span class="ga">GA</span> goal-average (départage en cas d'égalité)</div>`+c.ranking.map(x=>{
       const p=x.u, win=c.winners.includes(p), los=false;
-      const sub=`${x.w} V · ${x.d} N · ${x.l} D${c.firsts.includes(p)?' · Vainqueur (1er)':c.lasts.includes(p)?' · Vainqueur (dernier)':''}`;
-      return `<div class="prow"><div class="pos live">${x.pos}<sup>${x.pos===1?'er':'e'}</sup>${x.tie?'<i>ex æquo</i>':''}</div>${avatarOf(p)}<div class="nm">${esc(nameOf(p))}${p===S.me?'<span class="me-tag">TOI</span>':''}<small>${sub}</small></div><span class="pill ${win?'':los?'red':'green'}" ${win?'style="background:var(--brand)"':''}>${win?'🏆 ':los?'💸 ':''}${x.pts} pt${x.pts>1?'s':''}</span></div>`;
+      const sub=`${x.w} V · ${x.d} N · ${x.l} D${c.firsts.includes(p)?' · Vainqueur':''}`;
+      return `<div class="prow"><div class="pos live">${x.pos}<sup>${x.pos===1?'er':'e'}</sup>${x.tie?'<i>ex æquo</i>':''}</div>${avatarOf(p)}<div class="nm">${esc(nameOf(p))}${p===S.me?'<span class="me-tag">TOI</span>':''}<small>${sub}</small></div><span class="ga ${x.ga>0?'p':x.ga<0?'n':''}" title="Goal-average">${x.ga>0?'+':''}${x.ga}</span><span class="pill ${win?'':los?'red':'green'}" ${win?'style="background:var(--brand)"':''}>${win?'🏆 ':los?'💸 ':''}${x.pts} pt${x.pts>1?'s':''}</span></div>`;
     }).join('')+'</div>';
   } else if(tab==='surv'){
     h+=prizeBand(lg,'big');
@@ -1122,9 +1214,6 @@ function viewLeague(lid){
     const tr=trendSection(c); if(tr) h+=`<div class="card">${tr}</div>`;
     const past=c.rounds.filter(r=>t(r.deadline)<=now()).reverse();
     if(!past.length) h+=`<div class="empty"><h3>RIEN POUR L'INSTANT</h3><p>Les journées passées apparaîtront ici.</p></div>`;
-    const hv=S.view.hv||'days';
-    if(past.length) h+=`<div class="chips in" style="margin-bottom:12px"><button class="chip sm ${hv==='days'?'on':''}" data-a="hview" data-v="days">Par journée</button>${c.mem.map(u=>`<button class="chip sm ${hv===u?'on':''}" data-a="hview" data-v="${u}">${esc(u===S.me?'Moi':nameOf(u))}</button>`).join('')}</div>`;
-    if(hv!=='days' && past.length){ h+=journey(c,hv,{share:hv===S.me}); return h; }
     past.forEach(r=>{
       h+=roundCard(c,r,{hint:false});
       const ri=c.info[r.k]||{}; const voters=(ri.aliveBefore||[]);
@@ -1136,7 +1225,7 @@ function viewLeague(lid){
 
 function viewParis(){
   let h=`<div class="ptitle">${titleImg('title-mes-paris.png','MES PARIS')}</div>`;
-  const my=Object.keys(S.leagues).filter(isMember).map(C).filter(Boolean);
+  const my=Object.keys(S.leagues).filter(lid=>isMember(lid)&&shownL(lid)).map(C).filter(Boolean);
   if(!my.length) return h+`<div class="empty"><div class="ico">🎟️</div><h3>AUCUNE LIGUE</h3><p>Inscris-toi à une ligue pour jouer.</p><button class="btn" data-a="tab" data-v="ligues">VOIR LES LIGUES</button></div>`;
   const next=[], wait=[], hist=[];
   my.forEach(c=>{
@@ -1158,39 +1247,31 @@ function viewParis(){
     h+=card;
   });
   if(wait.length){ h+=`<div class="sec2">EN ATTENTE DES RÉSULTATS</div>`; wait.forEach(([c,r])=>{ h+=`<div class="card"><div style="font-family:var(--bold);font-weight:800">${esc(c.lg.name)} · Journée ${(c.info[r.k]||{}).n||''}</div><div class="muted" style="margin-top:4px">Ton choix : <b style="color:var(--on)">${esc(pickLabel(c.lg,r,pickOf(S.me,c.lg.id,r.k)))}</b></div></div>`; }); }
-  if(hist.length){
-    h+=`<div class="sec">Historique</div>`;
-    hist.sort((a,b)=>t(b[1].deadline)-t(a[1].deadline)).slice(0,20).forEach(([c,r,p,ri])=>{
-      const out=ri.out&&ri.out.includes(S.me); let ok=ri.state==='cancelled'?null:!out;
-      if(c.points){ const sc=(ri.pts||{})[S.me]; ok=sc===3?true:sc===0?false:null; }
-      h+=`<div class="prow"><div class="av" style="background:${ok===null?'var(--muted)':ok?'var(--ok2)':'var(--brand)'}">${ok===null?'–':ok?'✓':'✗'}</div><div class="nm">${esc(pickLabel(c.lg,r,p))}<small>${esc(c.lg.name)} · ${c.pick?'Journée':'Question'} ${ri.n||''}${ri.state==='cancelled'?' · annulée':''}</small></div></div>`;
-    });
-  }
   return h;
 }
 
 
 function fmtBlock(fmt, act, lid, nr, locked){
   const v=lid?lid+'|':'';
-  return `<label class="f">Format</label><div class="chips in" style="flex-wrap:wrap"><button class="chip sm fmtchip ${fmt!=='points'?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}survivor"`} aria-label="Survivor">${WM('survivor', fmt!=='points')}</button><button class="chip sm fmtchip ${fmt==='points'?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}points"`} aria-label="One Shot">${WM('oneshot', fmt==='points')}</button></div>`+
-    (fmt==='points'?`<div class="help" style="margin:-4px 0 10px">Chaque journée, on choisit une équipe : victoire 3 pts, nul 1 pt, défaite 0. Jamais 2 fois la même équipe. À la fin, le 1er gagne… et le dernier aussi !</div><label class="f">Nombre de journées</label><input class="in${lid?' w':''}" type="number" inputmode="numeric" min="3" max="38" id="${lid?'ei-nr':'nl-nr'}" value="${nr||POINTS_N}" ${locked?'disabled':''}>`
+  return `<label class="f">Format</label><div class="chips in" style="flex-wrap:wrap"><button class="chip sm fmtchip ${fmt!=='points'?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}survivor"`} aria-label="Survivor">${WM('survivor', fmt!=='points')}</button><button class="chip sm fmtchip ${fmt==='points'?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}points"`} aria-label="Race">${WM('oneshot', fmt==='points')}</button></div>`+
+    (fmt==='points'?`<div class="help" style="margin:-4px 0 10px">Chaque journée, on choisit une équipe : victoire 3 pts, nul 1 pt, défaite 0. Jamais 2 fois la même équipe. Le premier à atteindre l'objectif gagne ; égalité = meilleur goal-average.</div><label class="f">Points à atteindre pour gagner</label><div class="nrange"><input type="range" min="10" max="40" step="1" id="${lid?'ei-nr':'nl-nr'}" value="${Math.min(40,Math.max(10,+nr||POINTS_N))}" ${locked?'disabled':''} oninput="this.nextElementSibling.firstChild.textContent=this.value"><b>${Math.min(40,Math.max(10,+nr||POINTS_N))}<small> pts</small></b></div><div class="help" style="margin:-2px 0 10px">Entre 10 et 40 points.</div>`
       :`<div class="help" style="margin:-4px 0 10px">Un mauvais pari et tu es éliminé. Le dernier en vie gagne.</div>`);
 }
 function viewAdmin(){
   if(S.view.manage) return viewManage(S.view.manage);
   const owner=S.isOwner;
   let h=`<div class="ptitle">${owner?titleImg('title-admin.png','ADMIN'):titleImg('title-ma-ligue.png','MA LIGUE')}<div class="sub">${owner?'Crée et gère les ligues.':'Crée ta ligue privée et invite tes proches avec un code.'}</div></div>`;
-  const mineL = owner ? Object.values(S.leagues) : Object.values(S.leagues).filter(l=>l.id===S.me);
+  const mineL = (owner ? Object.values(S.leagues) : Object.values(S.leagues).filter(l=>l.id===S.me)).filter(l=>shownL(l.id));
   if(owner || !mineL.length){
     const d=new Date(now()+864e5); d.setHours(20,0,0,0);
     const k=S.view.newCat, cc=cat(k);
     h+=`<div class="card"><div class="ctitle" style="margin-bottom:18px">Créer une ligue</div>
       <label class="f">Nom</label>${pfxInput('nl-name','','','Ligue des potes', (cc.mode==='pick'&&S.view.newFmt==='points')?'oneshot':'survivor')}
-      <label class="f">Catégorie</label><div class="chips in">${Object.entries(CATS).map(([kk,v])=>`<button class="chip ${kk===k?'on':''}" data-a="newCat" data-v="${kk}">${esc(v.label)}</button>`).join('')}</div>
+      <label class="f">Catégorie</label><div class="chips in">${Object.entries(CATS).filter(([kk])=>!HIDDEN_CATS.includes(kk)).map(([kk,v])=>`<button class="chip ${kk===k?'on':''}" data-a="newCat" data-v="${kk}">${esc(v.label)}</button>`).join('')}</div>
       <label class="f" style="margin-top:4px">Type de pari : ${cc.mode==='pick'?'un match par journée':'vote à la majorité'}</label>
       <div class="help" style="margin:0">${cc.mode==='pick'?`Chaque joueur choisit UN seul match par journée et parie dessus. Interdit de reprendre une équipe déjà jouée.${cc.draw&&S.view.newFmt!=='points'?' Le match nul peut être parié.':''}`:'Chaque question oppose 2 options : ceux qui votent comme la minorité sont éliminés.'}</div>
       ${cc.mode==='pick'?fmtBlock(S.view.newFmt,'newFmt',null,POINTS_N,false):''}
-      <label class="f">Description (optionnel)</label><textarea class="in" id="nl-desc" maxlength="300" placeholder="Entre amis pour tester…"></textarea>
+      ${(!owner||S.mode==='demo')?lastBlock(S.view.newLast,'newLast',null,false):''}
       <label class="f">Fin des inscriptions (date + heure)</label><div class="row2"><input class="in" type="date" id="nl-date" value="${dateIn(d)}"><input class="in" type="time" id="nl-time" value="20:00"></div>
       <button class="btn pop full" style="margin-top:18px" data-a="createLeague">CRÉER LA LIGUE</button></div>`;
   }
@@ -1212,12 +1293,12 @@ function viewManage(lid){
   if(S.isOwner) h+=`<div class="card"><label class="auto-sw" style="margin:0"><input type="checkbox" ${lg.pin?'checked':''} data-a="togglePin" data-v="${lid}"> ⭐ Afficher en premier sur l'accueil</label><div class="help" style="margin:8px 0 0">La ligue passe en tête de la liste « Les ligues ». Si plusieurs ligues sont cochées, la dernière cochée est la première.</div></div>`;
   // info
   const sd=new Date(lg.startAt);
-  h+=`<div class="card"><div class="h-disp">NOM &amp; DESCRIPTION</div>
+  h+=`<div class="card"><div class="h-disp">NOM &amp; RÉGLAGES</div>
     <label class="f">Nom de la ligue</label>${pfxInput('ei-name','w',stripPrefix(lg.name),'Ligue 1', isPoints(lg)?'oneshot':'survivor')}
-    <label class="f">Description</label><textarea class="in w" id="ei-desc" maxlength="300" placeholder="Quelques mots affichés sur la vignette de la ligue…">${esc(lg.description||'')}</textarea>
     ${c.status==='upcoming'?`<label class="f">Date de début (fin des inscriptions)</label><div class="row2"><input class="in w" type="date" id="ei-date" value="${dateIn(sd)}"><input class="in w" type="time" id="ei-time" value="${timeIn(sd)}"></div><div class="help">La ligue démarre le ${fmtDT(lg.startAt)}.</div>`:''}
-    ${isPickMode(lg)?fmtBlock(isPoints(lg)?'points':'survivor','setFmt',lid,lg.nRounds,c.rounds.some(r=>t(r.deadline)<=now())):''}
-    <label class="f">Catégorie</label><div class="chips in" style="flex-wrap:wrap">${Object.entries(CATS).map(([k,v])=>`<button class="chip sm ${k===lg.category?'on':''}" ${c.rounds.length?'disabled title="Catégorie figée après la 1re journée"':`data-a="setCat" data-v="${lid}|${k}"`}>${esc(v.label)}</button>`).join('')}</div>
+    ${isPickMode(lg)?fmtBlock(isPoints(lg)?'points':'survivor','setFmt',lid,lg.target,c.rounds.some(r=>t(r.deadline)<=now())):''}
+    ${(lg.private||lg.lastRule||S.mode==='demo')?lastBlock(lg.lastRule,'setLast',lid,c.status!=='upcoming'):''}
+    <label class="f">Catégorie</label><div class="chips in" style="flex-wrap:wrap">${Object.entries(CATS).filter(([kk])=>!HIDDEN_CATS.includes(kk)).map(([k,v])=>`<button class="chip sm ${k===lg.category?'on':''}" ${c.rounds.length?'disabled title="Catégorie figée après la 1re journée"':`data-a="setCat" data-v="${lid}|${k}"`}>${esc(v.label)}</button>`).join('')}</div>
     ${cc.comps.length?`<label class="f">Championnat</label><div class="chips in" style="flex-wrap:wrap">${cc.comps.map(k=>`<button class="chip sm ${k===lg.comp?'on':''}" data-a="setComp" data-v="${lid}|${k}">${esc(COMP_NAMES[k])}</button>`).join('')}</div><div class="help" style="margin:-4px 0 12px;font-size:13px">Sert pour le classement, les stats et l'import des journées.</div>`:''}
     <button class="btn pop full" style="margin-top:6px" data-a="saveInfo" data-v="${lid}">ENREGISTRER</button></div>`;
   // cover
@@ -1302,13 +1383,13 @@ function viewManage(lid){
 
 function viewProfil(){
   const me=S.players[S.me]||{}; const name=nameOf(S.me);
-  const my=Object.keys(S.leagues).filter(isMember).map(C).filter(Boolean);
+  const my=Object.keys(S.leagues).filter(lid=>isMember(lid)&&shownL(lid)).map(C).filter(Boolean);
   const wins=my.filter(c=>c.winners.includes(S.me)).length, alive=my.filter(c=>c.status!=='finished'&&c.alive.includes(S.me)).length;
   let h=`<div class="ptitle">${titleImg('title-profil.png','PROFIL')}</div>`;
   h+=`<div style="text-align:center"><button class="avatar-big" data-a="uploadAvatar"><img src="${me.avatar?blobUrl(me.avatar):DEFAULT_AVATAR}" data-fb="${esc(initials(name))}" alt=""><span class="cam">${I.cam}</span></button><div style="margin:18px 0 22px;display:flex;gap:22px;justify-content:center"><button class="link" data-a="uploadAvatar">Changer la photo</button>${me.avatar?'<button class="link" data-a="recropAvatar">Recadrer</button>':''}</div></div>`;
   h+=`<div class="card" style="display:flex;align-items:center;gap:14px"><div style="flex:1;min-width:0"><div class="lbl">Nom d'utilisateur</div><div class="pname" style="margin-top:10px">${esc(name)}</div>${S.email?`<div class="pmail">${esc(S.email)}</div>`:'<div style="height:10px"></div>'}${S.isOwner?`<span class="badge">${I.shield}ADMIN</span>`:''}</div><button class="circ" data-a="editName" aria-label="Modifier">${I.edit}</button></div>`;
-  h+=`<div class="statgrid"><div class="stat"><b>${my.length}</b><span>Ligues</span></div><div class="stat"><b>${alive}</b><span>En vie</span></div><div class="stat"><b>${wins}</b><span>Victoires</span></div></div>`;
-  if(S.mode==='demo') h+=`<div class="card" style="font-size:14px;line-height:1.5"><b>Mode démo.</b> Données fictives, rien n'est enregistré. Ouvre le site depuis son lien claude.ai, connecté, pour jouer avec tes proches.</div>`;
+  h+=`<div class="statgrid pstats"><div class="stat"><b>${my.length}</b><span>Ligues</span></div><div class="stat"><b>${alive}</b><span>En vie</span></div><div class="stat"><b>${wins}</b><span>Victoires</span></div></div>`;
+  if(S.mode==='demo') h+=`<div class="card" style="font-size:14px;line-height:1.5"><b>Mode démo.</b> Données fictives, rien n'est enregistré.</div>`;
   if(S.readOnly) h+=`<div class="card" style="background:var(--brand-soft);font-size:14px;line-height:1.5"><b>Lecture seule.</b> Pour jouer, l'organisateur doit t'inviter sur le site avec le rôle Éditeur.</div>`;
   const jl=my.filter(c=>c.started && c.rounds.some(r=>t(r.deadline)<=now()));
   if(jl.length){ h+=`<div class="sec">Mon parcours</div>`+jl.map(c=>journey(c,S.me,{title:true,share:true})).join(''); }
@@ -1320,7 +1401,7 @@ function viewProfil(){
 }
 
 /* ================================================================ Render */
-function countTodo(){ let n=0; Object.keys(S.leagues).filter(isMember).forEach(lid=>{ const c=C(lid); if(!c||c.status==='finished'||!c.alive.includes(S.me)) return; const r=c.rounds.find(r=>t(r.deadline)>now()); if(r && !pickOf(S.me,lid,r.k)) n++; }); return n; }
+function countTodo(){ let n=0; Object.keys(S.leagues).filter(lid=>isMember(lid)&&shownL(lid)).forEach(lid=>{ const c=C(lid); if(!c||c.status==='finished'||!c.alive.includes(S.me)) return; const r=c.rounds.find(r=>t(r.deadline)>now()); if(r && !pickOf(S.me,lid,r.k)) n++; }); return n; }
 function render(){
   const app=document.getElementById('app');
   if(S.mode==='loading'||(S.mode==='live'&&!(S.loaded.leagues&&S.loaded.players))){ app.innerHTML='<div class="spin"></div>'; return; }
