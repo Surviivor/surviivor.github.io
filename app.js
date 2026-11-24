@@ -842,13 +842,15 @@ function viewHome(){
   let nextDl=null; myL.forEach(c=>{ if(c.status==='finished'||!c.alive.includes(S.me)) return; const r=c.rounds.find(r=>t(r.deadline)>now()); if(!r) return; const done=!!pickOf(S.me,c.lg.id,r.k); const cand={t:t(r.deadline), name:stripPrefix(c.lg.name), done};
     if(!nextDl || (nextDl.done && !done) || (nextDl.done===done && cand.t<nextDl.t)) nextDl=cand; });
   const avImg=`<img src="${me.avatar?blobUrl(me.avatar):DEFAULT_AVATAR}" data-fb="${esc(initials(nm))}" alt="">`;
-  let h=`<div class="nh-top"><button class="nh-av" data-a="tab" data-v="profil" aria-label="Profil">${avImg}</button><div class="nh-hi"><small>Salut,</small><b>${esc(nm)}</b></div><span class="nh-logo">${WM()}</span></div>
+  let h=S.guest?`<div class="nh-top"><div class="nh-hi"><small>Bienvenue sur</small><span class="nh-logo">${WM()}</span></div><button class="btn sm brand" data-a="tab" data-v="profil">Se connecter</button></div>
+  `:`<div class="nh-top"><button class="nh-av" data-a="tab" data-v="profil" aria-label="Profil">${avImg}</button><div class="nh-hi"><small>Salut,</small><b>${esc(nm)}</b></div><span class="nh-logo">${WM()}</span></div>
   <div class="nh-card2">
     <div class="nh-l"><b>${aliveIn}</b><span>ligue${aliveIn>1?'s':''} où tu es<br>encore en vie</span></div>
     <button class="nh-todo ${todo?'':'zero'}" data-a="tab" data-v="paris"><b>${todo}</b><span>pari${todo>1?'s':''} à valider</span><i>${I.arrow}</i></button>
     ${nextDl?`<div class="nh-next">${I.clock}<span>${nextDl.done?`Modifiable · <b>${esc(nextDl.name)}</b>`:`Fais ton choix pour la <b>${esc(nextDl.name)}</b>`}</span><em class="cdl" data-t="${nextDl.t}">${cdText(nextDl.t)}</em></div>`:''}
   </div>
-  <div class="how"><div class="how-t">Comment on joue&nbsp;?</div>
+`;
+  h+=`  <div class="how"><div class="how-t">Comment on joue&nbsp;?</div>
     <div class="how-sw" role="tablist"><button role="tab" class="${fmt==='survivor'?'on':''}" data-a="fmt" data-v="survivor" aria-label="Survivor">${WM('survivor', fmt==='survivor')}</button><button role="tab" class="${fmt==='oneshot'?'on':''}" data-a="fmt" data-v="oneshot" aria-label="Race">${WM('oneshot', fmt==='oneshot')}</button></div></div>
   <div class="how-d">${fmt==='oneshot'?'– Cumule des points –':'– Le dernier en vie gagne –'}</div>
   <div class="slider"><div class="slides" id="slides">
