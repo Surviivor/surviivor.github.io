@@ -344,7 +344,7 @@ function lastsOf(c){
   return [];
 }
 const LAST_RULES={wins:{ico:'🏆',t:'Le dernier gagne également'}, drink:{ico:'🍺',t:'Le dernier doit un verre au premier'}};
-const C = lid => { const c=compute(lid); if(!c) return c; c.lastRule=LAST_RULES[c.lg.lastRule]?c.lg.lastRule:null; c.lasts=c.lastRule?lastsOf(c):[]; c.firstsW=c.points?c.firsts:c.winners; return c; };
+const C = lid => { const c=compute(lid); if(!c) return c; c.lastRule=(c.points&&LAST_RULES[c.lg.lastRule])?c.lg.lastRule:null; c.lasts=c.lastRule?lastsOf(c):[]; c.firstsW=c.points?c.firsts:c.winners; return c; };
 const wonBy=(c,u)=>c.winners.includes(u)||(c.lastRule==='wins'&&c.lasts.includes(u));
 function lastBanner(c){
   if(!c.lastRule) return '';
@@ -356,7 +356,7 @@ function lastBanner(c){
   return `<div class="banner info"><span class="ico">🍺</span>${nm(c.lasts)} ${c.lasts.length>1?'doivent':'doit'} un verre à ${nm(c.firstsW)}.</div>`;
 }
 function lastBlock(cur, act, lid, locked){
-  const v=lid?lid+'|':'', opts=[['','Aucune option','Seul le gagnant compte.'],['wins','🏆 Le dernier gagne également','Le premier éliminé (ou le dernier au classement) remporte aussi la ligue.'],['drink','🍺 Le dernier doit un verre au premier','Le premier éliminé (ou le dernier au classement) paie un verre au gagnant.']];
+  const v=lid?lid+'|':'', opts=[['','Aucune option','Seul le gagnant compte.'],['wins','🏆 Le dernier gagne également','Le dernier au classement à la fin remporte aussi la ligue.'],['drink','🍺 Le dernier doit un verre au premier','Le dernier au classement à la fin paie un verre au gagnant.']];
   return `<label class="f">Option fun</label><div class="lopt">${opts.map(([k,tt,d])=>`<button class="lopt-b ${(cur||'')===k?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}${k}"`}><i></i><span><b>${tt}</b><small>${d}</small></span></button>`).join('')}</div>${locked?'<div class="help" style="margin:-4px 0 10px">Option figée une fois la ligue commencée.</div>':''}`;
 }
 function usedTeams(c, uid, rk){
@@ -595,7 +595,7 @@ const A = {
     const k=S.view.newCat, cc=cat(k);
     const id=S.isOwner ? 'l'+rid() : S.me;
     const pts=cc.mode==='pick'&&S.view.newFmt==='points'; const nr=Math.min(40,Math.max(10,+((g('nl-nr')||{}).value)||POINTS_N));
-    const lg={...(pts?{scoring:'points',target:nr}:{}),name:name.slice(0,60),category:k,mode:cc.mode,comp:(cc.comps.includes(compFromName(name))?compFromName(name):cc.comps[0])||null,startAt:new Date(d+'T'+h).toISOString(),createdAt:new Date().toISOString(),createdBy:S.me,private:!S.isOwner,...(S.view.newLast&&LAST_RULES[S.view.newLast]&&(!S.isOwner||S.mode==='demo')?{lastRule:S.view.newLast}:{}),code:genCode(),cover:'auto',rules:'',rounds:{}};
+    const lg={...(pts?{scoring:'points',target:nr}:{}),name:name.slice(0,60),category:k,mode:cc.mode,comp:(cc.comps.includes(compFromName(name))?compFromName(name):cc.comps[0])||null,startAt:new Date(d+'T'+h).toISOString(),createdAt:new Date().toISOString(),createdBy:S.me,private:!S.isOwner,...(pts&&S.view.newLast&&LAST_RULES[S.view.newLast]?{lastRule:S.view.newLast}:{}),code:genCode(),cover:'auto',rules:'',rounds:{}};
     writeLeague(id,lg,'set').then(()=>{ if(!isMember(id)) writeMe({leagues:{[id]:new Date().toISOString()}}); toast('Ligue créée ! Code : '+lg.code); A.manage(id); setTimeout(()=>autoImport(id),400); });
   },
   saveInfo(lid){
@@ -1060,7 +1060,7 @@ function rulesPics(lg){
 }
 function rulesCard(lg){
   const txt=(lg.rules||'').trim()||defaultRules(lg);
-  const extra=(LAST_RULES[lg.lastRule]?`<p class="lrule">${LAST_RULES[lg.lastRule].ico} <b>Option de la ligue :</b> ${LAST_RULES[lg.lastRule].t.toLowerCase()}${isPoints(lg)?' (le dernier au classement à la fin)':' (le premier éliminé)'}.</p>`:'');
+  const extra=(isPoints(lg)&&LAST_RULES[lg.lastRule]?`<p class="lrule">${LAST_RULES[lg.lastRule].ico} <b>Option de la ligue :</b> ${LAST_RULES[lg.lastRule].t.toLowerCase()}${' (le dernier au classement à la fin)'}.</p>`:'');
   return `<details class="card coll" ${S.open['rules'+lg.id]?'open':''}><summary data-a="toggle" data-v="rules${lg.id}"><span class="ctitle">${I.book}Règles du jeu</span>${I.chev}</summary><div class="rules-body">${rulesPics(lg)}${extra}${txt.split(/\n+/).map(p=>`<p>${esc(p)}</p>`).join('')}</div></details>`;
 }
 function standingsCard(lg, openDefault){
@@ -1273,7 +1273,7 @@ function viewAdmin(){
       <label class="f" style="margin-top:4px">Type de pari : ${cc.mode==='pick'?'un match par journée':'vote à la majorité'}</label>
       <div class="help" style="margin:0">${cc.mode==='pick'?`Chaque joueur choisit UN seul match par journée et parie dessus. Interdit de reprendre une équipe déjà jouée.${cc.draw&&S.view.newFmt!=='points'?' Le match nul peut être parié.':''}`:'Chaque question oppose 2 options : ceux qui votent comme la minorité sont éliminés.'}</div>
       ${cc.mode==='pick'?fmtBlock(S.view.newFmt,'newFmt',null,POINTS_N,false):''}
-      ${(!owner||S.mode==='demo')?lastBlock(S.view.newLast,'newLast',null,false):''}
+      ${(cc.mode==='pick'&&S.view.newFmt==='points')?lastBlock(S.view.newLast,'newLast',null,false):''}
       <label class="f">Fin des inscriptions (date + heure)</label><div class="row2"><input class="in" type="date" id="nl-date" value="${dateIn(d)}"><input class="in" type="time" id="nl-time" value="20:00"></div>
       <button class="btn pop full" style="margin-top:18px" data-a="createLeague">CRÉER LA LIGUE</button></div>`;
   }
@@ -1299,7 +1299,7 @@ function viewManage(lid){
     <label class="f">Nom de la ligue</label>${pfxInput('ei-name','w',stripPrefix(lg.name),'Ligue 1', isPoints(lg)?'oneshot':'survivor')}
     ${c.status==='upcoming'?`<label class="f">Date de début (fin des inscriptions)</label><div class="row2"><input class="in w" type="date" id="ei-date" value="${dateIn(sd)}"><input class="in w" type="time" id="ei-time" value="${timeIn(sd)}"></div><div class="help">La ligue démarre le ${fmtDT(lg.startAt)}.</div>`:''}
     ${isPickMode(lg)?fmtBlock(isPoints(lg)?'points':'survivor','setFmt',lid,lg.target,c.rounds.some(r=>t(r.deadline)<=now())):''}
-    ${(lg.private||lg.lastRule||S.mode==='demo')?lastBlock(lg.lastRule,'setLast',lid,c.status!=='upcoming'):''}
+    ${isPoints(lg)?lastBlock(lg.lastRule,'setLast',lid,c.status!=='upcoming'):''}
     <label class="f">Catégorie</label><div class="chips in" style="flex-wrap:wrap">${Object.entries(CATS).filter(([kk])=>!HIDDEN_CATS.includes(kk)).map(([k,v])=>`<button class="chip sm ${k===lg.category?'on':''}" ${c.rounds.length?'disabled title="Catégorie figée après la 1re journée"':`data-a="setCat" data-v="${lid}|${k}"`}>${esc(v.label)}</button>`).join('')}</div>
     ${cc.comps.length?`<label class="f">Championnat</label><div class="chips in" style="flex-wrap:wrap">${cc.comps.map(k=>`<button class="chip sm ${k===lg.comp?'on':''}" data-a="setComp" data-v="${lid}|${k}">${esc(COMP_NAMES[k])}</button>`).join('')}</div><div class="help" style="margin:-4px 0 12px;font-size:13px">Sert pour le classement, les stats et l'import des journées.</div>`:''}
     <button class="btn pop full" style="margin-top:6px" data-a="saveInfo" data-v="${lid}">ENREGISTRER</button></div>`;

@@ -433,3 +433,6 @@ nav.bottom .nbadge{font-size:11px;top:2px;left:auto;right:4px;border:2px solid v
 .nc-join.nc-create{margin-top:10px;background:#16181D;color:#fff;border-color:#16181D}
 .nc-join.nc-create svg{color:#F6C343}
 .nh-next span{white-space:normal;line-height:1.3}
+/* Admin : pas de fond derrière les boutons de choix */
+.chips.in{background:transparent;border-radius:0;padding:2px 0;width:auto}
+.card .chips.in .chip:not(.on){border:1.5px solid rgba(22,24,29,.14)}
