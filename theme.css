@@ -532,3 +532,10 @@ nav.bottom .nbadge{font-size:11px;top:2px;left:auto;right:4px;border:2px solid v
 .mpl .mp-body>.card{background:transparent;box-shadow:none;border-radius:0;margin:0;padding-left:0;padding-right:0;border-top:1.5px solid rgba(22,24,29,.08)}
 .mpl .mp-body>.card.coll{padding-top:14px;padding-bottom:14px}
 .mpl .mp-body>.card.round{padding-top:16px;padding-bottom:0}
+/* bandeau photo de profil */
+.avband{display:flex;align-items:center;gap:12px;background:#fff;border-radius:20px;padding:10px 10px 10px 10px;margin:0 0 14px}
+.avband>img{width:46px;height:46px;border-radius:50%;object-fit:cover;flex:none}
+.ab-tx{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.ab-tx b{font-family:var(--bold);font-weight:800;font-size:14.5px;line-height:1.2}
+.ab-go{border:0;background:none;padding:0;color:var(--on);font-weight:700;font-size:13px;text-decoration:underline;text-underline-offset:3px;display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.ab-go svg{width:14px;height:14px}

@@ -502,6 +502,12 @@ function installBand(){
   const btn=(!ios&&installEvt)?`<button class="ib-go" data-a="install">Installer</button>`:`<button class="ib-go" data-a="toggle" data-v="instHow">${open?'OK':'Comment ?'}</button>`;
   return `<div class="iband"><div class="ib-row"><img src="img/icon-192.png" alt=""><div class="ib-tx"><b>Installe l'appli</b><span>Accès en 1 clic depuis ton écran d'accueil</span></div>${btn}<button class="ib-x" data-a="hideBand" aria-label="Fermer">✕</button></div>${open?`<div class="ib-how">${how}</div>`:''}</div>`;
 }
+function avatarBand(){
+  if(S.guest || !S.me) return '';
+  const me=S.players[S.me]||{}; if(me.avatar) return '';
+  try{ if(localStorage.getItem('survivor-avband-hide')) return ''; }catch(e){}
+  return `<div class="avband"><img src="${DEFAULT_AVATAR}" alt=""><div class="ab-tx"><b>Enlève Macron, tu es bien plus beau.</b><button class="ab-go" data-a="uploadAvatar">Changer ma photo ${I.arrow}</button></div><button class="ib-x" data-a="hideAvBand" aria-label="Fermer">✕</button></div>`;
+}
 function installCard(where){
   if(!window.SURVIVOR_FIREBASE || isStandalone()) return '';
   if(where==='home'){ try{ if(localStorage.getItem('survivor-install-hide')) return ''; }catch(e){} }
@@ -559,6 +565,7 @@ const A = {
   fmt(v){ S.view.fmt=v; S.view.filter='all'; S.slide=0; const el=document.getElementById('slides'); if(el) el.scrollLeft=0; render(); },
   slide(i){ slideClock=Date.now(); const el=document.getElementById('slides'); if(el) el.scrollTo({left:el.clientWidth*(+i),behavior:'smooth'}); },
   install(){ if(!installEvt) return; installEvt.prompt(); installEvt.userChoice.finally(()=>{ installEvt=null; render(); }); },
+  hideAvBand(){ try{ localStorage.setItem('survivor-avband-hide','1'); }catch(e){} render(); },
   hideBand(){ try{ localStorage.setItem('survivor-band-hide','1'); }catch(e){} render(); },
   hideInstall(){ try{ localStorage.setItem('survivor-install-hide','1'); }catch(e){} render(); },
   logout(){ if(window.survivorLogout) window.survivorLogout(); },
@@ -866,7 +873,7 @@ function viewHome(){
   let nextDl=null; myL.forEach(c=>{ if(c.status==='finished'||!c.alive.includes(S.me)) return; const r=c.rounds.find(r=>t(r.deadline)>now()); if(!r) return; const done=!!pickOf(S.me,c.lg.id,r.k); const cand={t:t(r.deadline), name:stripPrefix(c.lg.name), done};
     if(!nextDl || (nextDl.done && !done) || (nextDl.done===done && cand.t<nextDl.t)) nextDl=cand; });
   const avImg=`<img src="${me.avatar?blobUrl(me.avatar):DEFAULT_AVATAR}" data-fb="${esc(initials(nm))}" alt="">`;
-  let h=(S.guest?`<div class="nh-top"><div class="nh-hi"><small>Bienvenue sur</small><span class="nh-logo">${WM()}</span></div><button class="btn sm brand" data-a="tab" data-v="profil">Se connecter</button></div>`:`<div class="nh-top"><button class="nh-av" data-a="tab" data-v="profil" aria-label="Profil">${avImg}</button><div class="nh-hi"><small>Salut,</small><b>${esc(nm)}</b></div><span class="nh-logo">${WM()}</span></div>`)+installBand()+`
+  let h=(S.guest?`<div class="nh-top"><div class="nh-hi"><small>Bienvenue sur</small><span class="nh-logo">${WM()}</span></div><button class="btn sm brand" data-a="tab" data-v="profil">Se connecter</button></div>`:`<div class="nh-top"><button class="nh-av" data-a="tab" data-v="profil" aria-label="Profil">${avImg}</button><div class="nh-hi"><small>Salut,</small><b>${esc(nm)}</b></div><span class="nh-logo">${WM()}</span></div>`)+installBand()+avatarBand()+`
   <div class="nh-card2">
     <div class="nh-l"><b>${inGame}</b><span>ligue${inGame>1?'s':''} où tu es<br>encore en jeu</span></div>
     <button class="nh-todo ${todo?'':'zero'}" data-a="tab" data-v="paris"><b>${todo}</b><span>pari${todo>1?'s':''} à valider</span><i>${I.arrow}</i></button>
