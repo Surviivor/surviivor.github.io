@@ -552,3 +552,11 @@ nav.bottom .nbadge{font-size:11px;top:2px;left:auto;right:4px;border:2px solid v
 .jbtn.ghost{background:rgba(255,255,255,.18);color:#fff}
 .mp-st.jk{background:#EDE7FF;color:#4A2FC2;margin-left:6px}
 label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 12px}
+/* Joker : picto carte au début du titre */
+.jki{width:15px;height:20px;vertical-align:-4px;margin-right:6px;flex:none;display:inline-block}
+.jbox{padding:12px 12px 12px 14px}
+.jbox.on .jki rect:first-child{fill:#fff}
+.jbox.on .jki path,.jbox.on .jki circle,.jbox.on .jki rect+rect,.jbox.on .jki text{fill:#5B3FD6}
+.mp-st.jk{gap:5px}
+.mp-st.jk .jki{width:11px;height:15px;margin:0;vertical-align:-2px}
+.jbox .jki{width:19px;height:25px;vertical-align:-6px;margin-right:7px}

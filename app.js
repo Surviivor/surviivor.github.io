@@ -234,6 +234,7 @@ const roundsOf = lg => Object.entries(lg.rounds||{}).map(([k,r])=>({...r,k})).so
 const matchesOf = r => Object.entries(r.matches||{}).map(([k,m])=>({...m,k})).sort((a,b)=>t(a.d)-t(b.d)||a.k.localeCompare(b.k));
 const teamKey = side => side ? String(side.id || side.n || '').toLowerCase() : '';
 function pickOf(uid, lid, rk){ const p=S.players[uid]; return p && p.picks && p.picks[lid] && p.picks[lid][rk] ? p.picks[lid][rk] : null; }
+const JOKER_ICO='<svg class="jki" viewBox="0 0 30 40" aria-hidden="true"><rect x="1" y="1" width="28" height="38" rx="6" fill="#26282E"/><path d="M8 19.5l1.2-6.3 3.4 3.4 2.4-5 2.4 5 3.4-3.4 1.2 6.3z" fill="#fff"/><circle cx="9.2" cy="12.4" r="1.7" fill="#fff"/><circle cx="15" cy="10.2" r="1.7" fill="#fff"/><circle cx="20.8" cy="12.4" r="1.7" fill="#fff"/><rect x="8" y="21" width="14" height="1.8" rx=".6" fill="#fff"/><text x="15" y="32" text-anchor="middle" font-family="Georgia,serif" font-size="6.4" font-weight="700" fill="#fff" letter-spacing=".3">JOKER</text></svg>';
 // Joker « double chance » (Survivor, 1 fois par ligue) : le pari contient une 2e équipe (m2/p2, j:true)
 const jokerOn = lg => !!lg && !!lg.joker && isPickMode(lg) && !isPoints(lg);
 const pickSides = p => !p ? [] : [{m:p.m,p:p.p}, ...(p.j && p.m2 && p.p2 ? [{m:p.m2,p:p.p2}] : [])];
@@ -623,13 +624,13 @@ const A = {
       else { if(sides[0].m===mk) nx=[{m:mk,p},sides[1]]; else if(sides[1].m===mk) nx=[sides[0],{m:mk,p}]; else nx=[sides[0],{m:mk,p}]; }
       const doc=nx.length===2?{m:nx[0].m,p:nx[0].p,m2:nx[1].m,p2:nx[1].p,j:true,at}:{m:nx[0].m,p:nx[0].p,m2:null,p2:null,j:false,at};
       S.view.jk=lid+'|'+rk;
-      return writeMe({picks:{[lid]:{[rk]:doc}}}).then(()=>toast(nx.length===2?'🃏 Joker utilisé : 2 équipes choisies !':'Choisis ta 2e équipe (dans un autre match).'));
+      return writeMe({picks:{[lid]:{[rk]:doc}}}).then(()=>toast(nx.length===2?'Joker utilisé : 2 équipes choisies !':'Choisis ta 2e équipe (dans un autre match).'));
     }
     if(cur && cur.m===mk && cur.p===p) return;
     writeMe({picks:{[lid]:{[rk]:{m:mk||null,p,m2:null,p2:null,j:false,at}}}}).then(()=>toast(cur?'Choix modifié !':'Choix enregistré !'));
   },
   toggle(v){ S.open[v]=!S.open[v]; render(); },
-  jokerUse(v){ if(guard()) return; S.view.jk=v; render(); toast('🃏 Joker activé : choisis 2 équipes de 2 matchs différents.'); },
+  jokerUse(v){ if(guard()) return; S.view.jk=v; render(); toast('Joker activé : choisis 2 équipes de 2 matchs différents.'); },
   jokerCancel(v){ const [lid,rk]=v.split('|'); S.view.jk=null; const cur=pickOf(S.me,lid,rk); if(cur&&cur.j){ writeMe({picks:{[lid]:{[rk]:{m:cur.m,p:cur.p,m2:null,p2:null,j:false,at:new Date().toISOString()}}}}).then(()=>toast('Joker annulé : tu le gardes pour plus tard.')); } else render(); },
   mpTog(v){ const [lid,d]=v.split('|'), k='mp'+lid; const cur=(k in S.open)?S.open[k]:d==='1'; S.open[k]=!cur; render(); },
   newCat(v){ if(HIDDEN_CATS.includes(v)) return; S.view.newCat=v; render(); },
@@ -1004,11 +1005,11 @@ function rankTag(lg, m, side){
 function jokerBox(c, r){
   const lg=c.lg; if(!jokerOn(lg) || !isMember(lg.id)) return '';
   const closed=t(r.deadline)<=now(), my=pickOf(S.me,lg.id,r.k), used=jokerRound(lg.id,S.me);
-  if(my && my.j && my.m2) return `<div class="jbox on"><span class="jk">🃏</span><div><b>Joker utilisé sur cette journée</b><small>Tu survis si l'une de tes 2 équipes gagne.</small></div>${!closed&&canPick(c,r)?`<button class="jbtn ghost" data-a="jokerCancel" data-v="${lg.id}|${r.k}">Annuler</button>`:''}</div>`;
+  if(my && my.j && my.m2) return `<div class="jbox on"><div><b>${JOKER_ICO}Joker utilisé sur cette journée</b><small>Tu survis si l'une de tes 2 équipes gagne.</small></div>${!closed&&canPick(c,r)?`<button class="jbtn ghost" data-a="jokerCancel" data-v="${lg.id}|${r.k}">Annuler</button>`:''}</div>`;
   if(closed || !canPick(c,r)) return '';
-  if(used && used!==r.k){ const n=(c.info[used]||{}).n; return `<div class="jbox off"><span class="jk">🃏</span><div><b>Joker déjà utilisé</b><small>${n?'Journée '+n+'. ':''}Une seule fois par ligue.</small></div></div>`; }
-  if(S.view.jk===lg.id+'|'+r.k) return `<div class="jbox on"><span class="jk">🃏</span><div><b>Joker activé</b><small>${my?'Choisis ta 2e équipe dans un autre match.':'Choisis 2 équipes dans 2 matchs différents.'}</small></div><button class="jbtn ghost" data-a="jokerCancel" data-v="${lg.id}|${r.k}">Annuler</button></div>`;
-  return `<div class="jbox"><span class="jk">🃏</span><div><b>Joker « double chance » dispo</b><small>Choisis 2 équipes cette journée : tu survis si l'une des deux gagne. Une seule fois par ligue.</small></div><button class="jbtn" data-a="jokerUse" data-v="${lg.id}|${r.k}">Utiliser</button></div>`;
+  if(used && used!==r.k){ const n=(c.info[used]||{}).n; return `<div class="jbox off"><div><b>${JOKER_ICO}Joker déjà utilisé</b><small>${n?'Journée '+n+'. ':''}Une seule fois par ligue.</small></div></div>`; }
+  if(S.view.jk===lg.id+'|'+r.k) return `<div class="jbox on"><div><b>${JOKER_ICO}Joker activé</b><small>${my?'Choisis ta 2e équipe dans un autre match.':'Choisis 2 équipes dans 2 matchs différents.'}</small></div><button class="jbtn ghost" data-a="jokerCancel" data-v="${lg.id}|${r.k}">Annuler</button></div>`;
+  return `<div class="jbox"><div><b>${JOKER_ICO}Joker « double chance » dispo</b><small>Choisis 2 équipes cette journée : tu survis si l'une des deux gagne. Une seule fois par ligue.</small></div><button class="jbtn" data-a="jokerUse" data-v="${lg.id}|${r.k}">Utiliser</button></div>`;
 }
 function roundCard(c, r, o={}){
   const lg=c.lg, ri=c.info[r.k]||{}, closed=t(r.deadline)<=now(), can=canPick(c,r);
@@ -1055,7 +1056,7 @@ function pickLabel(lg,r,p){
   if(!p) return '—';
   if(!isPickMode(lg)) return p.p==='A'?r.a.n:r.b.n;
   const one=x=>{ const m=(r.matches||{})[x.m]; if(!m) return '—'; return x.p==='H'?m.h.n : x.p==='A'?m.a.n : `Nul (${m.h.n} – ${m.a.n})`; };
-  return pickSides(p).map(one).join(' + ')+(p.j&&p.m2?' 🃏':'');
+  return pickSides(p).map(one).join(' + ')+(p.j&&p.m2?' (joker)':'');
 }
 const rankCache=new WeakMap();
 const PH_COLORS=[['#E5493A','#7F1D1D'],['#2563EB','#1E1B4B'],['#16A34A','#064E3B'],['#D97706','#7C2D12'],['#7C3AED','#2E1065'],['#0891B2','#083344'],['#DB2777','#500724'],['#111827','#4B5563']];
@@ -1131,7 +1132,7 @@ function livesRulesHtml(lg){
   if(isPoints(lg)||!isPickMode(lg)) return '';
   let h='';
   if(+lg.lives>0) h+=`<p class="lrule">❤️ <b>Option de la ligue :</b> chaque joueur démarre avec <b>${+lg.lives} vie${+lg.lives>1?'s':''} en réserve</b>. Tu peux te tromper ${+lg.lives>1?+lg.lives+' fois':'une fois'} et continuer à jouer.</p>`;
-  if(lg.joker) h+=`<p class="lrule">🃏 <b>Joker « double chance » :</b> une fois dans la ligue, tu peux choisir <b>2 équipes</b> sur une journée. Tu survis si l'une des deux gagne.</p>`;
+  if(lg.joker) h+=`<p class="lrule">${JOKER_ICO}<b>Joker « double chance » :</b> une fois dans la ligue, tu peux choisir <b>2 équipes</b> sur une journée. Tu survis si l'une des deux gagne.</p>`;
   if(lg.awayBonus) h+=`<p class="lrule">✈️ <b>Bonus extérieur :</b> gagne <b>3 paris de suite</b> sur l'équipe qui joue <b>à l'extérieur</b> et tu gagnes <b>1 vie</b>.</p>`;
   return h;
 }
@@ -1140,7 +1141,7 @@ function livesBlock(lg, act, lid, locked){
   return `<label class="f fbig">Options</label><div class="lopt">
     <button class="lopt-b ${L?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}lives"`}><i></i><span><b>❤️ 1 vie en réserve</b><small>Chaque joueur peut se tromper une fois et continuer à jouer.</small></span></button>
     <button class="lopt-b ${B?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}away"`}><i></i><span><b>✈️ Bonus extérieur</b><small>3 paris gagnés de suite sur l'équipe à l'extérieur = 1 vie en plus.</small></span></button>
-    <button class="lopt-b ${J?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}joker"`}><i></i><span><b>🃏 Joker « double chance »</b><small>Une fois dans la ligue, chaque joueur peut choisir 2 équipes sur une journée : il survit si l'une des deux gagne.</small></span></button>
+    <button class="lopt-b ${J?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}joker"`}><i></i><span><b>${JOKER_ICO}Joker « double chance »</b><small>Une fois dans la ligue, chaque joueur peut choisir 2 équipes sur une journée : il survit si l'une des deux gagne.</small></span></button>
   </div>${locked?'<div class="help" style="margin:-4px 0 10px">Options figées une fois la ligue commencée.</div>':''}`;
 }
 function rulesCard(lg){
@@ -1336,7 +1337,7 @@ function viewParis(){
     // Encart déroulant par ligue : ouvert par défaut tant que le choix n'est pas fait
     const k='mp'+c.lg.id, todo=!my, op=(k in S.open)?S.open[k]:todo;
     const pill=todo?`<span class="mp-st todo">À valider · ${until(r.deadline)||"1 min"}</span>`:`<span class="mp-st ok">✓ Choix fait</span>`;
-    h+=`<details class="mpl" ${op?'open':''}><summary class="mp-sum" data-a="mpTog" data-v="${c.lg.id}|${todo?1:0}"><div class="mp-nm">${(()=>{const sb=splitBrand(c.lg.name);return sb?`${WM(sb.k)}<span>${xify(esc(sb.rest))}</span>`:`<span>${esc(c.lg.name)}</span>`})()}</div><div class="mp-row">${pill}${(jokerOn(c.lg)&&!jokerRound(c.lg.id,S.me))?'<span class="mp-st jk" title="Joker double chance disponible">🃏 Joker</span>':''}<span class="mp-d">${c.pick?'J':'Q'}${(c.info[r.k]||{}).n||''} · ${fmtD(r.deadline).slice(0,5)}</span>${I.chev}</div></summary><div class="mp-body">${c.pick?statsCard(c):''}${card}</div></details>`;
+    h+=`<details class="mpl" ${op?'open':''}><summary class="mp-sum" data-a="mpTog" data-v="${c.lg.id}|${todo?1:0}"><div class="mp-nm">${(()=>{const sb=splitBrand(c.lg.name);return sb?`${WM(sb.k)}<span>${xify(esc(sb.rest))}</span>`:`<span>${esc(c.lg.name)}</span>`})()}</div><div class="mp-row">${pill}${(jokerOn(c.lg)&&!jokerRound(c.lg.id,S.me))?'<span class="mp-st jk" title="Joker double chance disponible">'+JOKER_ICO+'Joker</span>':''}<span class="mp-d">${c.pick?'J':'Q'}${(c.info[r.k]||{}).n||''} · ${fmtD(r.deadline).slice(0,5)}</span>${I.chev}</div></summary><div class="mp-body">${c.pick?statsCard(c):''}${card}</div></details>`;
   });
   if(wait.length){ h+=`<div class="sec2">EN ATTENTE DES RÉSULTATS</div>`; wait.forEach(([c,r])=>{ h+=`<div class="card"><div style="font-family:var(--bold);font-weight:800">${esc(c.lg.name)} · Journée ${(c.info[r.k]||{}).n||''}</div><div class="muted" style="margin-top:4px">Ton choix : <b style="color:var(--on)">${esc(pickLabel(c.lg,r,pickOf(S.me,c.lg.id,r.k)))}</b></div></div>`; }); }
   return h;
