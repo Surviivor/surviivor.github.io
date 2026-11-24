@@ -946,7 +946,7 @@ function trendSection(c){
 }
 function statsCard(c){
   const lg=c.lg; const key=lg.comp;
-  const trend=trendSection(c);
+  const trend='';
   const f=key?S.feeds[key]:null; if(key&&!f) loadFeed(key);
   const tbl=c.lg.category==='tuprefere'?'':standingsCard(lg,'body');
   const wrap=body=>`<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.flash}Aide au choix</span>${I.chev}</summary>${body}</details>`;
@@ -1015,9 +1015,9 @@ function viewLeague(lid){
   else if(alive) h+=`<div class="banner alive"><span class="ico">💚</span>${c.alive.length===1?'Tu es le dernier survivant !':`Tu es dans les ${c.alive.length} survivants !`}</div>`;
   else h+=`<div class="banner dead"><span class="ico">☠️</span>Tu es éliminé. Tente ta chance dans une autre ligue…</div>`;
   const tab=S.view.ltab;
-  h+=`<div class="seg"><button class="${tab==='paris'?'on':''}" data-a="ltab" data-v="paris">${c.pick?'Paris':'Vote'}</button><button class="${tab==='surv'?'on':''}" data-a="ltab" data-v="surv">${c.points?'Classement':'Survivants'}</button><button class="${tab==='hist'?'on':''}" data-a="ltab" data-v="hist">Historique</button><button class="${tab==='rules'?'on':''}" data-a="ltab" data-v="rules">Règles</button></div>`;
+  h+=`<div class="seg"><button class="${tab==='paris'?'on':''}" data-a="ltab" data-v="paris">${c.pick?'Paris':'Vote'}</button><button class="${tab==='surv'?'on':''}" data-a="ltab" data-v="surv">${c.points?'Classement':'Survivants'}</button><button class="${tab==='hist'?'on':''}" data-a="ltab" data-v="hist">Historique</button></div>`;
   if(tab==='paris'){
-    h+=statsCard(c);
+    h+=rulesCard(lg)+statsCard(c);
     const open=c.rounds.filter(r=>t(r.deadline)>now()).slice(0,1);
     const waiting=c.rounds.filter(r=>t(r.deadline)<=now() && ['waiting'].includes((c.info[r.k]||{}).state));
     if(c.status==='finished') h+=`<div class="empty"><div class="ico">🏁</div><h3>C'EST FINI</h3><p>Revis la ligue dans l'historique.</p></div>`;
@@ -1026,9 +1026,6 @@ function viewLeague(lid){
       else h+=`<div class="card muted" style="text-align:center;font-size:15px">Pas de journée ouverte pour l'instant.${canManage(lg)?' Importe la prochaine depuis « Gérer la ligue ».':' La prochaine arrive bientôt !'}</div>`;
       if(waiting.length) h+=`<div class="sec2">EN ATTENTE DES RÉSULTATS</div>`+waiting.map(r=>roundCard(c,r)).join('');
     }
-  } else if(tab==='rules'){
-    const txt=(lg.rules||'').trim()||defaultRules(lg);
-    h+=`<div class="card"><span class="ctitle">${I.book}Règles du jeu</span><div class="rules-body" style="margin-top:14px">${lg.description?`<p><b>${esc(lg.description)}</b></p>`:''}${txt.split(/\n+/).map(p=>`<p>${esc(p)}</p>`).join('')}</div></div>`;
   } else if(tab==='surv' && c.points){
     const lead=c.ranking[0];
     h+=`<div class="card"><span class="ctitle">${I.chart}Statistiques</span><div class="statgrid" style="margin-bottom:0"><div class="stat" style="background:#fff"><b>${c.mem.length}</b><span>Joueurs</span></div><div class="stat" style="background:#fff"><b>${c.played}/${c.N}</b><span>Journées</span></div><div class="stat" style="background:#fff"><b>${lead?lead.pts:0}</b><span>Pts du 1er</span></div></div></div>`;
@@ -1051,6 +1048,7 @@ function viewLeague(lid){
       return `<div class="prow"><div class="pos ${dead?'':'live'}">${x.pos}<sup>${x.pos===1?'er':'e'}</sup>${x.tie?'<i>ex æquo</i>':''}</div>${avatarOf(p,dead?'dead':'')}<div class="nm">${esc(nameOf(p))}${p===S.me?'<span class="me-tag">TOI</span>':''}<small>${sub}</small></div>${pill}</div>`;
     }).join('')+'</div>';
   } else {
+    const tr=trendSection(c); if(tr) h+=`<div class="card">${tr}</div>`;
     const past=c.rounds.filter(r=>t(r.deadline)<=now()).reverse();
     if(!past.length) h+=`<div class="empty"><h3>RIEN POUR L'INSTANT</h3><p>Les journées passées apparaîtront ici.</p></div>`;
     const hv=S.view.hv||'days';
