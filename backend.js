@@ -160,7 +160,7 @@ async function writePicks(uid, picks) {
   for (const [lid, rounds] of Object.entries(picks || {})) {
     for (const [rk, pk] of Object.entries(rounds || {})) {
       if (!pk) continue;
-      batch.set(doc(fs, 'picks', pickId(lid, rk, uid)), { uid, league: lid, round: rk, m: pk.m || null, p: pk.p, at: pk.at || new Date().toISOString() });
+      batch.set(doc(fs, 'picks', pickId(lid, rk, uid)), { uid, league: lid, round: rk, m: pk.m || null, p: pk.p, m2: pk.m2 || null, p2: pk.p2 || null, j: !!(pk.j && pk.m2), at: pk.at || new Date().toISOString() });
       n++;
     }
   }
@@ -216,7 +216,7 @@ function collectionRef(path) {
       const emit = () => {
         if (!players || !picks) return;
         const byUid = {};
-        picks.forEach(d => { const x = d.data(); if (!x || !x.uid) return; ((byUid[x.uid] = byUid[x.uid] || {})[x.league] = byUid[x.uid][x.league] || {})[x.round] = { m: x.m, p: x.p, at: x.at }; });
+        picks.forEach(d => { const x = d.data(); if (!x || !x.uid) return; ((byUid[x.uid] = byUid[x.uid] || {})[x.league] = byUid[x.uid][x.league] || {})[x.round] = { m: x.m, p: x.p, at: x.at, ...(x.j ? { m2: x.m2, p2: x.p2, j: true } : {}) }; });
         const docs = players.map(d => { const data = { ...d.data(), picks: byUid[d.id] || {} }; return { id: d.id, exists: true, data: () => data, metadata: d.metadata }; });
         next({ docs, size: docs.length, empty: !docs.length, metadata: meta });
       };

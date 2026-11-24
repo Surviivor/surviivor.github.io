@@ -539,3 +539,15 @@ nav.bottom .nbadge{font-size:11px;top:2px;left:auto;right:4px;border:2px solid v
 .ab-tx b{font-family:var(--bold);font-weight:800;font-size:14.5px;line-height:1.2}
 .ab-go{border:0;background:none;padding:0;color:var(--on);font-weight:700;font-size:13px;text-decoration:underline;text-underline-offset:3px;display:inline-flex;align-items:center;gap:5px;cursor:pointer}
 .ab-go svg{width:14px;height:14px}
+/* Joker « double chance » */
+.jbox{display:flex;align-items:center;gap:10px;background:#F4F0FF;border:1.5px solid #DCD2FF;border-radius:16px;padding:10px 10px 10px 12px;margin:4px 0 12px}
+.jbox .jk{font-size:24px;flex:none}
+.jbox>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.jbox b{font-family:var(--bold);font-weight:800;font-size:14px}
+.jbox small{font-size:12.5px;color:var(--muted);line-height:1.35}
+.jbox.on{background:#5B3FD6;border-color:#5B3FD6;color:#fff}
+.jbox.on small{color:rgba(255,255,255,.8)}
+.jbox.off{opacity:.6}
+.jbtn{flex:none;height:34px;padding:0 14px;border-radius:999px;border:0;background:#5B3FD6;color:#fff;font-family:var(--bold);font-weight:700;font-size:13px;cursor:pointer}
+.jbtn.ghost{background:rgba(255,255,255,.18);color:#fff}
+.mp-st.jk{background:#EDE7FF;color:#4A2FC2;margin-left:6px}
