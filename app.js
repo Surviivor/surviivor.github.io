@@ -434,7 +434,7 @@ const A = {
   },
   hview(v){ S.view.hview=v; S.view.hv=v; render(); },
   toLeagues(){ const el=document.getElementById('ligues'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); },
-  slide(i){ const el=document.getElementById('slides'); if(el) el.scrollTo({left:el.clientWidth*(+i),behavior:'smooth'}); },
+  slide(i){ slideClock=Date.now(); const el=document.getElementById('slides'); if(el) el.scrollTo({left:el.clientWidth*(+i),behavior:'smooth'}); },
   install(){ if(!installEvt) return; installEvt.prompt(); installEvt.userChoice.finally(()=>{ installEvt=null; render(); }); },
   hideInstall(){ try{ localStorage.setItem('survivor-install-hide','1'); }catch(e){} render(); },
   logout(){ if(window.survivorLogout) window.survivorLogout(); },
@@ -685,11 +685,20 @@ function cdText(ms){
   if(h>=1) return `encore ${h} h ${String(m%60).padStart(2,'0')} min`;
   return `encore ${Math.max(1,m)} min`;
 }
+// Défilement automatique du tutoriel : toutes les 7 secondes (pause de 7 s après un geste du joueur)
+let slideClock=Date.now();
+setInterval(()=>{
+  const el=document.getElementById('slides'); if(!el || document.hidden) return;
+  if(Date.now()-slideClock<7000) return;
+  const n=el.querySelectorAll('.slide').length||1, i=((S.slide||0)+1)%n;
+  slideClock=Date.now(); el.scrollTo({left:el.clientWidth*i,behavior:'smooth'});
+},500);
 function syncSlider(){
   const el=document.getElementById('slides'); if(!el) return;
   const upd=()=>{ const i=Math.round(el.scrollLeft/Math.max(1,el.clientWidth)); S.slide=i; document.querySelectorAll('.sdots button').forEach((b,j)=>b.classList.toggle('on',j===i)); };
-  if(!el.dataset.bound){ el.dataset.bound='1'; el.addEventListener('scroll',()=>requestAnimationFrame(upd),{passive:true}); }
-  if(S.slide===undefined){ const seen=(()=>{ try{ return localStorage.getItem('survivor-tuto'); }catch(e){ return null; } })(); S.slide=seen?3:0; try{ localStorage.setItem('survivor-tuto','1'); }catch(e){} }
+  if(!el.dataset.bound){ el.dataset.bound='1'; el.addEventListener('scroll',()=>requestAnimationFrame(upd),{passive:true});
+    ['pointerdown','touchstart','wheel'].forEach(ev=>el.addEventListener(ev,()=>{ slideClock=Date.now(); },{passive:true})); }
+  if(S.slide===undefined) S.slide=0;
   el.scrollLeft=el.clientWidth*S.slide; upd();
 }
 function tickCountdowns(){
