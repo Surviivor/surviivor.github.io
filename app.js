@@ -51,6 +51,7 @@ const I = {
   ball:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 7l4 3-1.5 5h-5L8 10l4-3zM12 2v5M16 10l5-1.5M14.5 15l3 4.5M9.5 15l-3 4.5M8 10L3 8.5"/></svg>',
   rugby:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="12" rx="10" ry="6" transform="rotate(-45 12 12)"/><path d="M9 15l6-6M10 11l3 3M12 9l3 3M8 13l3 3"/></svg>',
   basket:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2v20M5 5c3 3 3 11 0 14M19 5c-3 3-3 11 0 14"/></svg>',
+  data:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/><circle cx="19" cy="6" r="1.2" fill="currentColor"/></svg>',
   flash:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg>',
   key:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="8" cy="15" r="5"/><path d="M11.5 11.5L21 2M17 6l3 3M15 8l2 2"/></svg>'
 };
@@ -591,6 +592,7 @@ const A = {
     writeMe({picks:{[lid]:{[rk]:{m:mk||null,p,at:new Date().toISOString()}}}}).then(()=>toast(cur?'Choix modifié !':'Choix enregistré !'));
   },
   toggle(v){ S.open[v]=!S.open[v]; render(); },
+  mpTog(v){ const [lid,d]=v.split('|'), k='mp'+lid; const cur=(k in S.open)?S.open[k]:d==='1'; S.open[k]=!cur; render(); },
   newCat(v){ if(HIDDEN_CATS.includes(v)) return; S.view.newCat=v; render(); },
   newFmt(v){ S.view.newFmt=v; render(); },
   newLast(v){ S.view.newLast=v; render(); },
@@ -963,7 +965,7 @@ function roundCard(c, r, o={}){
   let h=`<div class="card round">`;
   if(o.header) h+=o.header;
   else h+=`<h3>Journée ${ri.n||r.n||''}</h3>`;
-  h+=dlLine(r);
+  if(!o.noDl) h+=dlLine(r);
   if(!c.pick) return h+duelHtml(c,r,{can,closed})+roundFoot(c,r)+'</div>';
   if(!closed && o.hint!==false) h+=`<div class="hint">Choisis UN seul match et parie dessus.${allowDraw(lg)?'':' Pas de match nul.'} Les équipes déjà jouées sont grisées.</div>`;
   const used=usedTeams(c,S.me,r.k); const dist=closed?roundDist(c,r):null;
@@ -971,7 +973,7 @@ function roundCard(c, r, o={}){
     const res=matchResult(lg,m); const sc=matchScore(lg,m);
     const chosen=o.compact && my && my.m===m.k;
     h+=`<div class="match ${chosen?'chosen':''}">`;
-    if(!o.compact) h+=`<div class="mline"><span class="tm">${logoTag(m.h)}<span>${esc(m.h.n)}</span>${rankTag(lg,m,m.h)}</span><span class="vs">${sc?`<span class="res">${esc(sc)}</span>`:'VS'}</span><span class="tm r">${logoTag(m.a)}<span>${esc(m.a.n)}</span>${rankTag(lg,m,m.a)}</span></div>`;
+    if(!o.compact || o.mline) h+=`<div class="mline"><span class="tm">${logoTag(m.h)}<span>${esc(m.h.n)}</span>${rankTag(lg,m,m.h)}</span><span class="vs">${sc?`<span class="res">${esc(sc)}</span>`:'VS'}</span><span class="tm r">${logoTag(m.a)}<span>${esc(m.a.n)}</span>${rankTag(lg,m,m.a)}</span></div>`;
     h+=`<div class="tiles ${allowDraw(lg)?'':'two'}">${tileHtml(c,r,m,'H',{can,used,dist})}${allowDraw(lg)?tileHtml(c,r,m,'D',{can,used,dist}):''}${tileHtml(c,r,m,'A',{can,used,dist})}</div></div>`;
   });
   return h+roundFoot(c,r)+'</div>';
@@ -1128,11 +1130,11 @@ function statsCard(c){
   const trend='';
   const f=key?S.feeds[key]:null; if(key&&!f) loadFeed(key);
   const tbl=c.lg.category==='tuprefere'?'':standingsCard(lg,'body');
-  const wrap=body=>`<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.flash}Aide au choix</span>${I.chev}</summary>${body}</details>`;
-  if(!f||f.missing||c.lg.category==='tuprefere'){ if(!trend&&!tbl) return ''; return wrap(trend+tbl); return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.flash}Aide au choix</span>${I.chev}</summary>${trend}</details>`; }
+  const wrap=body=>`<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${body}</details>`;
+  if(!f||f.missing||c.lg.category==='tuprefere'){ if(!trend&&!tbl) return ''; return wrap(trend+tbl); return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${trend}</details>`; }
   const form=teamForm(f);
   const pts=Object.keys(form).map(id=>[id, form[id].slice(0,5).reduce((a,r)=>a+(r==='W'?3:r==='D'?1:0),0), Math.min(5,form[id].length)]).filter(x=>x[2]>=2);
-  if(pts.length<6){ if(!trend&&!tbl) return ''; return wrap(trend+tbl); return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.flash}Aide au choix</span>${I.chev}</summary>${trend}</details>`; }
+  if(pts.length<6){ if(!trend&&!tbl) return ''; return wrap(trend+tbl); return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${trend}</details>`; }
   const best=pts.slice().sort((a,b)=>b[1]-a[1]||a[2]-b[2]).slice(0,3), worst=pts.slice().sort((a,b)=>a[1]-b[1]||b[2]-a[2]).slice(0,3);
   const row=([id,p,n])=>statRow(f,id,`<b>${p}</b><span>pts</span>`,formDots(form[id]));
   const maxN=Math.max(...pts.map(x=>x[2]));
@@ -1140,7 +1142,7 @@ function statsCard(c){
   h+=`<div class="ssec"><div class="stitle">${I.down}À la peine</div><div class="slist">${worst.map(row).join('')}</div></div>`;
   h+=`<div class="muted" style="font-size:12px;margin-top:14px">Points pris sur les ${maxN} dernières journées${maxN<5?' (seules celles-ci sont disponibles pour l\'instant)':''}. Données du ${fmtDT(f.updatedAt)}.</div>`;
   h+=tbl;
-  return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.flash}Aide au choix</span>${I.chev}</summary>${h}</details>`;
+  return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${h}</details>`;
 }
 // Final/ongoing ranking: survivors share the top; the eliminated are ranked by elimination day
 // (later = better), then by boldness of the losing pick (weaker team = better).
@@ -1197,13 +1199,13 @@ function viewLeague(lid){
   const tab=S.view.ltab;
   h+=`<div class="seg"><button class="${tab==='paris'?'on':''}" data-a="ltab" data-v="paris">${c.pick?'Paris':'Vote'}</button><button class="${tab==='surv'?'on':''}" data-a="ltab" data-v="surv">${c.points?'Classement':'Survivants'}</button><button class="${tab==='hist'?'on':''}" data-a="ltab" data-v="hist">Stats</button></div>`;
   if(tab==='paris'){
-    h+=rulesCard(lg)+statsCard(c);
     const open=c.rounds.filter(r=>t(r.deadline)>now()).slice(0,1);
     const waiting=c.rounds.filter(r=>t(r.deadline)<=now() && ['waiting'].includes((c.info[r.k]||{}).state));
-    if(c.status==='finished') h+=`<div class="empty"><div class="ico">🏁</div><h3>C'EST FINI</h3><p>Revis la ligue dans l'historique.</p></div>`;
+    if(c.status==='finished') h+=`<div class="empty"><div class="ico">🏁</div><h3>C'EST FINI</h3><p>Revis la ligue dans l'historique.</p></div>`+rulesCard(lg);
     else {
-      if(open.length) h+=open.map(r=>roundCard(c,r)).join('');
-      else h+=`<div class="card muted" style="text-align:center;font-size:15px">Pas de journée ouverte pour l'instant.${canManage(lg)?' Importe la prochaine depuis « Gérer la ligue ».':' La prochaine arrive bientôt !'}</div>`;
+      if(open.length) h+=open.map(r=>`<div class="jbig">${c.pick?'Journée':'Question'} ${(c.info[r.k]||{}).n||r.n||''}</div><div class="jsub">${I.clock}<span>Choix ouvert jusqu'au ${fmtDT(r.deadline)}</span></div>`+(c.pick?statsCard(c):'')+roundCard(c,r,{header:`<h3>${c.pick?'Mon choix':'Mon vote'}</h3>`, noDl:true})).join('');
+      else h+=(c.pick?statsCard(c):'')+`<div class="card muted" style="text-align:center;font-size:15px">Pas de journée ouverte pour l'instant.${canManage(lg)?' Importe la prochaine depuis « Gérer la ligue ».':' La prochaine arrive bientôt !'}</div>`;
+      h+=rulesCard(lg);
       if(waiting.length) h+=`<div class="sec2">EN ATTENTE DES RÉSULTATS</div>`+waiting.map(r=>roundCard(c,r)).join('');
     }
   } else if(tab==='surv' && c.points){
@@ -1260,9 +1262,12 @@ function viewParis(){
   next.forEach(([c,r])=>{
     const my=pickOf(S.me,c.lg.id,r.k); const nm=c.pick?matchesOf(r).length:0;
     const info=c.pick?`<div class="dl open" style="font-size:15px">${nm} match${nm>1?'s':''} · ${my?'ton choix est en surbrillance':'à toi de choisir'} · modifiable jusqu'au ${fmtDT(r.deadline)}</div>`:`<div class="dl open" style="font-size:15px">Vote modifiable jusqu'au ${fmtDT(r.deadline)}</div>`;
-    let card=roundCard(c,r,{header:hdr(c,r)+info, compact:true, hint:false});
+    let card=roundCard(c,r,{header:`<h3>${c.pick?'Mon choix':'Mon vote'}</h3>`+info, compact:true, mline:true, hint:false});
     card=card.replace(/<div class="dl open">[\s\S]*?<\/div>/,''); // header already shows deadline
-    h+=card;
+    // Encart déroulant par ligue : ouvert par défaut tant que le choix n'est pas fait
+    const k='mp'+c.lg.id, todo=!my, op=(k in S.open)?S.open[k]:todo;
+    const pill=todo?`<span class="mp-st todo">À valider · ${until(r.deadline)||"1 min"}</span>`:`<span class="mp-st ok">✓ Choix fait</span>`;
+    h+=`<details class="mpl" ${op?'open':''}><summary class="mp-sum" data-a="mpTog" data-v="${c.lg.id}|${todo?1:0}"><div class="mp-nm">${(()=>{const sb=splitBrand(c.lg.name);return sb?`${WM(sb.k)}<span>${xify(esc(sb.rest))}</span>`:`<span>${esc(c.lg.name)}</span>`})()}</div><div class="mp-row">${pill}<span class="mp-d">${c.pick?'J':'Q'}${(c.info[r.k]||{}).n||''} · ${fmtD(r.deadline).slice(0,5)}</span>${I.chev}</div></summary><div class="mp-body">${c.pick?statsCard(c):''}${card}</div></details>`;
   });
   if(wait.length){ h+=`<div class="sec2">EN ATTENTE DES RÉSULTATS</div>`; wait.forEach(([c,r])=>{ h+=`<div class="card"><div style="font-family:var(--bold);font-weight:800">${esc(c.lg.name)} · Journée ${(c.info[r.k]||{}).n||''}</div><div class="muted" style="margin-top:4px">Ton choix : <b style="color:var(--on)">${esc(pickLabel(c.lg,r,pickOf(S.me,c.lg.id,r.k)))}</b></div></div>`; }); }
   return h;

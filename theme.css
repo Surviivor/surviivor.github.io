@@ -498,3 +498,37 @@ nav.bottom .nbadge{font-size:11px;top:2px;left:auto;right:4px;border:2px solid v
 .sl-bub{display:inline-flex;vertical-align:-4px;margin-right:6px;color:var(--on)}
 .sl-bub svg{width:22px;height:22px}
 .nc-main{display:block;width:100%;text-align:left;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}
+/* Mes paris : encarts déroulants par ligue */
+.mpl{margin:0 0 12px}
+.mp-sum{list-style:none;cursor:pointer;background:#fff;border-radius:22px;padding:14px 16px 12px}
+.mp-sum::-webkit-details-marker{display:none}
+.mp-top>div{margin-bottom:8px!important}
+.mp-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.mp-row .chev{width:22px;height:22px;transition:transform .2s;flex:none}
+.mpl[open] .mp-row .chev{transform:rotate(180deg)}
+.mp-st{display:inline-flex;align-items:center;border-radius:999px;padding:5px 11px;font-family:var(--bold);font-weight:700;font-size:12.5px}
+.mp-st.todo{background:var(--yel);color:var(--on)}
+.mp-st.ok{background:#DDF1E3;color:#1E7A3C}
+.mpl[open] .mp-sum{margin-bottom:8px}
+.mp-body{margin-bottom:22px}
+.mp-body>.card{margin-bottom:10px}
+.mp-nm{display:flex;align-items:center;gap:7px;font-family:var(--bold);font-weight:800;font-size:17px;margin-bottom:9px;min-width:0}
+.mp-nm .wm{height:15px;flex:none}
+.mp-nm span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-d{flex:1;text-align:right;color:var(--muted);font-size:13px;white-space:nowrap}
+.mp-st{white-space:nowrap}
+/* Ligue > Paris : titre de journée hors encart */
+.jbig{font-family:var(--bold);font-weight:800;font-size:30px;line-height:1;text-transform:uppercase;letter-spacing:-.01em;margin:22px 4px 12px}
+.jbig{margin-bottom:6px}
+.jsub{display:flex;align-items:center;gap:8px;margin:0 4px 14px;color:var(--muted);font-size:14.5px;font-weight:500}
+.jsub svg{width:18px;height:18px;flex:none}
+.dtt{display:flex;flex-direction:column;gap:3px;min-width:0}
+.csub{color:var(--muted);font-size:13px;font-weight:500;padding-left:34px;text-transform:none;letter-spacing:0}
+/* Mes paris : ligue + DATA + MON CHOIX dans un seul encadré */
+.mpl{background:#fff;border-radius:22px;overflow:hidden}
+.mpl .mp-sum{background:transparent;border-radius:0}
+.mpl[open] .mp-sum{margin-bottom:0;padding-bottom:12px}
+.mpl .mp-body{margin:0;padding:0 16px 16px}
+.mpl .mp-body>.card{background:transparent;box-shadow:none;border-radius:0;margin:0;padding-left:0;padding-right:0;border-top:1.5px solid rgba(22,24,29,.08)}
+.mpl .mp-body>.card.coll{padding-top:14px;padding-bottom:14px}
+.mpl .mp-body>.card.round{padding-top:16px;padding-bottom:0}
