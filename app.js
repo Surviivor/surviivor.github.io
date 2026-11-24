@@ -821,7 +821,7 @@ function viewHome(){
   const all=Object.values(S.leagues).filter(visible).map(l=>C(l.id)).filter(Boolean);
   const order={upcoming:0,live:1,finished:2};
   all.sort((a,b)=>(+(b.lg.pin||0))-(+(a.lg.pin||0)) || order[a.status]-order[b.status] || (a.status==='upcoming'?t(a.lg.startAt)-t(b.lg.startAt):t(b.lg.createdAt)-t(a.lg.createdAt)));
-  const fmt=S.view.fmt||'survivor';
+  const fmt=S.view.fmt||'survivor', howOpen=!S.open.howX;
   const DESC={survivor:'Un mauvais pari et tu es éliminé. Le dernier en vie gagne.', oneshot:'Pas d’élimination : cumule des points pour gagner la ligue.'};
   const nOs=all.filter(c=>c.points).length, nSv=all.length-nOs;
   const lfmt=S.view.lfmt||'survivor';
@@ -842,15 +842,13 @@ function viewHome(){
   let nextDl=null; myL.forEach(c=>{ if(c.status==='finished'||!c.alive.includes(S.me)) return; const r=c.rounds.find(r=>t(r.deadline)>now()); if(!r) return; const done=!!pickOf(S.me,c.lg.id,r.k); const cand={t:t(r.deadline), name:stripPrefix(c.lg.name), done};
     if(!nextDl || (nextDl.done && !done) || (nextDl.done===done && cand.t<nextDl.t)) nextDl=cand; });
   const avImg=`<img src="${me.avatar?blobUrl(me.avatar):DEFAULT_AVATAR}" data-fb="${esc(initials(nm))}" alt="">`;
-  let h=S.guest?`<div class="nh-top"><div class="nh-hi"><small>Bienvenue sur</small><span class="nh-logo">${WM()}</span></div><button class="btn sm brand" data-a="tab" data-v="profil">Se connecter</button></div>
-  `:`<div class="nh-top"><button class="nh-av" data-a="tab" data-v="profil" aria-label="Profil">${avImg}</button><div class="nh-hi"><small>Salut,</small><b>${esc(nm)}</b></div><span class="nh-logo">${WM()}</span></div>
+  let h=(S.guest?`<div class="nh-top"><div class="nh-hi"><small>Bienvenue sur</small><span class="nh-logo">${WM()}</span></div><button class="btn sm brand" data-a="tab" data-v="profil">Se connecter</button></div>`:`<div class="nh-top"><button class="nh-av" data-a="tab" data-v="profil" aria-label="Profil">${avImg}</button><div class="nh-hi"><small>Salut,</small><b>${esc(nm)}</b></div><span class="nh-logo">${WM()}</span></div>`)+`
   <div class="nh-card2">
     <div class="nh-l"><b>${inGame}</b><span>ligue${inGame>1?'s':''} où tu es<br>encore en jeu</span></div>
     <button class="nh-todo ${todo?'':'zero'}" data-a="tab" data-v="paris"><b>${todo}</b><span>pari${todo>1?'s':''} à valider</span><i>${I.arrow}</i></button>
     ${nextDl?`<div class="nh-next">${I.clock}<span>${nextDl.done?`Modifiable · <b>${esc(nextDl.name)}</b>`:`Fais ton choix pour la <b>${esc(nextDl.name)}</b>`}</span><em class="cdl" data-t="${nextDl.t}">${cdText(nextDl.t)}</em></div>`:''}
   </div>
-`;
-  h+=`  <div class="how"><div class="how-t">Comment on joue&nbsp;?</div>
+  <div class="how-card ${howOpen?'open':''}"><div class="how"><button class="how-t how-tg" data-a="toggle" data-v="howX" aria-expanded="${howOpen}"><span>Comment on joue&nbsp;?</span>${I.chev}</button>${howOpen?`
     <div class="how-sw" role="tablist"><button role="tab" class="${fmt==='survivor'?'on':''}" data-a="fmt" data-v="survivor" aria-label="Survivor">${WM('survivor', fmt==='survivor')}</button><button role="tab" class="${fmt==='oneshot'?'on':''}" data-a="fmt" data-v="oneshot" aria-label="Race">${WM('oneshot', fmt==='oneshot')}</button></div></div>
   <div class="how-d">${fmt==='oneshot'?'– Cumule des points –':'– Le dernier en vie gagne –'}</div>
   <div class="slider"><div class="slides" id="slides">
@@ -868,10 +866,10 @@ ${fmt==='oneshot'?`    <div class="sl slide "><div class="sl-ph"><div class="il 
 <div class="m1"><b><img src="data/logos/soccer_7868.png" alt=""></b><em>N</em><b><img src="data/logos/soccer_175.png" alt=""></b></div>
 </div><span class="sl-k">1<small>/4</small></span></div><div class="sl-tx nobtn"><div class="sl-h">Chaque journée, choisis <mark>une équipe</mark>.</div></div></div>
     <div class="sl slide "><div class="sl-ph"><div class="il il2"><div class="il-res ok"><div class="il-sc"><img src="data/logos/soccer_160.png" alt=""><b>2 - 0</b><img src="data/logos/soccer_273.png" alt=""></div><div class="il-st"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-8.5-5.2-9.8-10.6C1.4 6.9 3.6 4 6.9 4c2 0 3.6 1.1 5.1 3 1.5-1.9 3.1-3 5.1-3 3.3 0 5.5 2.9 4.7 6.4C20.5 15.8 12 21 12 21z"/></svg>En vie</div></div>
-<div class="il-res ko"><div class="il-sc"><img src="data/logos/soccer_160.png" alt=""><b>0 - 1</b><img src="data/logos/soccer_273.png" alt=""></div><div class="il-st"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>Éliminé</div></div></div><span class="sl-k">2<small>/4</small></span></div><div class="sl-tx nobtn"><div class="sl-h">Ton équipe gagne&nbsp;: <mark class="g">tu survis</mark>. Sinon&nbsp;: tu es éliminé.</div></div></div>
+<div class="il-res ko"><div class="il-sc"><img src="data/logos/soccer_160.png" alt=""><b>0 - 1</b><img src="data/logos/soccer_273.png" alt=""></div><div class="il-st"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>Éliminé</div></div></div><span class="sl-k">2<small>/4</small></span></div><div class="sl-tx nobtn"><div class="sl-h">Ton équipe gagne → <mark class="g">tu survis</mark>.<br>Sinon, tu es éliminé.</div></div></div>
     <div class="sl slide yel"><div class="sl-ph"><div class="il il3"><div class="il3-big"><img src="data/logos/soccer_160.png" alt=""><span>Déjà joué</span></div><div class="il3-row"><b><img src="data/logos/soccer_176.png" alt=""></b><b><img src="data/logos/soccer_175.png" alt=""></b><b><img src="data/logos/soccer_167.png" alt=""></b><b><img src="data/logos/soccer_174.png" alt=""></b><b><img src="data/logos/soccer_166.png" alt=""></b></div></div><span class="sl-k">3<small>/4</small></span></div><div class="sl-tx nobtn"><div class="sl-h">Mais tu ne pourras plus sélectionner cette équipe.</div></div></div>
     <div class="sl slide dark mid full"><img class="sl-bgimg" src="img/slide-supporter.jpg" alt=""><div class="sl-ph"><div class="il il4p"></div><span class="sl-k">4<small>/4</small></span></div><div class="sl-tx nobtn"><div class="sl-h">Le dernier en vie <mark>gagne</mark>.</div></div></div>
-`}  </div><div class="sdots">${[0,1,2,3].map(i=>`<button data-a="slide" data-v="${i}" aria-label="Écran ${i+1}"></button>`).join('')}</div></div>
+`}  </div><div class="sdots">${[0,1,2,3].map(i=>`<button data-a="slide" data-v="${i}" aria-label="Écran ${i+1}"></button>`).join('')}</div></div>`:`</div>`}</div>
   ${installCard('home')}
   <div class="nh-sec" id="ligues"><span>Les ligues</span><small>${list.length} ligue${list.length>1?'s':''}</small></div>`;
   h+=`<div class="lsw2 ${lfmt}"><div class="lsw2-tabs" role="tablist"><button role="tab" class="${lfmt==='survivor'?'on':''}" data-a="lfmt" data-v="survivor" aria-label="Ligues Survivor">${WM('survivor', lfmt==='survivor')}<em>${nSv}</em></button><button role="tab" class="${lfmt==='oneshot'?'on':''}" data-a="lfmt" data-v="oneshot" aria-label="Ligues Race">${WM('oneshot', false)}<em>${nOs}</em></button></div></div>`;
