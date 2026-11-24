@@ -642,7 +642,6 @@ function viewHome(){
       <div class="tags">${catTag(lg.category)}${lg.private?'<span class="tag priv">Privée</span>':''}</div>
       <div class="tags">${statusPill(c)}</div>
       ${leagueTitle(lg.name)}
-      ${prizeBand(lg)}
       ${cd?`<div class="cd">Début dans ${cd}</div>`:''}
       ${c.winners.length?`<div class="win">🏆 ${c.winners.map(w=>esc(nameOf(w))).join(' & ')}</div>`:''}
       <div class="stats"><span>${I.users}<b>${c.mem.length}</b> joueurs</span><span>${I.heart}<b>${c.status==='upcoming'?c.mem.length:c.alive.length}</b> en vie</span></div>
