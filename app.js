@@ -558,7 +558,9 @@ const A = {
   setComp(lid,k){ S.view.comp=k; loadFeed(k); writeLeague(lid,{comp:k}).then(()=>{ toast('Championnat : '+COMP_NAMES[k]); autoImport(lid); }); },
   setCover(lid,k){ writeLeague(lid,{cover:k}).then(()=>toast('Photo mise à jour.')); },
   uploadCover(lid){ pickFile(async f=>{ const a=await upload(f); if(a) writeLeague(lid,{cover:'asset:'+a.id}).then(()=>toast('Photo importée !')); }); },
-  uploadAvatar(){ if(guard()) return; pickFile(async f=>{ const a=await upload(f); if(a) writeMe({avatar:a.id}).then(()=>toast('Photo de profil mise à jour !')); }); },
+  uploadAvatar(){ if(guard()) return; pickFile(async f=>{ const u=URL.createObjectURL(f); const b=await cropAvatar(u); URL.revokeObjectURL(u); if(!b) return; const a=await upload(b); if(a) writeMe({avatar:a.id}).then(()=>toast('Photo de profil mise à jour !')); }); },
+  recropAvatar(){ if(guard()) return; const me=S.players[S.me]||{}; if(!me.avatar) return A.uploadAvatar(); if(S.mode==='demo') return toast('Indisponible en mode démo.',true);
+    cropAvatar(blobUrl(me.avatar)).then(async b=>{ if(!b) return; const a=await upload(b); if(a) writeMe({avatar:a.id}).then(()=>toast('Photo recadrée !')); }); },
   comp(v){ S.view.comp=v; loadFeed(v); render(); },
   importRound(lid, key){
     const lg=S.leagues[lid], f=S.feeds[S.view.comp]; if(!lg||!f) return;
@@ -663,6 +665,46 @@ function pickFile(cb){
   if(!assets && S.mode!=='demo') return toast('Import de photo réservé aux éditeurs du site.',true);
   if(S.mode==='demo') return toast('Indisponible en mode démo.',true);
   const inp=document.getElementById('filepick'); inp.value=''; inp.onchange=()=>{ const f=inp.files[0]; if(f) cb(f); }; inp.click();
+}
+
+/* ---------- Recadrage de la photo de profil ---------- */
+function cropAvatar(src){
+  return new Promise(resolve=>{
+    const BOX=260, OUT=480;
+    const d=document.createElement('div'); d.className='modal';
+    d.innerHTML=`<div class="sheet crop-sheet"><h3>RECADRER LA PHOTO</h3><div class="muted" style="font-size:14px">Fais glisser la photo et zoome pour bien cadrer ton visage.</div>
+      <div class="crop-box"><img alt="" draggable="false"></div>
+      <div class="crop-zoom"><span>−</span><input type="range" min="1" max="4" step="0.01" value="1"><span>+</span></div>
+      <div class="acts"><button class="btn ghost" data-x>ANNULER</button><button class="btn" data-ok>VALIDER</button></div></div>`;
+    document.body.appendChild(d);
+    const box=d.querySelector('.crop-box'), img=box.querySelector('img'), range=d.querySelector('input[type=range]');
+    let W=0,H=0, base=1, z=1, x=0, y=0;
+    const clamp=()=>{ const s=base*z, w=W*s, h=H*s; x=Math.min(0,Math.max(BOX-w,x)); y=Math.min(0,Math.max(BOX-h,y)); };
+    const draw=()=>{ clamp(); const s=base*z; img.style.width=W*s+'px'; img.style.height=H*s+'px'; img.style.transform=`translate(${x}px,${y}px)`; };
+    const zoomTo=(nz,cx=BOX/2,cy=BOX/2)=>{ nz=Math.min(4,Math.max(1,nz)); const k=nz/z; x=cx-(cx-x)*k; y=cy-(cy-y)*k; z=nz; range.value=z; draw(); };
+    img.onload=()=>{ W=img.naturalWidth; H=img.naturalHeight; base=Math.max(BOX/W,BOX/H); x=(BOX-W*base)/2; y=(BOX-H*base)/2; draw(); };
+    img.onerror=()=>{ toast('Photo illisible.',true); d.remove(); resolve(null); };
+    if(/^https?:/.test(src)) img.crossOrigin='anonymous';
+    img.src=src;
+    const pts=new Map(); let last=null, pinch=null;
+    box.addEventListener('pointerdown',e=>{ box.setPointerCapture(e.pointerId); pts.set(e.pointerId,{x:e.clientX,y:e.clientY}); last={x:e.clientX,y:e.clientY}; if(pts.size===2){ const [a,b]=[...pts.values()]; pinch={dist:Math.hypot(a.x-b.x,a.y-b.y), z}; } });
+    box.addEventListener('pointermove',e=>{ if(!pts.has(e.pointerId)) return; pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      if(pts.size===2 && pinch){ const [a,b]=[...pts.values()]; const r=box.getBoundingClientRect(); zoomTo(pinch.z*Math.hypot(a.x-b.x,a.y-b.y)/pinch.dist,(a.x+b.x)/2-r.left,(a.y+b.y)/2-r.top); return; }
+      if(last){ x+=e.clientX-last.x; y+=e.clientY-last.y; last={x:e.clientX,y:e.clientY}; draw(); } });
+    const up=e=>{ pts.delete(e.pointerId); if(pts.size<2) pinch=null; const rest=[...pts.values()][0]; last=rest?{...rest}:null; };
+    box.addEventListener('pointerup',up); box.addEventListener('pointercancel',up);
+    box.addEventListener('wheel',e=>{ e.preventDefault(); const r=box.getBoundingClientRect(); zoomTo(z*(e.deltaY<0?1.08:1/1.08),e.clientX-r.left,e.clientY-r.top); },{passive:false});
+    range.addEventListener('input',()=>zoomTo(+range.value));
+    d.addEventListener('click',e=>{
+      if(e.target===d||e.target.closest('[data-x]')){ d.remove(); resolve(null); return; }
+      if(e.target.closest('[data-ok]')){
+        const s=base*z, c=document.createElement('canvas'); c.width=c.height=OUT;
+        try{ c.getContext('2d').drawImage(img,-x/s,-y/s,BOX/s,BOX/s,0,0,OUT,OUT);
+          c.toBlob(b=>{ d.remove(); resolve(b); },'image/jpeg',0.86); }
+        catch(err){ console.warn(err); toast('Impossible de recadrer cette photo.',true); d.remove(); resolve(null); }
+      }
+    });
+  });
 }
 async function upload(file){
   try{
@@ -1234,7 +1276,7 @@ function viewProfil(){
   const my=Object.keys(S.leagues).filter(isMember).map(C).filter(Boolean);
   const wins=my.filter(c=>c.winners.includes(S.me)).length, alive=my.filter(c=>c.status!=='finished'&&c.alive.includes(S.me)).length;
   let h=`<div class="ptitle">${titleImg('title-profil.png','PROFIL')}</div>`;
-  h+=`<div style="text-align:center"><button class="avatar-big" data-a="uploadAvatar"><img src="${me.avatar?blobUrl(me.avatar):DEFAULT_AVATAR}" data-fb="${esc(initials(name))}" alt=""><span class="cam">${I.cam}</span></button><div style="margin:18px 0 22px"><button class="link" data-a="uploadAvatar">Changer la photo</button></div></div>`;
+  h+=`<div style="text-align:center"><button class="avatar-big" data-a="uploadAvatar"><img src="${me.avatar?blobUrl(me.avatar):DEFAULT_AVATAR}" data-fb="${esc(initials(name))}" alt=""><span class="cam">${I.cam}</span></button><div style="margin:18px 0 22px;display:flex;gap:22px;justify-content:center"><button class="link" data-a="uploadAvatar">Changer la photo</button>${me.avatar?'<button class="link" data-a="recropAvatar">Recadrer</button>':''}</div></div>`;
   h+=`<div class="card" style="display:flex;align-items:center;gap:14px"><div style="flex:1;min-width:0"><div class="lbl">Nom d'utilisateur</div><div class="pname" style="margin-top:10px">${esc(name)}</div>${S.email?`<div class="pmail">${esc(S.email)}</div>`:'<div style="height:10px"></div>'}${S.isOwner?`<span class="badge">${I.shield}ADMIN</span>`:''}</div><button class="circ" data-a="editName" aria-label="Modifier">${I.edit}</button></div>`;
   h+=`<div class="statgrid"><div class="stat"><b>${my.length}</b><span>Ligues</span></div><div class="stat"><b>${alive}</b><span>En vie</span></div><div class="stat"><b>${wins}</b><span>Victoires</span></div></div>`;
   if(S.mode==='demo') h+=`<div class="card" style="font-size:14px;line-height:1.5"><b>Mode démo.</b> Données fictives, rien n'est enregistré. Ouvre le site depuis son lien claude.ai, connecté, pour jouer avec tes proches.</div>`;
