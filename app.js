@@ -328,7 +328,7 @@ async function boot(){
 }
 
 /* ---------- Visiteurs non connectés ---------- */
-const GUEST_OK=new Set(['hview','toLeagues','slide','install','hideInstall','filter','open','back','ltab','toggle','comp','peek']);
+const GUEST_OK=new Set(['reload','hview','toLeagues','slide','install','hideInstall','filter','open','back','ltab','toggle','comp','peek']);
 function askLogin(a,v){
   const lg=v&&S.leagues[String(v).split('|')[0]];
   if(a==='join' && lg){ try{ sessionStorage.setItem('survivor-after-login',JSON.stringify({a:'join',v:lg.id})); }catch(e){} }
@@ -434,6 +434,7 @@ const A = {
   },
   hview(v){ S.view.hview=v; S.view.hv=v; render(); },
   toLeagues(){ const el=document.getElementById('ligues'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); },
+  reload(){ location.reload(); },
   slide(i){ slideClock=Date.now(); const el=document.getElementById('slides'); if(el) el.scrollTo({left:el.clientWidth*(+i),behavior:'smooth'}); },
   install(){ if(!installEvt) return; installEvt.prompt(); installEvt.userChoice.finally(()=>{ installEvt=null; render(); }); },
   hideInstall(){ try{ localStorage.setItem('survivor-install-hide','1'); }catch(e){} render(); },
@@ -1153,7 +1154,7 @@ function render(){
   const todo=countTodo();
   const tabs=[['ligues','Ligues',I.trophy],['paris','Mes paris',I.paris],['admin',S.isOwner?'Admin':'Ma ligue',S.isOwner?I.gear:I.plus],['profil','Profil',I.user]];
   app.innerHTML=(S.mode==='demo'?`<div class="demo">🎮 <span><b>MODE DÉMO</b> · données fictives, rien n'est enregistré.</span></div>`:'')+
-    (S.stale?`<div class="demo">⚠️ <span>Connexion lente : les données peuvent ne pas être à jour.</span></div>`:'')+
+    (S.stale?`<div class="demo">⚠️ <span>Connexion lente : les données peuvent ne pas être à jour.</span><button class="demo-btn" data-a="reload">Réessayer</button></div>`:'')+
     `<div class="page">${body}</div><nav class="bottom">${tabs.map(([k,l,ic])=>`<button class="${v.tab===k?'on':''}" data-a="tab" data-v="${k}">${ic}${l}${k==='paris'&&todo?`<span class="nbadge">${todo}</span>`:''}</button>`).join('')}</nav>`;
   Object.entries(keep).forEach(([id,val])=>{ const el=document.getElementById(id); if(el&&el.type!=='file') el.value=val; });
   if(focusId){ const el=document.getElementById(focusId); if(el) el.focus(); }

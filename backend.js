@@ -28,7 +28,9 @@ const fbApp = initializeApp(cfg);
 const auth = getAuth(fbApp);
 // Cache local (IndexedDB) : les visites suivantes s'affichent tout de suite, puis se mettent à jour
 let fs;
-try { fs = initializeFirestore(fbApp, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); }
+// Sur iPhone/Safari, la connexion « en continu » de Firebase se bloque parfois : on passe en mode classique (long polling)
+const WEBKIT = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) || /^((?!chrome|chromium|android|crios|fxios|edg).)*safari/i.test(navigator.userAgent);
+try { fs = initializeFirestore(fbApp, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }), ...(WEBKIT ? { experimentalForceLongPolling: true } : {}) }); }
 catch (e) { console.warn('cache local indisponible', e); fs = getFirestore(fbApp); }
 setPersistence(auth, browserLocalPersistence).catch(() => {});
 if (cfg.useEmulator) { connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true }); connectFirestoreEmulator(fs, '127.0.0.1', 8080); }
@@ -182,7 +184,10 @@ function collectionRef(path) {
     doc: id => docRef(`${col}/${id || Math.random().toString(36).slice(2, 12)}`),
     onSnapshot(next, err) {
       if (col !== 'players') {
-        return onSnapshot(collection(fs, col), s => next({ docs: s.docs.map(snapDoc), size: s.size, empty: s.empty, metadata: s.metadata }), e => err && err(mapErr(e)));
+        let got = false;
+        const fb = setTimeout(async () => { if (got) return; try { const s = await getDocs(collection(fs, col)); if (!got) next({ docs: s.docs.map(snapDoc), size: s.size, empty: s.empty, metadata: { fromCache: false, hasPendingWrites: false } }); } catch (e) {} }, 6000);
+        const un = onSnapshot(collection(fs, col), s => { got = true; next({ docs: s.docs.map(snapDoc), size: s.size, empty: s.empty, metadata: s.metadata }); }, e => err && err(mapErr(e)));
+        return () => { clearTimeout(fb); un(); };
       }
       // players + their picks (stored in their own documents so the server can enforce deadlines)
       let players = null, picks = null, meta = { fromCache: true, hasPendingWrites: false };
@@ -195,7 +200,15 @@ function collectionRef(path) {
       };
       const u1 = onSnapshot(collection(fs, 'players'), s => { players = s.docs; meta = s.metadata; emit(); }, e => err && err(mapErr(e)));
       const u2 = onSnapshot(collection(fs, 'picks'), s => { picks = s.docs; emit(); }, e => err && err(mapErr(e)));
-      return () => { u1(); u2(); };
+      // Filet de sécurité : si le flux en direct tarde, on lit les données une fois
+      const fb = setTimeout(async () => {
+        try {
+          if (!players) { const s = await getDocs(collection(fs, 'players')); if (!players) { players = s.docs; meta = { fromCache: false, hasPendingWrites: false }; } }
+          if (!picks) { const s = await getDocs(collection(fs, 'picks')); if (!picks) picks = s.docs; }
+          emit();
+        } catch (e) {}
+      }, 6000);
+      return () => { clearTimeout(fb); u1(); u2(); };
     }
   };
 }
