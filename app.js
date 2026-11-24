@@ -64,6 +64,8 @@ const S = {
   view:{tab:'ligues', league:null, ltab:'paris', manage:null, filter:'all', comp:null, newCat:'football'},
   open:{}
 };
+// « Comment on joue ? » : déroulé lors des 3 premières visites, puis replié par défaut
+(()=>{ try{ const n=(+localStorage.getItem('survivor-visits')||0)+1; localStorage.setItem('survivor-visits',String(n)); if(n>3) S.open.howX=true; }catch(e){} })();
 let db=null, user=null, assets=null;
 
 /* ================================================================ Utils */
