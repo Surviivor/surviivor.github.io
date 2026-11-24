@@ -615,6 +615,7 @@ const A = {
     const g=id=>document.getElementById(id);
     const rest=stripPrefix(g('ei-name').value); if(rest.length<2) return toast('Complète le nom de la ligue.',true); const name=fullName(rest, isPoints(S.leagues[lid])?'points':'survivor');
     const patch={name:name.slice(0,60)};
+    const pzI=g('ei-prize'); if(pzI) patch.prize=pzI.value.trim().slice(0,80);
     const cf=compFromName(name), lgx=S.leagues[lid]; if(cf && cat(lgx.category).comps.includes(cf) && cf!==lgx.comp){ patch.comp=cf; S.view.comp=cf; loadFeed(cf); }
     const nrI=g('ei-nr'); if(nrI && !nrI.disabled && isPoints(lgx)) patch.target=Math.min(40,Math.max(10,+nrI.value||POINTS_N));
     const d=g('ei-date'), h=g('ei-time'); if(d && d.value) patch.startAt=new Date(d.value+'T'+(h.value||'20:00')).toISOString();
@@ -806,7 +807,11 @@ const visible = lg => !HIDDEN_CATS.includes(lg.category) && (!lg.private || isMe
 
 
 /* Lot : maillot rétro du championnat (ligues de football) */
+// Lot de la ligue : champ « prize » réglé dans Gérer la ligue (valeur par défaut pour Race X Ligue 1)
+const prizeOf = lg => typeof lg.prize==='string' ? lg.prize.trim() : (isPoints(lg) && /race\s*x\s*ligue\s*1\b/i.test(lg.name||'') ? 'un maillot de Kaká' : '');
 function prizeBand(lg, cls){
+  const pz=prizeOf(lg);
+  if(pz) return `<div class="prize ${cls||''}"><span class="pz-i">👕</span><span>${isPoints(lg)?'Le gagnant':'Le dernier survivant'} de cette ligue gagne <b>${esc(pz)}</b></span></div>`;
   if(isPoints(lg)) return '';
   if((lg.category||'football')!=='football' || !lg.comp || !COMP_NAMES[lg.comp]) return '';
   return `<div class="prize ${cls||''}"><span class="pz-i">👕</span><span>Le dernier survivant de cette ligue gagne <b>un maillot rétro de ${esc(COMP_NAMES[lg.comp])}</b></span></div>`;
@@ -1202,6 +1207,7 @@ function viewLeague(lid){
       if(waiting.length) h+=`<div class="sec2">EN ATTENTE DES RÉSULTATS</div>`+waiting.map(r=>roundCard(c,r)).join('');
     }
   } else if(tab==='surv' && c.points){
+    h+=prizeBand(lg,'big');
     const lead=c.ranking[0];
     h+=`<div class="card"><span class="ctitle">${I.chart}En chiffres</span><div class="statgrid" style="margin-bottom:0"><div class="stat" style="background:#fff"><b>${c.mem.length}</b><span>Joueurs</span></div><div class="stat" style="background:#fff"><b>${c.N}</b><span>Pts à atteindre</span></div><div class="stat" style="background:#fff"><b>${lead?lead.pts:0}</b><span>Pts du 1er</span></div></div></div>`;
     h+=`<div class="plist"><div class="sec">Classement</div><div class="ga-leg">Points · <span class="ga">GA</span> goal-average (départage en cas d'égalité)</div>`+c.ranking.map(x=>{
@@ -1307,6 +1313,7 @@ function viewManage(lid){
   const sd=new Date(lg.startAt);
   h+=`<div class="card"><div class="h-disp">NOM &amp; RÉGLAGES</div>
     <label class="f">Nom de la ligue</label>${pfxInput('ei-name','w',stripPrefix(lg.name),'Ligue 1', isPoints(lg)?'oneshot':'survivor')}
+    <label class="f">Lot à gagner (optionnel)</label><input class="in w" id="ei-prize" maxlength="80" placeholder="un maillot de Kaká" value="${esc(prizeOf(lg))}"><div class="help" style="margin:-4px 0 12px">Affiché dans l'onglet ${isPoints(lg)?'Classement':'Survivants'} : « ${isPoints(lg)?'Le gagnant':'Le dernier survivant'} de cette ligue gagne … ».</div>
     ${c.status==='upcoming'?`<label class="f">Date de début (fin des inscriptions)</label><div class="row2"><input class="in w" type="date" id="ei-date" value="${dateIn(sd)}"><input class="in w" type="time" id="ei-time" value="${timeIn(sd)}"></div><div class="help">La ligue démarre le ${fmtDT(lg.startAt)}.</div>`:''}
     ${isPickMode(lg)?fmtBlock(isPoints(lg)?'points':'survivor','setFmt',lid,lg.target,c.rounds.some(r=>t(r.deadline)<=now())):''}
     ${isPoints(lg)?lastBlock(lg.lastRule,'setLast',lid,c.status!=='upcoming'):''}
