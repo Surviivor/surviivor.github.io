@@ -300,8 +300,8 @@ function compute(lid){
       }
       else if(!correct.length && !A.some(u=>lives[u]>0)){ ri.state='cancelled'; ri.out=[]; }
       else {
-        // bonus extérieur : 3 paris gagnés de suite sur l'équipe qui joue à l'extérieur = +1 vie
-        if(lg.awayBonus){ ri.gained=[]; A.forEach(u=>{ const p=pickOf(u,lid,r.k); if(p && !p.j && p.p==='A' && correct.includes(u)){ streak[u]++; if(streak[u]>=3){ lives[u]++; streak[u]=0; ri.gained.push(u); } } else streak[u]=0; }); }
+        // bonus extérieur : 3 paris gagnés (pas forcément de suite) sur l'équipe qui joue à l'extérieur = +1 vie
+        if(lg.awayBonus){ ri.gained=[]; A.forEach(u=>{ const p=pickOf(u,lid,r.k); if(p && !p.j && p.p==='A' && correct.includes(u)){ streak[u]++; if(streak[u]>=3){ lives[u]++; streak[u]=0; ri.gained.push(u); } } }); }
         const wrong=A.filter(u=>!correct.includes(u)), saved=wrong.filter(u=>lives[u]>0); saved.forEach(u=>lives[u]--);
         const out=wrong.filter(u=>!saved.includes(u)); out.forEach(u=>elimAt[u]=r.k); alive=new Set(A.filter(u=>!out.includes(u))); ri.state='done'; ri.out=out; ri.saved=saved;
       }
@@ -1133,14 +1133,14 @@ function livesRulesHtml(lg){
   let h='';
   if(+lg.lives>0) h+=`<p class="lrule">❤️ <b>Option de la ligue :</b> chaque joueur démarre avec <b>${+lg.lives} vie${+lg.lives>1?'s':''} en réserve</b>. Tu peux te tromper ${+lg.lives>1?+lg.lives+' fois':'une fois'} et continuer à jouer.</p>`;
   if(lg.joker) h+=`<p class="lrule">${JOKER_ICO}<b>Joker « double chance » :</b> une fois dans la ligue, tu peux choisir <b>2 équipes</b> sur une journée. Tu survis si l'une des deux gagne.</p>`;
-  if(lg.awayBonus) h+=`<p class="lrule">✈️ <b>Bonus extérieur :</b> gagne <b>3 paris de suite</b> sur l'équipe qui joue <b>à l'extérieur</b> et tu gagnes <b>1 vie</b>.</p>`;
+  if(lg.awayBonus) h+=`<p class="lrule">✈️ <b>Bonus extérieur :</b> gagne <b>3 paris</b> (pas forcément de suite) sur une équipe qui joue <b>à l'extérieur</b> et tu gagnes <b>1 vie</b>.</p>`;
   return h;
 }
 function livesBlock(lg, act, lid, locked){
   const v=lid?lid+'|':'', L=+(lg&&lg.lives)||0, B=!!(lg&&lg.awayBonus), J=!!(lg&&lg.joker);
   return `<label class="f fbig">Options</label><div class="lopt">
     <button class="lopt-b ${L?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}lives"`}><i></i><span><b>❤️ 1 vie en réserve</b><small>Chaque joueur peut se tromper une fois et continuer à jouer.</small></span></button>
-    <button class="lopt-b ${B?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}away"`}><i></i><span><b>✈️ Bonus extérieur</b><small>3 paris gagnés de suite sur l'équipe à l'extérieur = 1 vie en plus.</small></span></button>
+    <button class="lopt-b ${B?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}away"`}><i></i><span><b>✈️ Bonus extérieur</b><small>3 paris gagnés sur des équipes à l'extérieur (pas forcément de suite) = 1 vie en plus.</small></span></button>
     <button class="lopt-b ${J?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}joker"`}><i></i><span><b>${JOKER_ICO}Joker « double chance »</b><small>Une fois dans la ligue, chaque joueur peut choisir 2 équipes sur une journée : il survit si l'une des deux gagne.</small></span></button>
   </div>${locked?'<div class="help" style="margin:-4px 0 10px">Options figées une fois la ligue commencée.</div>':''}`;
 }
