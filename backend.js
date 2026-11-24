@@ -65,12 +65,24 @@ function showLogin(mode = 'home', msg = '') {
       <button data-l="home">← Retour</button>
     </div>`;
   }
-  appEl.innerHTML = `<div class="login">${LOGO}<div class="login-sub">Le dernier en vie remporte la ligue.</div>${msg ? `<div class="login-msg">${esc(msg)}</div>` : ''}${body}</div>`;
+  const html = `<div class="login">${LOGO}<div class="login-sub">${esc(loginIntro)}</div>${msg ? `<div class="login-msg">${esc(msg)}</div>` : ''}${body}</div>`;
+  if (started === 'guest') {
+    let ov = document.getElementById('login-ov');
+    if (!ov) { ov = document.createElement('div'); ov.id = 'login-ov'; document.body.appendChild(ov); document.body.classList.add('noscroll'); }
+    ov.innerHTML = `${loginMandatory ? '' : '<button class="login-x" data-l="close" aria-label="Fermer">✕</button>'}${html}`;
+  } else appEl.innerHTML = html;
 }
+let loginIntro = 'Le dernier en vie remporte la ligue.', loginMandatory = false;
+// Appelé par le site quand un visiteur non connecté veut jouer
+window.survivorLogin = (intro, mandatory) => {
+  loginIntro = intro || 'Connecte-toi pour jouer.'; loginMandatory = !!mandatory;
+  showLogin('home');
+};
 
 document.addEventListener('click', async e => {
   const b = e.target.closest('[data-l]'); if (!b || b.tagName === 'FORM') return;
   const a = b.dataset.l;
+  if (a === 'close') { const ov = document.getElementById('login-ov'); if (ov) ov.remove(); document.body.classList.remove('noscroll'); try { sessionStorage.removeItem('survivor-after-login'); } catch (e) {} return; }
   if (a === 'home' || a === 'email' || a === 'login') return showLogin(a === 'home' ? 'home' : 'login');
   if (a === 'signup') return showLogin('signup');
   if (a === 'reset') {
@@ -96,15 +108,16 @@ document.addEventListener('submit', async e => {
     if (f.dataset.l === 'doSignup') {
       const name = (document.getElementById('lg-name').value || '').trim();
       if (name.length < 2) return showLogin('signup', 'Choisis un pseudo (2 caractères minimum).');
-      const cred = await createUserWithEmailAndPassword(auth, mail, pass);
-      await updateProfile(cred.user, { displayName: name });
       pendingPseudo = name;
+      try { sessionStorage.setItem('survivor-pseudo', name); } catch (e) {}
+      const cred = await createUserWithEmailAndPassword(auth, mail, pass);
+      await updateProfile(cred.user, { displayName: name }).catch(() => {});
     } else {
       await signInWithEmailAndPassword(auth, mail, pass);
     }
   } catch (err) { showLogin(f.dataset.l === 'doSignup' ? 'signup' : 'login', frErr(err)); }
 });
-let pendingPseudo = null;
+let pendingPseudo = (() => { try { return sessionStorage.getItem('survivor-pseudo'); } catch (e) { return null; } })();
 
 window.survivorLogout = () => signOut(auth).then(() => location.reload());
 
@@ -187,7 +200,7 @@ function collectionRef(path) {
 const dbApi = { doc: docRef, collection: collectionRef };
 const userApi = {
   id: async () => me && me.uid,
-  me: async () => ({ id: me.uid, name: me.displayName || '', email: me.email || '' }),
+  me: async () => (me ? { id: me.uid, name: me.displayName || '', email: me.email || '' } : null),
   isOwner: () => !!(me && me.email && ADMINS.includes(me.email.toLowerCase())),
   canEdit: () => userApi.isOwner(),
   can: () => true,
@@ -213,17 +226,31 @@ const assetsApi = {
 window.claude = { use: async name => (name === 'db' ? dbApi : name === 'user' ? userApi : name === 'assets' ? assetsApi : null) };
 
 /* ------------------------------------------------------------------ start */
-let started = false;
-onAuthStateChanged(auth, async u => {
-  if (!u) { if (!started) showLogin('home'); else location.reload(); return; }
-  me = u;
-  if (started) return;
-  started = true;
-  appEl.innerHTML = '<div class="spin"></div>';
+let started = false; // false | 'guest' | 'user'
+const loadApp = () => { const s = document.createElement('script'); s.src = 'app.js' + (new URL(import.meta.url).search || ''); document.body.appendChild(s); };
+async function ensurePlayer(u) {
   try {
     const ref = doc(fs, 'players', u.uid);
     const cur = await getDoc(ref);
     if (!cur.exists()) await setDoc(ref, { id: u.uid, pseudo: (pendingPseudo || u.displayName || (u.email || 'Joueur').split('@')[0]).slice(0, 24), leagues: {} });
+    try { sessionStorage.removeItem('survivor-pseudo'); } catch (e) {}
   } catch (e) { console.warn(e); }
-  const s = document.createElement('script'); s.src = 'app.js' + (new URL(import.meta.url).search || ''); document.body.appendChild(s);
+}
+onAuthStateChanged(auth, async u => {
+  if (!u) {
+    if (started === 'user') return location.reload();
+    if (started) return;
+    // Visiteur non connecté : il voit le site, la connexion s'affiche quand il veut jouer
+    started = 'guest'; loadApp(); return;
+  }
+  me = u;
+  if (started === 'guest') {
+    const ov = document.getElementById('login-ov'); if (ov) ov.innerHTML = '<div class="login"><div class="spin"></div></div>';
+    await ensurePlayer(u); location.reload(); return;
+  }
+  if (started) return;
+  started = 'user';
+  appEl.innerHTML = '<div class="spin"></div>';
+  await ensurePlayer(u);
+  loadApp();
 });

@@ -307,10 +307,11 @@ async function boot(){
   try{ if(window.claude && window.claude.use){ [db,user,assets]=await Promise.all([window.claude.use('db'),window.claude.use('user'),window.claude.use('assets')]); } }catch(e){ db=null; }
   if(!db||!user) return startDemo();
   try{ S.me=await user.id(); }catch(e){}
+  if(!S.me && window.survivorLogin){ S.guest=true; S.me='__visiteur__'; }
   if(!S.me) return startDemo();
   try{ S.isOwner=!!user.isOwner(); }catch(e){}
   try{ if(user.can && user.can('data.write')===false) S.readOnly=true; }catch(e){}
-  try{ const me=await user.me(); S.email=(me&&me.email)||''; if(me&&me.name) S.names[S.me]=me.name; }catch(e){}
+  if(!S.guest) try{ const me=await user.me(); S.email=(me&&me.email)||''; if(me&&me.name) S.names[S.me]=me.name; }catch(e){}
   S.mode='live';
   const timer=setTimeout(()=>{ S.stale=true; S.loaded.leagues=S.loaded.players=true; render(); },10000);
   const sub=(col,store)=>db.collection(col).onSnapshot(snap=>{
@@ -319,11 +320,33 @@ async function boot(){
     S.loaded[col]=true; if(!snap.metadata.fromCache) S.stale=false;
     if(S.loaded.leagues&&S.loaded.players) clearTimeout(timer);
     afterData(); render();
-  }, err=>{ S.loaded[col]=true; console.warn(err); toast('Données indisponibles pour le moment.',true); render(); });
+  }, err=>{ S.loaded[col]=true; console.warn(err);
+    if(S.guest && err && err.code==='permission-denied'){ window.survivorLogin('Le dernier en vie remporte la ligue.',true); return; }
+    toast('Données indisponibles pour le moment.',true); render(); });
   sub('leagues',S.leagues); sub('players',S.players);
   render(); setInterval(render,30000);
 }
-function afterData(){ setTimeout(autoImportAll,300); resolveNames(); Object.values(S.leagues).forEach(l=>{ if(l.comp) loadFeed(l.comp); Object.values(l.rounds||{}).forEach(r=>Object.values(r.matches||{}).forEach(m=>m.comp&&loadFeed(m.comp))); }); }
+
+/* ---------- Visiteurs non connectés ---------- */
+const GUEST_OK=new Set(['hview','toLeagues','slide','install','hideInstall','filter','open','back','ltab','toggle','comp','peek']);
+function askLogin(a,v){
+  const lg=v&&S.leagues[String(v).split('|')[0]];
+  if(a==='join' && lg){ try{ sessionStorage.setItem('survivor-after-login',JSON.stringify({a:'join',v:lg.id})); }catch(e){} }
+  const intro = a==='join'&&lg ? `Connecte-toi ou crée ton compte pour t'inscrire à la ligue ${stripPrefix(lg.name)||''}.`.replace(' .','.')
+    : a==='pick' ? 'Connecte-toi ou crée ton compte pour parier.' : 'Connecte-toi ou crée ton compte pour jouer.';
+  window.survivorLogin(intro);
+}
+let afterLoginDone=false;
+function runAfterLogin(){
+  if(afterLoginDone || S.guest || S.mode!=='live' || !S.loaded.leagues || !S.loaded.players) return;
+  let job=null; try{ job=JSON.parse(sessionStorage.getItem('survivor-after-login')||'null'); sessionStorage.removeItem('survivor-after-login'); }catch(e){}
+  afterLoginDone=true;
+  if(job && job.a==='join' && S.leagues[job.v]){
+    if(!isMember(job.v)) A.join(job.v);
+    S.view.league=job.v; S.view.tab='ligues'; render();
+  }
+}
+function afterData(){ setTimeout(autoImportAll,300); runAfterLogin(); resolveNames(); Object.values(S.leagues).forEach(l=>{ if(l.comp) loadFeed(l.comp); Object.values(l.rounds||{}).forEach(r=>Object.values(r.matches||{}).forEach(m=>m.comp&&loadFeed(m.comp))); }); }
 
 function startDemo(){
   S.mode='demo'; S.me='moi'; S.isOwner=true; S.email='toi@exemple.fr';
@@ -1142,6 +1165,7 @@ document.addEventListener('input',e=>{
 document.addEventListener('click',e=>{
   const el=e.target.closest('[data-a]'); if(!el||el.disabled) return;
   const a=el.dataset.a, v=el.dataset.v;
+  if(S.guest && !GUEST_OK.has(a) && !(a==='tab'&&v==='ligues')){ e.preventDefault(); return askLogin(a,v); }
   if(el.tagName==='SUMMARY') e.preventDefault();
   if(a==='pick'){ const [l,r,m,p]=v.split('|'); return A.pick(l,r,m,p); }
   if(a==='setCat'){ const [l,k]=v.split('|'); return A.setCat(l,k); }

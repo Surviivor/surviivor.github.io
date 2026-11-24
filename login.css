@@ -9,3 +9,8 @@
 .login-msg{background:var(--brand-soft);color:#991B1B;border-radius:12px;padding:10px 12px;font-weight:600;font-size:14px;text-align:center}
 .login-card{background:var(--card);border-radius:20px;padding:18px;line-height:1.5}
 .login-card code{background:#fff;border-radius:6px;padding:1px 5px}
+
+#login-ov{position:fixed;inset:0;z-index:200;background:var(--bg,#fff);overflow:auto;-webkit-overflow-scrolling:touch}
+#login-ov .login{max-width:480px;margin:0 auto}
+.login-x{position:absolute;top:calc(14px + var(--safe-t,0px));right:16px;width:40px;height:40px;border-radius:50%;background:var(--card,#F3F4F6);font-size:16px;color:var(--on,#111827);z-index:2}
+body.noscroll{overflow:hidden}
