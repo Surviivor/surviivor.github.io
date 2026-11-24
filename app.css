@@ -536,3 +536,5 @@ nav.bottom .nbadge{position:absolute;top:-6px;left:calc(50% + 6px);min-width:20p
 .prize.big{font-size:14px;padding:12px 14px;margin:0 0 14px;border-radius:16px}
 .prize.big .pz-i{font-size:20px}
 .slide .hero-h.sm{font-size:24px;line-height:1.08}
+
+.hero-ph[style*="--op"] img{object-position:var(--op)}
