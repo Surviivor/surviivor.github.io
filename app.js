@@ -668,8 +668,7 @@ const visible = lg => !lg.private || isMember(lg.id) || canManage(lg);
 
 /* Lot : maillot rétro du championnat (ligues de football) */
 function prizeBand(lg, cls){
-  if(isPoints(lg)){ const foot=(lg.category||'football')==='football' && lg.comp && COMP_NAMES[lg.comp];
-    return `<div class="prize ${cls||''}"><span class="pz-i">${foot?'👕':'🎁'}</span><span>À la fin des ${nRoundsOf(lg)} journées, le 1er gagne <b>${foot?`un maillot rétro de ${esc(COMP_NAMES[lg.comp])}`:'le cadeau'}</b>… payé par le dernier du classement !</span></div>`; }
+  if(isPoints(lg)) return '';
   if((lg.category||'football')!=='football' || !lg.comp || !COMP_NAMES[lg.comp]) return '';
   return `<div class="prize ${cls||''}"><span class="pz-i">👕</span><span>Le dernier survivant de cette ligue gagne <b>un maillot rétro de ${esc(COMP_NAMES[lg.comp])}</b></span></div>`;
 }
