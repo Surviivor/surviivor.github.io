@@ -866,7 +866,7 @@ function viewHome(){
   <div class="nh-card2">
     <div class="nh-l"><b>${inGame}</b><span>ligue${inGame>1?'s':''} où tu es<br>encore en jeu</span></div>
     <button class="nh-todo ${todo?'':'zero'}" data-a="tab" data-v="paris"><b>${todo}</b><span>pari${todo>1?'s':''} à valider</span><i>${I.arrow}</i></button>
-    ${nextDl?`<div class="nh-next">${I.clock}<span>${nextDl.done?`Modifiable · <b>${esc(nextDl.name)}</b>`:`Fais ton choix pour la <b>${esc(nextDl.name)}</b>`}</span><em class="cdl" data-t="${nextDl.t}">${cdText(nextDl.t)}</em></div>`:''}
+    ${(nextDl&&nextDl.done&&!todo)?`<div class="nh-next ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v11H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h3z"/><path d="M7 10l4-8a2.5 2.5 0 0 1 2.5 2.5V9h5.6a2 2 0 0 1 2 2.3l-1.4 8a2 2 0 0 1-2 1.7H7"/></svg><span>Tous tes choix sont validés :)</span></div>`:nextDl?`<div class="nh-next">${I.clock}<span>${nextDl.done?`Modifiable · <b>${esc(nextDl.name)}</b>`:`Fais ton choix pour la <b>${esc(nextDl.name)}</b>`}</span><em class="cdl" data-t="${nextDl.t}">${cdText(nextDl.t)}</em></div>`:''}
   </div>
   <div class="how-card ${howOpen?'open':''}"><div class="how"><button class="how-t how-tg" data-a="toggle" data-v="howX" aria-expanded="${howOpen}"><span>Comment on joue&nbsp;?</span>${I.chev}</button>${howOpen?`
     <div class="how-sw" role="tablist"><button role="tab" class="${fmt==='survivor'?'on':''}" data-a="fmt" data-v="survivor" aria-label="Survivor">${WM('survivor', false)}</button><button role="tab" class="${fmt==='oneshot'?'on':''}" data-a="fmt" data-v="oneshot" aria-label="Race">${WM('oneshot', false)}</button></div></div>
