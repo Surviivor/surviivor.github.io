@@ -1047,15 +1047,15 @@ function rulesPics(lg){
     return `<div class="rpics">`+
       `<div class="rp">${pick}<p>Chaque journée, choisis <b>une équipe</b></p></div>`+
       `<div class="rp">${pts}<p>Victoire <b>3 pts</b>, nul <b>1 pt</b>, défaite <b>0</b></p></div>`+
-      `<div class="rp yel">${once}<p><b>Une seule fois</b> par équipe</p></div>`+
+      `<div class="rp yel">${once}<p>Une équipe ne peut pas être sélectionnée <b>2 fois</b></p></div>`+
       `<div class="rp">${both}<p>Le <b>1er à l’objectif</b> gagne</p></div></div>`;
   }
   const win=`<div class="rp-il"><div class="rp-res"><span class="ok"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-8.5-5.2-9.8-10.6C1.4 6.9 3.6 4 6.9 4c2 0 3.6 1.1 5.1 3 1.5-1.9 3.1-3 5.1-3 3.3 0 5.5 2.9 4.7 6.4C20.5 15.8 12 21 12 21z"/></svg>En vie</span><span class="ko"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>Éliminé</span></div></div>`;
-  const last=`<div class="rp-il dark"><div class="rp-faces"><i>·</i><i class="win"><s><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 7l5 4 4-7 4 7 5-4-2 12H5z"/></svg></s>1</i><i>·</i></div></div>`;
+  const last=`<div class="rp-il photo"><img src="img/slide-supporter.jpg" alt=""></div>`;
   return `<div class="rpics">`+
     `<div class="rp">${pick}<p>Chaque journée, choisis <b>une équipe</b></p></div>`+
     `<div class="rp">${win}<p>Elle gagne : <b>tu survis</b>. Sinon, éliminé</p></div>`+
-    `<div class="rp yel">${once}<p><b>Une seule fois</b> par équipe</p></div>`+
+    `<div class="rp yel">${once}<p>Une équipe ne peut pas être sélectionnée <b>2 fois</b></p></div>`+
     `<div class="rp">${last}<p>Le <b>dernier en vie</b> gagne</p></div></div>`;
 }
 function rulesCard(lg){

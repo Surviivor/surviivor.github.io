@@ -441,3 +441,5 @@ nav.bottom .nbadge{font-size:11px;top:2px;left:auto;right:4px;border:2px solid v
 .sl-tx.nobtn .sl-h{font-size:17px;line-height:1.3;text-wrap:balance}
 .sl-tx.nobtn{align-items:center;min-height:68px}
 .sl.full .sl-tx.nobtn{min-height:68px}
+.rp-il.photo{overflow:hidden;padding:0;background:var(--on)}
+.rp-il.photo img{width:100%;height:100%;object-fit:cover;object-position:50% 30%}
