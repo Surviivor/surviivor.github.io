@@ -550,3 +550,5 @@ nav.bottom .nbadge{position:absolute;top:-6px;left:calc(50% + 6px);min-width:20p
 .pfx-in.oneshot .in{padding-left:158px}
 
 .card.coll{padding-top:17px;padding-bottom:17px}
+.seg{gap:6px}
+.seg button{flex:1 1 auto;padding:13px 8px;font-size:11.5px;letter-spacing:.9px;white-space:nowrap}

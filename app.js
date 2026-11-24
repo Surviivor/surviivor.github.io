@@ -75,6 +75,13 @@ const fmtD = iso => { const d=new Date(iso); return `${pad(d.getDate())}/${pad(d
 const fmtShort = iso => { const d=new Date(iso); return d.toLocaleDateString('fr-FR',{weekday:'short'})+` ${pad(d.getDate())}/${pad(d.getMonth()+1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
 const dateIn = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const timeIn = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+function untilJH(iso){
+  const d=t(iso)-now(); if(d<=0) return 'quelques instants';
+  const m=Math.floor(d/60000), h=Math.floor(m/60), j=Math.floor(h/24), hh=h%24;
+  if(j>=1) return `${j} jour${j>1?'s':''}${hh?` et ${hh} heure${hh>1?'s':''}`:''}`;
+  if(h>=1) return `${h} heure${h>1?'s':''}${m%60?` et ${m%60} min`:''}`;
+  return `${Math.max(1,m)} min`;
+}
 function until(iso){
   const d=t(iso)-now(); if(d<=0) return null;
   const m=Math.floor(d/60000), h=Math.floor(m/60), j=Math.floor(h/24);
@@ -899,6 +906,7 @@ function standingsCard(lg, openDefault){
   const myTeams=new Set(); roundsOf(lg).forEach(r=>{ const p=pickOf(S.me,lg.id,r.k); if(p&&p.p!=='D'&&r.matches&&r.matches[p.m]){ const m=r.matches[p.m]; myTeams.add(String(p.p==='H'?m.h.id:m.a.id)); } });
   const groups=f.standings.map(g=>`<table class="tbl">${g.g&&f.standings.length>1?`<caption>${esc(g.g)}</caption>`:''}<thead><tr><th class="r">#</th><th>ÉQUIPE</th><th class="n">J</th><th class="n">DIFF</th><th class="n">${esc(f.ptsLabel||'PTS')}</th></tr></thead><tbody>`+
     g.rows.map((row,i)=>{ const tm=teamOf(f,row.t); const gd=row.gd>0?'+'+row.gd:row.gd; return `<tr class="${myTeams.has(String(row.t))?'me':''}"><td class="r">${row.rank||i+1}</td><td><div class="team">${tm.logo?`<img src="${esc(tm.logo)}" data-fb="" alt="">`:''}<span>${esc(tm.n)}</span></div></td><td class="n">${row.gp??''}</td><td class="n">${gd??''}</td><td class="n pts">${row.pts??''}</td></tr>`; }).join('')+`</tbody></table>`).join('');
+  if(openDefault==='body') return `<div class="ssec"><div class="stitle">${I.chart}Classement ${esc(COMP_NAMES[key]||f.name||'')}</div>${groups}<div class="muted" style="font-size:12px;margin-top:10px">Mis à jour le ${fmtDT(f.updatedAt)}</div></div>`;
   return `<details class="card coll" ${(openDefault? S.open['st'+lg.id]!==false : S.open['st'+lg.id])?'open':''}><summary data-a="toggle" data-v="st${lg.id}"><span class="ctitle">${I.chart}Classement ${esc(COMP_NAMES[key]||f.name||'')}</span>${I.chev}</summary>${groups}<div class="muted" style="font-size:12px;margin-top:10px">Mis à jour le ${fmtDT(f.updatedAt)}</div></details>`;
 }
 
@@ -940,17 +948,20 @@ function statsCard(c){
   const lg=c.lg; const key=lg.comp;
   const trend=trendSection(c);
   const f=key?S.feeds[key]:null; if(key&&!f) loadFeed(key);
-  if(!f||f.missing||c.lg.category==='tuprefere'){ if(!trend) return ''; return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.flash}Statistiques</span>${I.chev}</summary>${trend}</details>`; }
+  const tbl=c.lg.category==='tuprefere'?'':standingsCard(lg,'body');
+  const wrap=body=>`<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.flash}Aide au choix</span>${I.chev}</summary>${body}</details>`;
+  if(!f||f.missing||c.lg.category==='tuprefere'){ if(!trend&&!tbl) return ''; return wrap(trend+tbl); return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.flash}Aide au choix</span>${I.chev}</summary>${trend}</details>`; }
   const form=teamForm(f);
   const pts=Object.keys(form).map(id=>[id, form[id].slice(0,5).reduce((a,r)=>a+(r==='W'?3:r==='D'?1:0),0), Math.min(5,form[id].length)]).filter(x=>x[2]>=2);
-  if(pts.length<6){ if(!trend) return ''; return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.flash}Statistiques</span>${I.chev}</summary>${trend}</details>`; }
+  if(pts.length<6){ if(!trend&&!tbl) return ''; return wrap(trend+tbl); return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.flash}Aide au choix</span>${I.chev}</summary>${trend}</details>`; }
   const best=pts.slice().sort((a,b)=>b[1]-a[1]||a[2]-b[2]).slice(0,3), worst=pts.slice().sort((a,b)=>a[1]-b[1]||b[2]-a[2]).slice(0,3);
   const row=([id,p,n])=>statRow(f,id,`<b>${p}</b><span>pts</span>`,formDots(form[id]));
   const maxN=Math.max(...pts.map(x=>x[2]));
   let h=trend+`<div class="ssec"><div class="stitle">${I.flash}Les plus en forme</div><div class="slist">${best.map(row).join('')}</div></div>`;
   h+=`<div class="ssec"><div class="stitle">${I.down}À la peine</div><div class="slist">${worst.map(row).join('')}</div></div>`;
   h+=`<div class="muted" style="font-size:12px;margin-top:14px">Points pris sur les ${maxN} dernières journées${maxN<5?' (seules celles-ci sont disponibles pour l\'instant)':''}. Données du ${fmtDT(f.updatedAt)}.</div>`;
-  return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.flash}Statistiques</span>${I.chev}</summary>${h}</details>`;
+  h+=tbl;
+  return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.flash}Aide au choix</span>${I.chev}</summary>${h}</details>`;
 }
 // Final/ongoing ranking: survivors share the top; the eliminated are ranked by elimination day
 // (later = better), then by boldness of the losing pick (weaker team = better).
@@ -996,12 +1007,17 @@ function viewLeague(lid){
   else if(mine) pill='<span class="pill round green">INSCRIT</span>';
   let h=`<div class="lhead"><button class="cback" data-a="back" aria-label="Retour">${I.back}</button><div class="grow">${leagueTitle(lg.name)}</div>${pill}</div>`;
   if(canManage(lg)) h+=`<button class="link grey" style="margin:-4px 0 14px" data-a="manage" data-v="${lid}">${I.gear.replace('<svg','<svg width="18" height="18"')} Gérer la ligue</button>`;
-  // Pas de bandeau sous le titre, sauf l'inscription pour les non-inscrits
-  if(!mine && c.status==='upcoming') h+=`<div class="banner info"><span class="ico">🎟️</span><div style="flex:1">Inscriptions ouvertes jusqu'au ${fmtDT(lg.startAt)}</div><button class="btn sm green" data-a="join" data-v="${lid}">JE M'INSCRIS</button></div>`;
+  if(c.points && c.status==='finished') h+= c.firsts.includes(S.me)?`<div class="banner win"><span class="ico">🏆</span>${c.firsts.length>1?'Tu termines 1er ex æquo : tu gagnes !':'Tu termines 1er : tu gagnes !'}</div>`:c.lasts.includes(S.me)?`<div class="banner win"><span class="ico">🎉</span>Tu termines dernier… et tu gagnes aussi !</div>`:`<div class="banner dead"><span class="ico">🏁</span>Ligue terminée · ${c.firsts.map(w=>esc(nameOf(w))).join(' & ')} (1er)${c.lasts.length?` et ${c.lasts.map(w=>esc(nameOf(w))).join(' & ')} (dernier)`:''} ${c.winners.length>1?'gagnent':'gagne'}</div>`;
+  else if(c.points && mine && c.status==='live') h+=`<div class="banner alive"><span class="ico">📊</span>Tu es ${me_.pos}${me_.pos===1?'er':'e'}${me_.tie?' ex æquo':''} avec ${me_.pts} point${me_.pts>1?'s':''} · journée ${c.played}/${c.N}</div>`;
+  else if(c.status==='finished') h+= c.winners.includes(S.me)?`<div class="banner win"><span class="ico">🏆</span>${c.winners.length>1?'Tu fais partie des 2 derniers survivants !':'Tu es le grand gagnant !'}</div>`:`<div class="banner dead"><span class="ico">🏁</span>Ligue terminée · ${c.winners.map(w=>esc(nameOf(w))).join(' & ')} ${c.winners.length>1?'gagnent':'gagne'}</div>`;
+  else if(!mine) h+= c.status==='upcoming'?`<div class="banner info"><span class="ico">🎟️</span><div style="flex:1">Inscriptions ouvertes jusqu'au ${fmtDT(lg.startAt)}</div><button class="btn sm green" data-a="join" data-v="${lid}">JE M'INSCRIS</button></div>`:`<div class="banner info"><span class="ico">🔒</span>Inscriptions closes. Tu suis la ligue en spectateur.</div>`;
+  else if(c.status==='upcoming') h+=`<div class="banner alive"><span class="ico svgico">${I.clock}</span>Inscrit ! Début de la ligue dans ${untilJH(lg.startAt)}</div>`;
+  else if(alive) h+=`<div class="banner alive"><span class="ico">💚</span>${c.alive.length===1?'Tu es le dernier survivant !':`Tu es dans les ${c.alive.length} survivants !`}</div>`;
+  else h+=`<div class="banner dead"><span class="ico">☠️</span>Tu es éliminé. Tente ta chance dans une autre ligue…</div>`;
   const tab=S.view.ltab;
-  h+=`<div class="seg"><button class="${tab==='paris'?'on':''}" data-a="ltab" data-v="paris">${c.pick?'Paris':'Vote'}</button><button class="${tab==='surv'?'on':''}" data-a="ltab" data-v="surv">${c.points?'Classement':'Survivants'}</button><button class="${tab==='hist'?'on':''}" data-a="ltab" data-v="hist">Historique</button></div>`;
+  h+=`<div class="seg"><button class="${tab==='paris'?'on':''}" data-a="ltab" data-v="paris">${c.pick?'Paris':'Vote'}</button><button class="${tab==='surv'?'on':''}" data-a="ltab" data-v="surv">${c.points?'Classement':'Survivants'}</button><button class="${tab==='hist'?'on':''}" data-a="ltab" data-v="hist">Historique</button><button class="${tab==='rules'?'on':''}" data-a="ltab" data-v="rules">Règles</button></div>`;
   if(tab==='paris'){
-    h+=rulesCard(lg)+standingsCard(lg)+statsCard(c);
+    h+=statsCard(c);
     const open=c.rounds.filter(r=>t(r.deadline)>now()).slice(0,1);
     const waiting=c.rounds.filter(r=>t(r.deadline)<=now() && ['waiting'].includes((c.info[r.k]||{}).state));
     if(c.status==='finished') h+=`<div class="empty"><div class="ico">🏁</div><h3>C'EST FINI</h3><p>Revis la ligue dans l'historique.</p></div>`;
@@ -1010,6 +1026,9 @@ function viewLeague(lid){
       else h+=`<div class="card muted" style="text-align:center;font-size:15px">Pas de journée ouverte pour l'instant.${canManage(lg)?' Importe la prochaine depuis « Gérer la ligue ».':' La prochaine arrive bientôt !'}</div>`;
       if(waiting.length) h+=`<div class="sec2">EN ATTENTE DES RÉSULTATS</div>`+waiting.map(r=>roundCard(c,r)).join('');
     }
+  } else if(tab==='rules'){
+    const txt=(lg.rules||'').trim()||defaultRules(lg);
+    h+=`<div class="card"><span class="ctitle">${I.book}Règles du jeu</span><div class="rules-body" style="margin-top:14px">${lg.description?`<p><b>${esc(lg.description)}</b></p>`:''}${txt.split(/\n+/).map(p=>`<p>${esc(p)}</p>`).join('')}</div></div>`;
   } else if(tab==='surv' && c.points){
     const lead=c.ranking[0];
     h+=`<div class="card"><span class="ctitle">${I.chart}Statistiques</span><div class="statgrid" style="margin-bottom:0"><div class="stat" style="background:#fff"><b>${c.mem.length}</b><span>Joueurs</span></div><div class="stat" style="background:#fff"><b>${c.played}/${c.N}</b><span>Journées</span></div><div class="stat" style="background:#fff"><b>${lead?lead.pts:0}</b><span>Pts du 1er</span></div></div></div>`;
