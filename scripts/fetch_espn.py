@@ -39,6 +39,10 @@ dump = {'fetchedAt': today.isoformat(timespec='seconds') + 'Z', 'comps': {}, 'lo
 for key, (sport, lg, back, fwd, use_cal) in COMPS.items():
     base = get(f'https://site.api.espn.com/apis/site/v2/sports/{sport}/{lg}/scoreboard'); time.sleep(PAUSE)
     events = {e['id']: e for e in (base or {}).get('events', [])}
+    if key == 'top14':
+        # classement calculé à partir des résultats : on remonte au début de la saison (fin août)
+        start = datetime.datetime(today.year if today.month >= 8 else today.year - 1, 8, 20)
+        back = max(back, (today - start).days)
     lo, hi = today - datetime.timedelta(days=back), today + datetime.timedelta(days=fwd)
     days = []
     cal = (((base or {}).get('leagues') or [{}])[0]).get('calendar')

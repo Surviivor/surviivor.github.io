@@ -26,6 +26,31 @@ os.makedirs(DST+'/feeds',exist_ok=True); os.makedirs(DST+'/logos',exist_ok=True)
 logo_files=set(LOGOS)
 used_logos=set()
 existing=set(os.listdir(DST+'/logos'))
+def calc_rugby_standings(teams, events):
+    """ESPN ne fournit pas le classement du Top 14 : on le calcule à partir des résultats.
+    Victoire 4 pts, nul 2, défaite 0, +1 bonus défensif si défaite de 5 points ou moins
+    (le bonus offensif, qui dépend des essais, n'est pas disponible)."""
+    canon={}; byname={}
+    alias={'Section Paloise':'Pau','USA Perpignan':'Perpignan'}
+    for tid,t in teams.items():
+        nm=alias.get(t.get('n'),t.get('n'))
+        canon[tid]=byname.setdefault(nm,tid)
+    tab={}
+    for e in events.values():
+        if e.get('st')!='post' or e.get('hs') is None or e.get('as') is None: continue
+        h,a=canon.get(e['h'],e['h']),canon.get(e['a'],e['a']); hs,as_=int(e['hs']),int(e['as'])
+        for t,f,ag in ((h,hs,as_),(a,as_,hs)):
+            r=tab.setdefault(t,{'t':t,'gp':0,'w':0,'d':0,'l':0,'gf':0,'ga':0,'gd':0,'pts':0})
+            r['gp']+=1; r['gf']+=f; r['ga']+=ag; r['gd']=r['gf']-r['ga']
+            if f>ag: r['w']+=1; r['pts']+=4
+            elif f==ag: r['d']+=1; r['pts']+=2
+            else:
+                r['l']+=1
+                if ag-f<=5: r['pts']+=1
+    rows=sorted(tab.values(), key=lambda r:(-r['pts'],-r['gd'],-r['gf']))
+    for i,r in enumerate(rows): r['rank']=i+1
+    return [{'g':'Top 14','rows':rows,'calc':True}] if rows else []
+
 # Logos corrigés à la main (ESPN renvoie un mauvais logo ou aucun)
 LOGO_FIX={'top14':{'Bayonne':'data/logos/rugby_fix_bayonne.png','Aviron Bayonnais':'data/logos/rugby_fix_bayonne.png',
   'Perpignan':'data/logos/rugby_fix_perpignan.png','USA Perpignan':'data/logos/rugby_fix_perpignan.png',
@@ -115,6 +140,7 @@ for key in NAMES:
     import re as _re
     if key!='nba' and groups and groups[0].get('season') and not _re.search(r'202[67]', str(groups[0]['season'])):
         print(key,'stale standings', groups[0]['season']); groups=[]
+    if key=='top14' and not groups: groups=calc_rugby_standings(teams, events)
     # rounds
     evl=sorted([(k,v) for k,v in events.items() if v['st']!='canc'], key=lambda x:x[1]['d'])
     rounds=[]; cur=None
