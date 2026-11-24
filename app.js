@@ -17,6 +17,8 @@ const COVERS = [
 const cat = k => CATS[k] || CATS.football;
 const COMP_RX=[['eng.1',/premi(e|è)re?\s*league|\bpl\b|angleterre/i],['esp.1',/\bliga\b|espagne/i],['ita.1',/serie\s*a|italie|calcio/i],['ger.1',/bundesliga|allemagne/i],['uefa.champions',/champions|\bldc\b|\bucl\b/i],['fra.2',/ligue\s*2|\bl2\b/i],['fra.1',/ligue\s*1|\bl1\b/i],['nba',/\bnba\b/i],['top14',/top\s*14/i]];
 const compFromName = n => { for(const [k,rx] of COMP_RX) if(rx.test(String(n||''))) return k; return null; };
+const POINTS_N = 18;
+const pointsRules = n => `Ligue aux points sur ${n} journées.\nÀ chaque journée, choisis UNE équipe parmi les matchs proposés.\nElle gagne : 3 points. Match nul : 1 point. Elle perd : 0 point. Pas de choix = 0 point.\nAttention : tu ne peux choisir qu'une seule fois la même équipe sur toute la ligue. Plus les journées avancent, moins tu as le choix !\nLes choix restent secrets jusqu'à l'heure limite.\nÀ la fin des ${n} journées, le 1er du classement gagne… et le dernier lui paie le cadeau !\nÉgalité de points : départage au nombre de victoires, puis à l'audace (équipes les moins bien classées choisies).`;
 const DEFAULT_RULES = {
   pick:"À chaque journée, choisis UN seul match et parie sur l'équipe ou le résultat de ton choix.\nSi ton pari se réalise, tu restes en vie.\nSinon, tu es éliminé… (pas de pari = éliminé)\nLe dernier joueur en vie remporte la ligue.\nAttention : tu ne peux miser qu'une seule fois sur la même équipe. Les équipes sur lesquelles tu as déjà parié seront grisées pour les prochaines journées.\nLes choix restent secrets jusqu'à l'heure limite. Tu peux ensuite retrouver les choix de chacun dans l'onglet « HISTORIQUE ».\nSi tous les survivants tombent la même journée, ils sont départagés à l'audace : gagne celui qui a joué, en moyenne depuis le début, les équipes les moins bien classées avant chaque journée.",
   majority:"À chaque question, vote pour l'option de ton choix.\nTu restes en vie si tu votes comme la majorité des survivants.\nSi tu votes comme la minorité, ou si tu ne votes pas, tu es éliminé…\nLes votes restent secrets jusqu'à l'heure limite. Tu peux ensuite retrouver le résultat dans l'onglet « HISTORIQUE ».\nEn cas d'égalité parfaite entre les 2 options, personne parmi les votants n'est éliminé.\nLes 2 derniers survivants remportent la ligue."
@@ -176,7 +178,10 @@ function logoTag(side, cls='lg'){ return side && side.logo ? `<img class="${cls}
 
 /* ================================================================ Game logic */
 const isPickMode = lg => (lg.mode||cat(lg.category).mode)==='pick';
-const allowDraw = lg => lg.allowDraw!==undefined ? lg.allowDraw : cat(lg.category).draw;
+const isPoints = lg => !!lg && lg.scoring==='points' && isPickMode(lg);
+const nRoundsOf = lg => Math.max(1, +lg.nRounds || POINTS_N);
+const defaultRules = lg => isPoints(lg) ? pointsRules(nRoundsOf(lg)) : DEFAULT_RULES[isPickMode(lg)?'pick':'majority'];
+const allowDraw = lg => isPoints(lg) ? false : lg.allowDraw!==undefined ? lg.allowDraw : cat(lg.category).draw;
 const roundsOf = lg => Object.entries(lg.rounds||{}).map(([k,r])=>({...r,k})).sort((a,b)=>t(a.deadline)-t(b.deadline)||a.k.localeCompare(b.k));
 const matchesOf = r => Object.entries(r.matches||{}).map(([k,m])=>({...m,k})).sort((a,b)=>t(a.d)-t(b.d)||a.k.localeCompare(b.k));
 const teamKey = side => side ? String(side.id || side.n || '').toLowerCase() : '';
@@ -214,6 +219,7 @@ function audacity(lg, rounds, info, uid, upto){
 function compute(lid){
   const lg=S.leagues[lid]; if(!lg) return null;
   const mem=members(lid), rounds=roundsOf(lg), pick=isPickMode(lg);
+  if(isPoints(lg)) return computePoints(lg, mem, rounds);
   let alive=new Set(mem); const elimAt={}; const info={}; let finished=false, blocked=false, n=0;
   for(const r of rounds){
     n++; const ri={n:r.n||n, aliveBefore:[...alive], state:'open'}; info[r.k]=ri;
@@ -257,6 +263,38 @@ function compute(lid){
   const started = now()>=t(lg.startAt);
   return {lg, mem, rounds, info, alive:[...alive], elimAt, started, pick,
     status: !started?'upcoming':finished?'finished':'live', winners: finished?[...alive]:[]};
+}
+// Ligue aux points : 3 pts victoire, 1 pt nul, 0 défaite, sur N journées. Le 1er gagne, le dernier paie.
+function computePoints(lg, mem, rounds){
+  const lid=lg.id, N=nRoundsOf(lg), info={}, pts={}, w={}, d={}, l={};
+  mem.forEach(u=>{ pts[u]=0; w[u]=0; d[u]=0; l[u]=0; });
+  let played=0;
+  rounds.forEach((r,i)=>{
+    const ri={n:r.n||i+1, idx:i+1, aliveBefore:[...mem], state:'open', out:[], pts:{}}; info[r.k]=ri;
+    if(i>=N){ ri.state='after'; return; }
+    if(t(r.deadline)>now()) return;
+    const ms=matchesOf(r), res={}; let all=!!ms.length;
+    ms.forEach(m=>{ const x=matchResult(lg,m); if(x) res[m.k]=x.r; else all=false; });
+    ri.res=res; ri.state=all?'done':'waiting'; if(all) played++;
+    mem.forEach(u=>{ const p=pickOf(u,lid,r.k);
+      if(!p){ if(all) ri.pts[u]=0; return; }
+      const x=res[p.m]; if(!x) return;
+      const sc=x===p.p?3:x==='D'?1:0; ri.pts[u]=sc; pts[u]+=sc; if(sc===3) w[u]++; else if(sc===1) d[u]++; else l[u]++; });
+    if(all){ let bold=null, br=0; mem.forEach(u=>{ if(ri.pts[u]===3){ const rk=pickRank(lg,r,pickOf(u,lid,r.k)); if(rk&&rk>br){ br=rk; bold=u; } } }); if(bold) ri.bold={u:bold,rk:br}; }
+  });
+  const started=now()>=t(lg.startAt);
+  const finished=started && rounds.length>=N && rounds.slice(0,N).every(r=>info[r.k].state==='done');
+  const aud={}; mem.forEach(u=>aud[u]=audacity(lg,rounds,info,u)||0);
+  const key=u=>[pts[u], w[u], Math.round(aud[u]*100)];
+  const cmp=(a,b)=>{ const A=key(a), B=key(b); return B[0]-A[0]||B[1]-A[1]||B[2]-A[2]; };
+  const sorted=[...mem].sort((a,b)=>cmp(a,b)||nameOf(a).localeCompare(nameOf(b)));
+  const ranking=sorted.map(u=>({u, pos:sorted.filter(v=>cmp(v,u)<0).length+1, tie:sorted.some(v=>v!==u&&cmp(v,u)===0), pts:pts[u], w:w[u], d:d[u], l:l[u]}));
+  const lastPos=Math.max(0,...ranking.map(x=>x.pos));
+  const winners=finished?ranking.filter(x=>x.pos===1).map(x=>x.u):[];
+  const losers=finished&&mem.length>1?ranking.filter(x=>x.pos===lastPos&&x.pos!==1).map(x=>x.u):[];
+  const rankOf={}; ranking.forEach(x=>rankOf[x.u]=x);
+  return {lg, mem, rounds, info, alive:[...mem], elimAt:{}, started, pick:true, points:true, N, pts, played, ranking, rankOf, losers,
+    status: !started?'upcoming':finished?'finished':'live', winners};
 }
 const C = lid => compute(lid);
 function usedTeams(c, uid, rk){
@@ -416,7 +454,9 @@ function autoImport(lid){
   const f=S.feeds[lg.comp]; if(!f){ loadFeed(lg.comp); return; } if(f.missing||!f.rounds) return;
   const start=t(lg.startAt), horizon=now()+AUTO_DAYS*864e5;
   let n=Object.keys(lg.rounds||{}).length; const add={};
+  const cap=isPoints(lg)?nRoundsOf(lg):Infinity;
   f.rounds.filter(r=>t(r.s)>now() && t(r.s)>=start && t(r.s)<=horizon).forEach(fr=>{
+    if(n>=cap) return;
     const b=buildRound(lg, lg.comp, fr, n+1); if(!b) return;
     if((lg.rounds||{})[b.rk] || autoBusy[lid+b.rk]) return;
     add[b.rk]=b.round; autoBusy[lid+b.rk]=1; n++;
@@ -473,6 +513,9 @@ const A = {
   },
   toggle(v){ S.open[v]=!S.open[v]; render(); },
   newCat(v){ S.view.newCat=v; render(); },
+  newFmt(v){ S.view.newFmt=v; render(); },
+  setFmt(v){ const [lid,f]=v.split('|'); const lg=S.leagues[lid]; if(!lg) return;
+    writeLeague(lid, f==='points'?{scoring:'points', nRounds:+lg.nRounds||POINTS_N}:{scoring:'survivor'}).then(()=>toast(f==='points'?'Ligue passée au format « aux points ».':'Ligue passée au format Survivor.')); },
   createLeague(){
     const g=id=>document.getElementById(id);
     const rest=stripPrefix(g('nl-name').value), name=fullName(rest), desc=g('nl-desc').value.trim(), d=g('nl-date').value, h=g('nl-time').value||'20:00';
@@ -482,7 +525,8 @@ const A = {
     if(guard()) return;
     const k=S.view.newCat, cc=cat(k);
     const id=S.isOwner ? 'l'+rid() : S.me;
-    const lg={name:name.slice(0,60),description:desc.slice(0,300),category:k,mode:cc.mode,comp:(cc.comps.includes(compFromName(name))?compFromName(name):cc.comps[0])||null,startAt:new Date(d+'T'+h).toISOString(),createdAt:new Date().toISOString(),createdBy:S.me,private:!S.isOwner,code:genCode(),cover:'auto',rules:'',rounds:{}};
+    const pts=cc.mode==='pick'&&S.view.newFmt==='points'; const nr=Math.min(38,Math.max(3,+((g('nl-nr')||{}).value)||POINTS_N));
+    const lg={...(pts?{scoring:'points',nRounds:nr}:{}),name:name.slice(0,60),description:desc.slice(0,300),category:k,mode:cc.mode,comp:(cc.comps.includes(compFromName(name))?compFromName(name):cc.comps[0])||null,startAt:new Date(d+'T'+h).toISOString(),createdAt:new Date().toISOString(),createdBy:S.me,private:!S.isOwner,code:genCode(),cover:'auto',rules:'',rounds:{}};
     writeLeague(id,lg,'set').then(()=>{ if(!isMember(id)) writeMe({leagues:{[id]:new Date().toISOString()}}); toast('Ligue créée ! Code : '+lg.code); A.manage(id); setTimeout(()=>autoImport(id),400); });
   },
   saveInfo(lid){
@@ -490,6 +534,7 @@ const A = {
     const rest=stripPrefix(g('ei-name').value); if(rest.length<2) return toast('Complète le nom après « Survivor X ».',true); const name=fullName(rest);
     const patch={name:name.slice(0,60),description:g('ei-desc').value.trim().slice(0,300)};
     const cf=compFromName(name), lgx=S.leagues[lid]; if(cf && cat(lgx.category).comps.includes(cf) && cf!==lgx.comp){ patch.comp=cf; S.view.comp=cf; loadFeed(cf); }
+    const nrI=g('ei-nr'); if(nrI && !nrI.disabled && isPoints(lgx)) patch.nRounds=Math.min(38,Math.max(3,+nrI.value||POINTS_N));
     const d=g('ei-date'), h=g('ei-time'); if(d && d.value) patch.startAt=new Date(d.value+'T'+(h.value||'20:00')).toISOString();
     writeLeague(lid,patch).then(()=>{ toast('Ligue mise à jour.'); autoImport(lid); });
   },
@@ -512,7 +557,7 @@ const A = {
   toggleAuto(lid){ const on=S.leagues[lid].autoImport===false; writeLeague(lid,{autoImport:on}).then(()=>{ toast(on?'Ajout automatique activé.':'Ajout automatique désactivé.'); if(on) autoImport(lid); }); },
   peek(v){ S.open['peek'+v]=!S.open['peek'+v]; render(); },
   saveRules(lid){ writeLeague(lid,{rules:document.getElementById('ru-txt').value.slice(0,3000)}).then(()=>toast('Règles enregistrées.')); },
-  defRules(lid){ const lg=S.leagues[lid]; document.getElementById('ru-txt').value=DEFAULT_RULES[isPickMode(lg)?'pick':'majority']; },
+  defRules(lid){ const lg=S.leagues[lid]; document.getElementById('ru-txt').value=defaultRules(lg); },
   startNow(lid){ modal('<h3>DÉMARRER MAINTENANT ?</h3><div class="muted">Les inscriptions seront closes immédiatement.</div>','DÉMARRER',()=>{ writeLeague(lid,{startAt:new Date().toISOString()}).then(()=>toast('La ligue a démarré !')); }); },
   shareCode(lid){
     const lg=S.leagues[lid]; const txt=`Rejoins ma ligue « ${lg.name} » sur Survivor ! Code : ${lg.code}`;
@@ -623,6 +668,8 @@ const visible = lg => !lg.private || isMember(lg.id) || canManage(lg);
 
 /* Lot : maillot rétro du championnat (ligues de football) */
 function prizeBand(lg, cls){
+  if(isPoints(lg)){ const foot=(lg.category||'football')==='football' && lg.comp && COMP_NAMES[lg.comp];
+    return `<div class="prize ${cls||''}"><span class="pz-i">${foot?'👕':'🎁'}</span><span>À la fin des ${nRoundsOf(lg)} journées, le 1er gagne <b>${foot?`un maillot rétro de ${esc(COMP_NAMES[lg.comp])}`:'le cadeau'}</b>… payé par le dernier du classement !</span></div>`; }
   if((lg.category||'football')!=='football' || !lg.comp || !COMP_NAMES[lg.comp]) return '';
   return `<div class="prize ${cls||''}"><span class="pz-i">👕</span><span>Le dernier survivant de cette ligue gagne <b>un maillot rétro de ${esc(COMP_NAMES[lg.comp])}</b></span></div>`;
 }
@@ -668,7 +715,7 @@ function viewHome(){
       ${leagueTitle(lg.name)}
       ${cd?`<div class="cd">Début dans ${cd}</div>`:''}
       ${c.winners.length?`<div class="win">🏆 ${c.winners.map(w=>esc(nameOf(w))).join(' & ')}</div>`:''}
-      <div class="stats"><span>${I.users}<b>${c.mem.length}</b> joueurs</span><span>${I.heart}<b>${c.status==='upcoming'?c.mem.length:c.alive.length}</b> en vie</span></div>
+      <div class="stats"><span>${I.users}<b>${c.mem.length}</b> joueurs</span>${c.points?`<span>${I.chart}<b>${c.played}/${c.N}</b> journées</span>`:`<span>${I.heart}<b>${c.status==='upcoming'?c.mem.length:c.alive.length}</b> en vie</span>`}</div>
       <div class="actions">${act}</div></div></div>`;
   });
   h+=`<button class="btn line full" style="margin-top:6px" data-a="joinCode">${I.key} REJOINDRE UNE LIGUE PRIVÉE</button>`;
@@ -749,6 +796,14 @@ function roundCard(c, r, o={}){
 function roundFoot(c,r){
   const lg=c.lg, ri=c.info[r.k]||{}, my=pickOf(S.me,lg.id,r.k), alive=ri.aliveBefore&&ri.aliveBefore.includes(S.me), closed=t(r.deadline)<=now();
   let f='';
+  if(c.points){
+    if(!closed && isMember(lg.id) && !my) f=`<div class="note bad">Pas de choix = 0 point. Décide-toi avant ${fmtDT(r.deadline).split(' à ')[1]} le ${fmtD(r.deadline)} !</div>`;
+    else if(!closed && my) f=`<div class="note">Ton choix est enregistré. Tu peux le modifier jusqu'à l'heure limite.</div>`;
+    if(ri.state==='waiting' && closed) f+=`<div class="note">⏳ En attente des résultats${my?' — ton choix : <b>'+esc(pickLabel(lg,r,my))+'</b>':''}.</div>`;
+    if(ri.bold){ const p=pickOf(ri.bold.u,lg.id,r.k); f+=`<div class="note bold">🦁 Choix le plus audacieux : <b>${esc(nameOf(ri.bold.u))}</b> avec ${esc(pickLabel(lg,r,p))} (${ri.bold.rk}e)</div>`; }
+    if(closed && isMember(lg.id) && ri.pts && ri.pts[S.me]!==undefined){ const sc=ri.pts[S.me]; f+=sc===3?`<div class="note ok">✓ Victoire : +3 points !</div>`:sc===1?`<div class="note">➖ Match nul : +1 point.</div>`:`<div class="note bad">✗ ${my?'Défaite':'Pas de choix'} : 0 point.</div>`; }
+    return f;
+  }
   if(!closed && isMember(lg.id) && c.alive.includes(S.me) && !my) f=`<div class="note bad">Pas de choix = éliminé. Décide-toi avant ${fmtDT(r.deadline).split(' à ')[1]} le ${fmtD(r.deadline)} !</div>`;
   else if(!closed && my) f=`<div class="note">Ton choix est enregistré. Tu peux le modifier jusqu'à l'heure limite.</div>`;
   if(ri.state==='waiting' && closed) f+=`<div class="note">⏳ En attente des résultats${my?' — ton choix : <b>'+esc(pickLabel(lg,r,my))+'</b>':''}.</div>`;
@@ -813,7 +868,7 @@ function duelHtml(c,r,o){
 function roundVotes(c,r){ let A=0,B=0; ((c.info[r.k]||{}).aliveBefore||c.mem).forEach(u=>{ const p=pickOf(u,c.lg.id,r.k); if(p&&p.p==='A') A++; if(p&&p.p==='B') B++; }); return {A,B}; }
 
 function rulesCard(lg){
-  const txt=(lg.rules||'').trim()||DEFAULT_RULES[isPickMode(lg)?'pick':'majority'];
+  const txt=(lg.rules||'').trim()||defaultRules(lg);
   const extra=lg.description?`<p><b>${esc(lg.description)}</b></p>`:'';
   return `<details class="card coll" ${S.open['rules'+lg.id]?'open':''}><summary data-a="toggle" data-v="rules${lg.id}"><span class="ctitle">${I.book}Règles du jeu</span>${I.chev}</summary><div class="rules-body">${extra}${txt.split(/\n+/).map(p=>`<p>${esc(p)}</p>`).join('')}</div></details>`;
 }
@@ -883,7 +938,8 @@ function journeyData(c,u){
   const lg=c.lg; const out=[];
   for(const r of c.rounds){ if(t(r.deadline)>now()) break; const ri=c.info[r.k]||{}; if(!ri.aliveBefore||!ri.aliveBefore.includes(u)) continue;
     const p=pickOf(u,lg.id,r.k); let ok=null;
-    if(ri.state==='done'||ri.state==='tiebreak') ok=!ri.out.includes(u); else if(ri.state==='cancelled') ok='c';
+    if(c.points){ const sc=(ri.pts||{})[u]; ok=sc===3?true:sc===1?'c':sc===0?false:null; }
+    else if(ri.state==='done'||ri.state==='tiebreak') ok=!ri.out.includes(u); else if(ri.state==='cancelled') ok='c';
     let logo=''; if(c.pick&&p&&r.matches&&r.matches[p.m]){ const m=r.matches[p.m]; const sd=p.p==='H'?m.h:p.p==='A'?m.a:null; logo=sd&&sd.logo||''; }
     out.push({n:ri.n||r.n, label:p?pickLabel(lg,r,p):'Pas de choix', logo, ok, rk:c.pick?pickRank(lg,r,p):null});
   }
@@ -891,7 +947,7 @@ function journeyData(c,u){
 }
 function journey(c,u,o={}){
   const items=journeyData(c,u);
-  const st=c.winners.includes(u)?'🏆 Vainqueur':c.alive.includes(u)?'💚 Toujours en vie':`☠️ Éliminé à la J${(c.info[c.elimAt[u]]||{}).n||'?'}`;
+  const st=c.points?(c.winners.includes(u)?'🏆 Vainqueur':(c.losers||[]).includes(u)?'💸 Dernier : paie le cadeau':`${(c.rankOf[u]||{}).pos||'–'}${(c.rankOf[u]||{}).pos===1?'er':'e'} · ${c.pts[u]||0} pt${(c.pts[u]||0)>1?'s':''}`):c.winners.includes(u)?'🏆 Vainqueur':c.alive.includes(u)?'💚 Toujours en vie':`☠️ Éliminé à la J${(c.info[c.elimAt[u]]||{}).n||'?'}`;
   let h=`<div class="card jcard"><div class="jhead"><div>${o.title?`<div class="jt">${leagueTitle(c.lg.name)}</div>`:''}<div class="jst">${esc(nameOf(u))} · ${st}</div></div>${o.share?`<button class="btn sm ghost" data-a="shareJourney" data-v="${c.lg.id}">${I.share} PARTAGER</button>`:''}</div>`;
   if(!items.length) return h+`<div class="muted" style="margin-top:10px">Aucune journée jouée pour l'instant.</div></div>`;
   h+=`<div class="frise">${items.map(x=>`<div class="fj ${x.ok===true?'ok':x.ok===false?'ko':x.ok==='c'?'cx':'wait'}"><span class="fn">J${x.n}</span><span class="fl">${x.logo?`<img src="${esc(x.logo)}" data-fb="" alt="">`:esc(initials(x.label).slice(0,2))}</span><span class="fm">${x.ok===true?'✓':x.ok===false?'✗':x.ok==='c'?'=':'…'}</span><span class="ft">${esc(x.label)}${x.rk?` <em>${x.rk}e</em>`:''}</span></div>`).join('')}</div></div>`;
@@ -899,7 +955,7 @@ function journey(c,u,o={}){
 }
 function journeyText(c,u){
   const items=journeyData(c,u);
-  const st=c.winners.includes(u)?'🏆 vainqueur':c.alive.includes(u)?'toujours en vie 💚':`éliminé à la J${(c.info[c.elimAt[u]]||{}).n||'?'} ☠️`;
+  const st=c.points?`${(c.rankOf[u]||{}).pos||'–'}${(c.rankOf[u]||{}).pos===1?'er':'e'} avec ${c.pts[u]||0} pts`:c.winners.includes(u)?'🏆 vainqueur':c.alive.includes(u)?'toujours en vie 💚':`éliminé à la J${(c.info[c.elimAt[u]]||{}).n||'?'} ☠️`;
   return `Mon parcours ${c.lg.name} : `+items.map(x=>`J${x.n} ${x.label} ${x.ok===true?'✅':x.ok===false?'❌':x.ok==='c'?'➖':'⏳'}`).join(' · ')+` — ${st}`;
 }
 function standingRows(c){
@@ -914,18 +970,22 @@ function viewLeague(lid){
   if(!c) return `<div class="empty"><div class="ico">🤷</div><h3>LIGUE INTROUVABLE</h3><p>Elle a peut-être été supprimée.</p><button class="btn" data-a="back">RETOUR</button></div>`;
   const lg=c.lg, mine=isMember(lid), alive=c.alive.includes(S.me);
   let pill='';
-  if(mine && c.status!=='upcoming') pill = c.winners.includes(S.me)?'<span class="pill round" style="background:var(--brand)">🏆 GAGNANT</span>':alive?'<span class="pill round green"><span class="dot"></span>EN VIE</span>':'<span class="pill round red"><span class="dot"></span>ÉLIMINÉ</span>';
+  const me_=c.points&&c.rankOf[S.me];
+  if(c.points && mine && c.status!=='upcoming') pill = c.winners.includes(S.me)?'<span class="pill round" style="background:var(--brand)">🏆 GAGNANT</span>':`<span class="pill round">${me_.pos}${me_.pos===1?'er':'e'} · ${me_.pts} PT${me_.pts>1?'S':''}</span>`;
+  else if(mine && c.status!=='upcoming') pill = c.winners.includes(S.me)?'<span class="pill round" style="background:var(--brand)">🏆 GAGNANT</span>':alive?'<span class="pill round green"><span class="dot"></span>EN VIE</span>':'<span class="pill round red"><span class="dot"></span>ÉLIMINÉ</span>';
   else if(mine) pill='<span class="pill round green">INSCRIT</span>';
   let h=`<div class="lhead"><button class="cback" data-a="back" aria-label="Retour">${I.back}</button><div class="grow">${leagueTitle(lg.name)}</div>${pill}</div>`;
   h+=prizeBand(lg,'big');
   if(canManage(lg)) h+=`<button class="link grey" style="margin:-4px 0 14px" data-a="manage" data-v="${lid}">${I.gear.replace('<svg','<svg width="18" height="18"')} Gérer la ligue</button>`;
-  if(c.status==='finished') h+= c.winners.includes(S.me)?`<div class="banner win"><span class="ico">🏆</span>${c.winners.length>1?'Tu fais partie des 2 derniers survivants !':'Tu es le grand gagnant !'}</div>`:`<div class="banner dead"><span class="ico">🏁</span>Ligue terminée · ${c.winners.map(w=>esc(nameOf(w))).join(' & ')} ${c.winners.length>1?'gagnent':'gagne'}</div>`;
+  if(c.points && c.status==='finished') h+= c.winners.includes(S.me)?`<div class="banner win"><span class="ico">🏆</span>${c.winners.length>1?'Tu termines 1er ex æquo !':'Tu remportes la ligue !'}</div>`:c.losers.includes(S.me)?`<div class="banner dead"><span class="ico">💸</span>Tu finis dernier : c'est toi qui paies le cadeau !</div>`:`<div class="banner dead"><span class="ico">🏁</span>Ligue terminée · ${c.winners.map(w=>esc(nameOf(w))).join(' & ')} ${c.winners.length>1?'gagnent':'gagne'}${c.losers.length?` · ${c.losers.map(w=>esc(nameOf(w))).join(' & ')} ${c.losers.length>1?'paient':'paie'} le cadeau`:''}</div>`;
+  else if(c.points && mine && c.status==='live') h+=`<div class="banner alive"><span class="ico">📊</span>Tu es ${me_.pos}${me_.pos===1?'er':'e'}${me_.tie?' ex æquo':''} avec ${me_.pts} point${me_.pts>1?'s':''} · journée ${c.played}/${c.N}</div>`;
+  else if(c.status==='finished') h+= c.winners.includes(S.me)?`<div class="banner win"><span class="ico">🏆</span>${c.winners.length>1?'Tu fais partie des 2 derniers survivants !':'Tu es le grand gagnant !'}</div>`:`<div class="banner dead"><span class="ico">🏁</span>Ligue terminée · ${c.winners.map(w=>esc(nameOf(w))).join(' & ')} ${c.winners.length>1?'gagnent':'gagne'}</div>`;
   else if(!mine) h+= c.status==='upcoming'?`<div class="banner info"><span class="ico">🎟️</span><div style="flex:1">Inscriptions ouvertes jusqu'au ${fmtDT(lg.startAt)}</div><button class="btn sm green" data-a="join" data-v="${lid}">JE M'INSCRIS</button></div>`:`<div class="banner info"><span class="ico">🔒</span>Inscriptions closes. Tu suis la ligue en spectateur.</div>`;
   else if(c.status==='upcoming') h+=`<div class="banner alive"><span class="ico svgico">${I.clock}</span>Inscrit ! Début dans ${until(lg.startAt)||'quelques instants'}</div>`;
   else if(alive) h+=`<div class="banner alive"><span class="ico">💚</span>${c.alive.length===1?'Tu es le dernier !':`Tu es dans les ${c.alive.length} derniers !`}</div>`;
   else h+=`<div class="banner dead"><span class="ico">☠️</span>Tu es éliminé. Tente ta chance dans une autre ligue…</div>`;
   const tab=S.view.ltab;
-  h+=`<div class="seg"><button class="${tab==='paris'?'on':''}" data-a="ltab" data-v="paris">${c.pick?'Paris':'Vote'}</button><button class="${tab==='surv'?'on':''}" data-a="ltab" data-v="surv">Survivants</button><button class="${tab==='hist'?'on':''}" data-a="ltab" data-v="hist">Historique</button></div>`;
+  h+=`<div class="seg"><button class="${tab==='paris'?'on':''}" data-a="ltab" data-v="paris">${c.pick?'Paris':'Vote'}</button><button class="${tab==='surv'?'on':''}" data-a="ltab" data-v="surv">${c.points?'Classement':'Survivants'}</button><button class="${tab==='hist'?'on':''}" data-a="ltab" data-v="hist">Historique</button></div>`;
   if(tab==='paris'){
     h+=rulesCard(lg)+standingsCard(lg)+statsCard(c);
     const open=c.rounds.filter(r=>t(r.deadline)>now()).slice(0,1);
@@ -936,6 +996,14 @@ function viewLeague(lid){
       else h+=`<div class="card muted" style="text-align:center;font-size:15px">Pas de journée ouverte pour l'instant.${canManage(lg)?' Importe la prochaine depuis « Gérer la ligue ».':' La prochaine arrive bientôt !'}</div>`;
       if(waiting.length) h+=`<div class="sec2">EN ATTENTE DES RÉSULTATS</div>`+waiting.map(r=>roundCard(c,r)).join('');
     }
+  } else if(tab==='surv' && c.points){
+    const lead=c.ranking[0];
+    h+=`<div class="card"><span class="ctitle">${I.chart}Statistiques</span><div class="statgrid" style="margin-bottom:0"><div class="stat" style="background:#fff"><b>${c.mem.length}</b><span>Joueurs</span></div><div class="stat" style="background:#fff"><b>${c.played}/${c.N}</b><span>Journées</span></div><div class="stat" style="background:#fff"><b>${lead?lead.pts:0}</b><span>Pts du 1er</span></div></div></div>`;
+    h+=`<div class="plist"><div class="sec">Classement</div>`+c.ranking.map(x=>{
+      const p=x.u, win=c.winners.includes(p), los=c.losers.includes(p);
+      const sub=`${x.w} V · ${x.d} N · ${x.l} D${win?' · Vainqueur':los?' · Paie le cadeau':''}`;
+      return `<div class="prow"><div class="pos live">${x.pos}<sup>${x.pos===1?'er':'e'}</sup>${x.tie?'<i>ex æquo</i>':''}</div>${avatarOf(p)}<div class="nm">${esc(nameOf(p))}${p===S.me?'<span class="me-tag">TOI</span>':''}<small>${sub}</small></div><span class="pill ${win?'':los?'red':'green'}" ${win?'style="background:var(--brand)"':''}>${win?'🏆 ':los?'💸 ':''}${x.pts} pt${x.pts>1?'s':''}</span></div>`;
+    }).join('')+'</div>';
   } else if(tab==='surv'){
     const shown=c.status==='upcoming'?c.mem:c.alive;
     if(c.status==='live') h+=`<div class="muted" style="text-align:center;font-family:var(--bold);font-weight:700;margin-bottom:4px">Vous n'êtes plus que ${c.alive.length} en vie !</div>`;
@@ -957,7 +1025,7 @@ function viewLeague(lid){
     past.forEach(r=>{
       h+=roundCard(c,r,{hint:false});
       const ri=c.info[r.k]||{}; const voters=(ri.aliveBefore||[]);
-      if(voters.length) h+=`<div class="card" style="margin-top:-6px"><span class="lbl">Choix des joueurs</span>`+voters.map(u=>{ const p=pickOf(u,lid,r.k); const res=c.pick&&p?(ri.res||{})[p.m]:null; const ok=c.pick?(p&&res&&res===p.p):(p&&ri.win?p.p===ri.win:null); return `<div class="prow">${avatarOf(u)}<div class="nm">${esc(nameOf(u))}<small>${p?esc(pickLabel(lg,r,p)):'pas de choix'}</small></div>${ri.state==='done'?(ri.out.includes(u)?'<span class="pill red">Éliminé</span>':'<span class="pill green">OK</span>'):ok===null||ri.state!=='done'?'':''}</div>`; }).join('')+'</div>';
+      if(voters.length) h+=`<div class="card" style="margin-top:-6px"><span class="lbl">Choix des joueurs</span>`+voters.map(u=>{ const p=pickOf(u,lid,r.k); const res=c.pick&&p?(ri.res||{})[p.m]:null; const ok=c.pick?(p&&res&&res===p.p):(p&&ri.win?p.p===ri.win:null); return `<div class="prow">${avatarOf(u)}<div class="nm">${esc(nameOf(u))}<small>${p?esc(pickLabel(lg,r,p)):'pas de choix'}</small></div>${c.points?(ri.pts&&ri.pts[u]!==undefined?`<span class="pill ${ri.pts[u]===3?'green':ri.pts[u]===1?'grey':'red'}">+${ri.pts[u]}</span>`:''):ri.state==='done'?(ri.out.includes(u)?'<span class="pill red">Éliminé</span>':'<span class="pill green">OK</span>'):ok===null||ri.state!=='done'?'':''}</div>`; }).join('')+'</div>';
     });
   }
   return h;
@@ -990,13 +1058,21 @@ function viewParis(){
   if(hist.length){
     h+=`<div class="sec">Historique</div>`;
     hist.sort((a,b)=>t(b[1].deadline)-t(a[1].deadline)).slice(0,20).forEach(([c,r,p,ri])=>{
-      const out=ri.out&&ri.out.includes(S.me); const ok=ri.state==='cancelled'?null:!out;
+      const out=ri.out&&ri.out.includes(S.me); let ok=ri.state==='cancelled'?null:!out;
+      if(c.points){ const sc=(ri.pts||{})[S.me]; ok=sc===3?true:sc===0?false:null; }
       h+=`<div class="prow"><div class="av" style="background:${ok===null?'var(--muted)':ok?'var(--ok2)':'var(--brand)'}">${ok===null?'–':ok?'✓':'✗'}</div><div class="nm">${esc(pickLabel(c.lg,r,p))}<small>${esc(c.lg.name)} · ${c.pick?'Journée':'Question'} ${ri.n||''}${ri.state==='cancelled'?' · annulée':''}</small></div></div>`;
     });
   }
   return h;
 }
 
+
+function fmtBlock(fmt, act, lid, nr, locked){
+  const v=lid?lid+'|':'';
+  return `<label class="f">Format</label><div class="chips in" style="flex-wrap:wrap"><button class="chip sm ${fmt!=='points'?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}survivor"`}>Élimination</button><button class="chip sm ${fmt==='points'?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}points"`}>Aux points</button></div>`+
+    (fmt==='points'?`<div class="help" style="margin:-4px 0 10px">Chaque journée, on choisit une équipe : victoire 3 pts, nul 1 pt, défaite 0. Jamais 2 fois la même équipe. À la fin, le 1er gagne et le dernier paie le cadeau.</div><label class="f">Nombre de journées</label><input class="in${lid?' w':''}" type="number" inputmode="numeric" min="3" max="38" id="${lid?'ei-nr':'nl-nr'}" value="${nr||POINTS_N}" ${locked?'disabled':''}>`
+      :`<div class="help" style="margin:-4px 0 10px">Un mauvais pari et tu es éliminé. Le dernier en vie gagne.</div>`);
+}
 function viewAdmin(){
   if(S.view.manage) return viewManage(S.view.manage);
   const owner=S.isOwner;
@@ -1009,7 +1085,8 @@ function viewAdmin(){
       <label class="f">Nom</label>${pfxInput('nl-name','','','Ligue des potes')}
       <label class="f">Catégorie</label><div class="chips in">${Object.entries(CATS).map(([kk,v])=>`<button class="chip ${kk===k?'on':''}" data-a="newCat" data-v="${kk}">${esc(v.label)}</button>`).join('')}</div>
       <label class="f" style="margin-top:4px">Type de pari : ${cc.mode==='pick'?'un match par journée':'vote à la majorité'}</label>
-      <div class="help" style="margin:0">${cc.mode==='pick'?`Chaque joueur choisit UN seul match par journée et parie dessus. Interdit de reprendre une équipe déjà jouée.${cc.draw?' Le match nul peut être parié.':''}`:'Chaque question oppose 2 options : ceux qui votent comme la minorité sont éliminés.'}</div>
+      <div class="help" style="margin:0">${cc.mode==='pick'?`Chaque joueur choisit UN seul match par journée et parie dessus. Interdit de reprendre une équipe déjà jouée.${cc.draw&&S.view.newFmt!=='points'?' Le match nul peut être parié.':''}`:'Chaque question oppose 2 options : ceux qui votent comme la minorité sont éliminés.'}</div>
+      ${cc.mode==='pick'?fmtBlock(S.view.newFmt,'newFmt',null,POINTS_N,false):''}
       <label class="f">Description (optionnel)</label><textarea class="in" id="nl-desc" maxlength="300" placeholder="Entre amis pour tester…"></textarea>
       <label class="f">Fin des inscriptions (date + heure)</label><div class="row2"><input class="in" type="date" id="nl-date" value="${dateIn(d)}"><input class="in" type="time" id="nl-time" value="20:00"></div>
       <button class="btn pop full" style="margin-top:18px" data-a="createLeague">CRÉER LA LIGUE</button></div>`;
@@ -1036,6 +1113,7 @@ function viewManage(lid){
     <label class="f">Nom de la ligue</label>${pfxInput('ei-name','w',stripPrefix(lg.name),'Ligue 1')}
     <label class="f">Description</label><textarea class="in w" id="ei-desc" maxlength="300" placeholder="Quelques mots affichés sur la vignette de la ligue…">${esc(lg.description||'')}</textarea>
     ${c.status==='upcoming'?`<label class="f">Date de début (fin des inscriptions)</label><div class="row2"><input class="in w" type="date" id="ei-date" value="${dateIn(sd)}"><input class="in w" type="time" id="ei-time" value="${timeIn(sd)}"></div><div class="help">La ligue démarre le ${fmtDT(lg.startAt)}.</div>`:''}
+    ${isPickMode(lg)?fmtBlock(isPoints(lg)?'points':'survivor','setFmt',lid,lg.nRounds,c.rounds.some(r=>t(r.deadline)<=now())):''}
     <label class="f">Catégorie</label><div class="chips in" style="flex-wrap:wrap">${Object.entries(CATS).map(([k,v])=>`<button class="chip sm ${k===lg.category?'on':''}" ${c.rounds.length?'disabled title="Catégorie figée après la 1re journée"':`data-a="setCat" data-v="${lid}|${k}"`}>${esc(v.label)}</button>`).join('')}</div>
     ${cc.comps.length?`<label class="f">Championnat</label><div class="chips in" style="flex-wrap:wrap">${cc.comps.map(k=>`<button class="chip sm ${k===lg.comp?'on':''}" data-a="setComp" data-v="${lid}|${k}">${esc(COMP_NAMES[k])}</button>`).join('')}</div><div class="help" style="margin:-4px 0 12px;font-size:13px">Sert pour le classement, les stats et l'import des journées.</div>`:''}
     <button class="btn pop full" style="margin-top:6px" data-a="saveInfo" data-v="${lid}">ENREGISTRER</button></div>`;

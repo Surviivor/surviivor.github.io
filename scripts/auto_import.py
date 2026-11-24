@@ -73,8 +73,11 @@ def main(data_dir):
         start = ts(lg.get('startAt'))
         rounds = lg.get('rounds') or {}
         n = len(rounds)
+        cap = int(lg.get('nRounds') or 18) if lg.get('scoring') == 'points' else 10**6
         add = {}
         for fr in feed['rounds']:
+            if n >= cap:
+                break
             s = ts(fr['s'])
             if not (s > now and s >= start and s <= horizon):
                 continue
