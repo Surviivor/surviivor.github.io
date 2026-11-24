@@ -159,7 +159,8 @@ function creditLine(k){
   return `Photo : ${esc(c.artist)} · <a href="${esc(c.page)}" target="_blank" rel="noopener">${esc(c.license)}</a> · Wikimedia Commons`;
 }
 function nameOf(id){ const p=S.players[id]; if(p && p.pseudo) return p.pseudo; return S.names[id] || 'Joueur'; }
-function avatarOf(id, cls=''){ const p=S.players[id]; const ini=esc(initials(nameOf(id))); return p && p.avatar ? `<div class="av ${cls}"><img src="${blobUrl(p.avatar)}" data-fb="${ini}" alt=""></div>` : `<div class="av ${cls}">${ini}</div>`; }
+const DEFAULT_AVATAR='img/avatar-default.jpg';
+function avatarOf(id, cls=''){ const p=S.players[id]; const ini=esc(initials(nameOf(id))); return `<div class="av ${cls}"><img src="${p && p.avatar ? blobUrl(p.avatar) : DEFAULT_AVATAR}" data-fb="${ini}" alt=""></div>`; }
 let nameReq=null;
 function resolveNames(){
   if(!user || S.mode!=='live' || nameReq) return;
@@ -1219,7 +1220,7 @@ function viewProfil(){
   const my=Object.keys(S.leagues).filter(isMember).map(C).filter(Boolean);
   const wins=my.filter(c=>c.winners.includes(S.me)).length, alive=my.filter(c=>c.status!=='finished'&&c.alive.includes(S.me)).length;
   let h=`<div class="ptitle">${titleImg('title-profil.png','PROFIL')}</div>`;
-  h+=`<div style="text-align:center"><button class="avatar-big" data-a="uploadAvatar">${me.avatar?`<img src="${blobUrl(me.avatar)}" data-fb="${esc(initials(name))}" alt="">`:esc(initials(name))}<span class="cam">${I.cam}</span></button><div style="margin:18px 0 22px"><button class="link" data-a="uploadAvatar">Changer la photo</button></div></div>`;
+  h+=`<div style="text-align:center"><button class="avatar-big" data-a="uploadAvatar"><img src="${me.avatar?blobUrl(me.avatar):DEFAULT_AVATAR}" data-fb="${esc(initials(name))}" alt=""><span class="cam">${I.cam}</span></button><div style="margin:18px 0 22px"><button class="link" data-a="uploadAvatar">Changer la photo</button></div></div>`;
   h+=`<div class="card" style="display:flex;align-items:center;gap:14px"><div style="flex:1;min-width:0"><div class="lbl">Nom d'utilisateur</div><div class="pname" style="margin-top:10px">${esc(name)}</div>${S.email?`<div class="pmail">${esc(S.email)}</div>`:'<div style="height:10px"></div>'}${S.isOwner?`<span class="badge">${I.shield}ADMIN</span>`:''}</div><button class="circ" data-a="editName" aria-label="Modifier">${I.edit}</button></div>`;
   h+=`<div class="statgrid"><div class="stat"><b>${my.length}</b><span>Ligues</span></div><div class="stat"><b>${alive}</b><span>En vie</span></div><div class="stat"><b>${wins}</b><span>Victoires</span></div></div>`;
   if(S.mode==='demo') h+=`<div class="card" style="font-size:14px;line-height:1.5"><b>Mode démo.</b> Données fictives, rien n'est enregistré. Ouvre le site depuis son lien claude.ai, connecté, pour jouer avec tes proches.</div>`;
