@@ -436,3 +436,6 @@ nav.bottom .nbadge{font-size:11px;top:2px;left:auto;right:4px;border:2px solid v
 /* Admin : pas de fond derrière les boutons de choix */
 .chips.in{background:transparent;border-radius:0;padding:2px 0;width:auto}
 .card .chips.in .chip:not(.on){border:1.5px solid rgba(22,24,29,.14)}
+/* slides Survivor sans bouton : légende sur 2 lignes max */
+.sl-tx.nobtn{justify-content:flex-start;padding:12px 8px 6px;min-height:0}
+.sl-tx.nobtn .sl-h{font-size:17px;line-height:1.3;text-wrap:balance}
