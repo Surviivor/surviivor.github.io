@@ -631,6 +631,18 @@ const A = {
       if(guard()) return false; writeMe({pseudo:v.slice(0,24)}).then(()=>toast('Nom enregistré !'));
     });
   },
+  deleteAccount(){
+    if(!window.survivorDeleteAccount) return A.wipe();
+    modal('<h3>SUPPRIMER MON COMPTE ?</h3><div class="muted">Ton compte, ton profil et tous tes paris sont effacés, et tu quittes toutes tes ligues. Action définitive.</div>','SUPPRIMER',()=>{
+      if(guard()) return false;
+      toast('Suppression du compte…');
+      window.survivorDeleteAccount().catch(e=>{ const c=e&&e.code;
+        if(c==='cancelled'||c==='auth/popup-closed-by-user'||c==='auth/cancelled-popup-request') toast('Suppression annulée.');
+        else if(c==='auth/wrong-password'||c==='auth/invalid-credential') toast('Mot de passe incorrect.',true);
+        else if(c==='auth/requires-recent-login') toast('Par sécurité, déconnecte-toi, reconnecte-toi puis recommence.',true);
+        else handleErr(e); });
+    });
+  },
   wipe(){
     modal('<h3>SUPPRIMER MES DONNÉES ?</h3><div class="muted">Tu quittes toutes tes ligues et tes paris sont effacés. Action définitive.</div>','SUPPRIMER',()=>{
       if(guard()) return false; const id=S.me; delete S.players[id]; render();
@@ -1218,7 +1230,7 @@ function viewProfil(){
   if(CREDITS && Object.keys(CREDITS).length) h+=`<details class="card coll" style="margin-top:14px"><summary><span class="lbl">Crédits photos</span>${I.chev}</summary><div class="credits">${PHOTOS.filter(p=>CREDITS[p.k]).map(p=>`<p><b>${esc(p.label)}</b> — ${creditLine(p.k)}</p>`).join('')}</div></details>`;
   h+=installCard('profil');
   if(window.survivorLogout) h+=`<button class="btn line full" style="margin-top:18px" data-a="logout">SE DÉCONNECTER</button>`;
-  h+=`<div style="text-align:center;margin-top:26px"><button class="link red" style="color:var(--err)" data-a="wipe">${I.trash.replace('<svg','<svg width="22" height="22"')} Supprimer mes données</button></div>`;
+  h+=`<div style="text-align:center;margin-top:26px"><button class="link red" style="color:var(--err)" data-a="${window.survivorDeleteAccount?'deleteAccount':'wipe'}">${I.trash.replace('<svg','<svg width="22" height="22"')} ${window.survivorDeleteAccount?'Supprimer mon compte':'Supprimer mes données'}</button></div>`;
   return h;
 }
 

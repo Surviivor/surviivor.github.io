@@ -6,7 +6,7 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import {
   getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect,
   createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail,
-  signOut, updateProfile, setPersistence, browserLocalPersistence, connectAuthEmulator
+  signOut, updateProfile, deleteUser, reauthenticateWithPopup, reauthenticateWithCredential, EmailAuthProvider, setPersistence, browserLocalPersistence, connectAuthEmulator
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
   getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, deleteDoc, getDoc, getDocs,
@@ -126,6 +126,28 @@ let pendingPseudo = (() => { try { return sessionStorage.getItem('survivor-pseud
 
 window.survivorLogout = () => signOut(auth).then(() => location.reload());
 
+// Supprime le compte : paris, profil, puis le compte de connexion lui-même
+window.survivorDeleteAccount = async () => {
+  const u = auth.currentUser; if (!u) return;
+  // Firebase exige une connexion récente pour supprimer un compte : on redemande l'identité si besoin
+  const last = Date.parse(u.metadata && u.metadata.lastSignInTime) || 0;
+  if (Date.now() - last > 4 * 60 * 1000) {
+    const google = (u.providerData || []).some(p => p.providerId === 'google.com');
+    if (google) await reauthenticateWithPopup(u, new GoogleAuthProvider());
+    else {
+      const pwd = window.prompt('Par sécurité, entre ton mot de passe pour supprimer ton compte :');
+      if (!pwd) { const e = new Error('annulé'); e.code = 'cancelled'; throw e; }
+      await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, pwd));
+    }
+  }
+  const mine = await getDocs(query(collection(fs, 'picks'), where('uid', '==', u.uid)));
+  const batch = writeBatch(fs); mine.forEach(d => batch.delete(d.ref)); await batch.commit();
+  await deleteDoc(doc(fs, 'players', u.uid));
+  started = 'deleted';
+  await deleteUser(u);
+  location.reload();
+};
+
 /* -------------------------------------------------------------- adapters */
 let me = null;
 const snapDoc = d => ({ id: d.id, exists: d.exists(), data: () => d.data(), metadata: d.metadata });
@@ -194,7 +216,7 @@ function collectionRef(path) {
       const emit = () => {
         if (!players || !picks) return;
         const byUid = {};
-        picks.forEach(d => { const x = d.data(); ((byUid[x.uid] = byUid[x.uid] || {})[x.league] = byUid[x.uid][x.league] || {})[x.round] = { m: x.m, p: x.p, at: x.at }; });
+        picks.forEach(d => { const x = d.data(); if (!x || !x.uid) return; ((byUid[x.uid] = byUid[x.uid] || {})[x.league] = byUid[x.uid][x.league] || {})[x.round] = { m: x.m, p: x.p, at: x.at }; });
         const docs = players.map(d => { const data = { ...d.data(), picks: byUid[d.id] || {} }; return { id: d.id, exists: true, data: () => data, metadata: d.metadata }; });
         next({ docs, size: docs.length, empty: !docs.length, metadata: meta });
       };
