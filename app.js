@@ -993,7 +993,7 @@ function dashCard(myL, todo){
       else if(!c.alive.includes(S.me)){ st='Éliminé'; pct=Math.round(c.alive.length*100/c.mem.length); cls='mut'; }
       else if(c.alive.length===1){ st='Dernier survivant !'; pct=100; cls='ok'; }
       else { st=`<b>${c.alive.length}</b> survivants sur ${c.mem.length}`; pct=Math.max(2,Math.round(c.alive.length*100/c.mem.length)); }
-      return `<button class="drow" data-a="open" data-v="${c.lg.id}"><span class="nm"><small class="wm-txt">${kind}${sub}</small><span class="nm-l">${nm}<i class="nm-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></i></span></span><span class="st ${cls}">${st}</span><span class="bar ${cls}"><i style="width:${pct}%"></i></span></button>`; }).join('')+`</div>`;
+      return `<button class="drow" data-a="open" data-v="${c.lg.id}"><span class="nm"><small class="dk">${WM(c.points?'oneshot':'survivor',true)}${sub?`<span>${sub}</span>`:''}</small><span class="nm-l">${nm}<i class="nm-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></i></span></span><span class="st ${cls}">${st}</span><span class="bar ${cls}"><i style="width:${pct}%"></i></span></button>`; }).join('')+`</div>`;
   }
   return `<div class="nh-card2 dash">${h}</div>`;
 }
