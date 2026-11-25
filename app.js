@@ -1079,7 +1079,14 @@ function jokersCard(c, r){
   const op=S.open[k] || (S.view.jk&&S.view.jk.startsWith(lg.id+'|')) || (S.view.sab&&S.view.sab.lid===lg.id);
   const body=items.map(x=>`<div class="jitem ${x.state||''}"><div class="jt">${x.ico}<b>${x.t}</b>${x.state==='used'?'<span class="jtag">Utilisé</span>':x.state==='on'&&!x.btn?'<span class="jtag on">En cours</span>':''}${x.btn||''}</div><small>${x.d}</small>${x.note?`<div class="jnote">${x.note}</div>`:''}${x.panel||''}</div>`).join('');
   const regain=n===0?'<div class="help" style="margin:10px 0 0">Chaque joker ne s\'utilise qu\'une fois par ligue : aucun moyen d\'en récupérer.</div>':'';
-  return `<details class="card coll jkc" ${op?'open':''}><summary data-a="toggle" data-v="${k}"><span class="ctitle">${JOKER_ICO}Jokers (${n})</span>${I.chev}</summary><div class="jlist">${body}</div>${regain}</details>`;
+  // comment gagner des vies / points bonus
+  const how=[];
+  if(!c.points && +lg.lives>0) how.push(['❤️','Une vie en réserve','Chaque joueur démarre avec une vie : à sa première erreur, il la perd mais reste en jeu.']);
+  if(!c.points && lg.awayBonus) how.push(['✈️','Bonus extérieur','Tous les 3 paris sur une équipe qui joue à l’extérieur : +1 vie.']);
+  if(lg.redLantern) how.push(['🔴','Lanterne rouge',c.points?'Une victoire avec la dernière équipe du classement : +2 points bonus.':'Une victoire avec la dernière équipe du classement : +1 vie.']);
+  const myL=!c.points&&c.lives?c.lives[S.me]||0:0, st=!c.points&&lg.awayBonus&&c.streak?c.streak[S.me]||0:0;
+  const howH=how.length?`<div class="jhow"><div class="jhow-t">${c.points?'Comment gagner des points bonus':'Comment gagner des vies'}</div>${!c.points?`<div class="jhow-me">Tes vies : <b>${myL?('❤️'.repeat(Math.min(myL,5))+' '+myL):'aucune pour l’instant'}</b>${lg.awayBonus?` · Bonus extérieur : <b>${st}/3</b>`:''}</div>`:''}${how.map(([i,tt,d])=>`<div class="jhow-r"><span>${i}</span><div><b>${tt}</b><small>${d}</small></div></div>`).join('')}</div>`:'';
+  return `<details class="card coll jkc" ${op?'open':''}><summary data-a="toggle" data-v="${k}"><span class="ctitle">${JOKER_ICO}Jokers (${n})</span>${I.chev}</summary><div class="jlist">${body}</div>${regain}${howH}</details>`;
 }
 // sabotage reçu : reste toujours visible dans « Mon choix »
 function saboAlert(c, r){

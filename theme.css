@@ -633,3 +633,11 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .tile .bd .eq{font-family:var(--bold);font-weight:900;font-size:30px;line-height:1;color:#16181D}
 /* tuiles de pari : 20 % moins hautes, logos inchangés */
 .tiles .tile{min-height:0;padding:10px 4px 10px;gap:6px;font-size:13.5px}
+/* Jokers : comment gagner des vies */
+.jhow{margin-top:14px;padding-top:12px;border-top:1.5px solid rgba(22,24,29,.08)}
+.jhow-t{font-family:var(--bold);font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px}
+.jhow-me{font-size:13px;margin-bottom:8px}
+.jhow-r{display:flex;gap:10px;align-items:flex-start;padding:6px 0}
+.jhow-r>span{font-size:18px;line-height:1.2;flex:none}
+.jhow-r b{display:block;font-family:var(--bold);font-weight:800;font-size:14px}
+.jhow-r small{display:block;color:var(--muted);font-size:12.5px;line-height:1.35;margin-top:1px}
