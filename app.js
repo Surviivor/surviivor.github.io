@@ -1431,7 +1431,7 @@ function lastFiveSection(c, f){
     return `<div class="l5row"><div class="l5t">${logoTag(side)}<b>${esc(side.n)}</b></div><div class="l5l">${chips}</div></div>`;
   };
   const rows=matchesOf(r).map(m=>{ const x=line(m.h)+line(m.a); return x?`<div class="l5m">${x}</div>`:''; }).join('');
-  return rows?`<div class="ssec"><div class="stitle">${I.chart||IC.chart}5 derniers matchs</div><div class="muted" style="font-size:12px;margin:-4px 0 8px">Du plus récent au plus ancien · score du club en premier · DOM = à domicile, EXT = à l’extérieur.</div>${rows}</div>`:'';
+  return rows?`<div class="ssec"><div class="stitle">${I.chart||IC.chart}5 derniers matchs</div><div class="muted" style="font-size:12px;margin:-4px 0 8px">Du plus récent au plus ancien · score du club en premier.</div>${rows}</div>`:'';
 }
 // Cotes 1 / N / 2 des matchs de la prochaine journée (DraftKings via ESPN)
 function oddsSection(c, f){
@@ -1441,10 +1441,10 @@ function oddsSection(c, f){
   const rows=matchesOf(r).map(m=>{
     const o=f.odds[String(m.h.id||'')+'_'+String(m.a.id||'')]; if(!o) return ''; prov=prov||o.p;
     const vals=[o.h,o.n,o.a].filter(Boolean), min=Math.min(...vals);
-    const cell=(lbl,v)=>v?`<span class="oc ${v===min?'fav':''}"><i>${lbl}</i>${fx(v)}</span>`:'';
+    const cell=(lbl,v)=>v?`<span class="oc ${v===min?'fav':''}">${fx(v)}</span>`:'';
     return `<div class="odd"><div class="odd-t">${logoTag(m.h)}<b>${esc(m.h.n)}</b><span class="vs">–</span><b>${esc(m.a.n)}</b>${logoTag(m.a)}</div><div class="odd-l">${cell('1',o.h)}${cell('N',o.n)}${cell('2',o.a)}</div></div>`;
   }).join('');
-  return rows?`<div class="ssec"><div class="stitle">${IC.chart}Cotes</div><div class="muted" style="font-size:12px;margin:-4px 0 8px">Cotes ${esc(prov||'')} à la française, mises à jour 2 fois par jour. En jaune : le favori.</div>${rows}</div>`:'';
+  return rows?`<div class="ssec"><div class="stitle">${IC.chart}Cotes</div>${rows}</div>`:'';
 }
 function h2hSection(c, f){
   if(!f||!f.h2h) return '';
@@ -1458,12 +1458,22 @@ function h2hSection(c, f){
   }).join('');
   return rows?`<div class="ssec"><div class="stitle">${I.flash}Confrontations directes</div><div class="muted" style="font-size:12px;margin:-4px 0 8px">5 derniers matchs entre les 2 équipes.</div>${rows}</div>`:'';
 }
+// DATA : chaque section (classement, cotes…) devient dépliable
+function dsecs(html, lid){
+  const tp=document.createElement('template'); tp.innerHTML=html;
+  tp.content.querySelectorAll('.ssec').forEach(sec=>{ const tt=sec.querySelector('.stitle'); if(!tt) return;
+    const key='ds'+lid+'_'+tt.textContent.trim().replace(/\s+/g,'').slice(0,14);
+    const d=document.createElement('details'); d.className='ssec dsec'; if(S.open[key]) d.open=true;
+    const sm=document.createElement('summary'); sm.className='stitle'; sm.dataset.a='toggle'; sm.dataset.v=key; sm.innerHTML=tt.innerHTML+'<span class="dchev">'+I.chev+'</span>';
+    tt.remove(); const body=document.createElement('div'); body.className='dsec-b'; body.append(...sec.childNodes); d.append(sm,body); sec.replaceWith(d); });
+  return tp.innerHTML;
+}
 function statsCard(c){
   const lg=c.lg; const key=lg.comp;
   const trend='';
   const f=key?S.feeds[key]:null; if(key&&!f) loadFeed(key);
   const tbl=c.lg.category==='tuprefere'?'':standingsCard(lg,'body');
-  const wrap=body=>`<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${body}</details>`;
+  const wrap=body=>`<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${dsecs(body,lg.id)}</details>`;
   if(!f||f.missing||c.lg.category==='tuprefere'){ { const hh=oddsSection(c,f)+lastFiveSection(c,f)+h2hSection(c,f); if(!trend&&!tbl&&!hh) return ''; return wrap(trend+tbl+hh); } return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${trend}</details>`; }
   const form=teamForm(f);
   const pts=Object.keys(form).map(id=>[id, form[id].slice(0,5).reduce((a,r)=>a+(r==='W'?3:r==='D'?1:0),0), Math.min(5,form[id].length)]).filter(x=>x[2]>=2);
@@ -1472,10 +1482,9 @@ function statsCard(c){
   const row=([id,p,n])=>statRow(f,id,`<b>${p}</b><span>pts</span>`,formDots(form[id]));
   const maxN=Math.max(...pts.map(x=>x[2]));
   let h=trend+`<div class="ssec"><div class="stitle">${I.flash}Les plus en forme</div><div class="slist">${best.map(row).join('')}</div></div>`;
-  h+=`<div class="ssec"><div class="stitle">${I.down}À la peine</div><div class="slist">${worst.map(row).join('')}</div></div>`;
-  h+=`<div class="muted" style="font-size:12px;margin-top:14px">Points pris sur les ${maxN} dernières journées${maxN<5?' (seules celles-ci sont disponibles pour l\'instant)':''}. Données du ${fmtDT(f.updatedAt)}.</div>`;
+  h+=`<div class="ssec"><div class="stitle">${I.down}À la peine</div><div class="slist">${worst.map(row).join('')}</div><div class="muted" style="font-size:12px;margin-top:14px">Points pris sur les ${maxN} dernières journées${maxN<5?' (seules celles-ci sont disponibles pour l\'instant)':''}. Données du ${fmtDT(f.updatedAt)}.</div></div>`;
   h+=tbl+oddsSection(c,f)+lastFiveSection(c,f)+h2hSection(c,f);
-  return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${h}</details>`;
+  return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${dsecs(h,lg.id)}</details>`;
 }
 // Final/ongoing ranking: survivors share the top; the eliminated are ranked by elimination day
 // (later = better), then by boldness of the losing pick (weaker team = better).
