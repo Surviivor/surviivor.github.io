@@ -905,3 +905,10 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .odd-t b{overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
 .odd-t img.lg,.odd-t .vs{flex:none}
 .odd-t b{flex:1 1 0}
+/* Paris cachés : aperçu flouté */
+.nv-hid{position:relative;overflow:hidden}
+.nv-blur{filter:blur(7px);opacity:.75;pointer-events:none;user-select:none;max-height:330px;overflow:hidden}
+.nv-lock{position:absolute;left:0;right:0;top:56px;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:0 28px}
+.nv-lock span{width:52px;height:52px;border-radius:50%;background:var(--on);color:var(--yel);display:flex;align-items:center;justify-content:center}
+.nv-lock span .ic{width:26px;height:26px}
+.nv-lock b{font-family:var(--bold);font-weight:800;font-size:16px;line-height:1.35;background:rgba(255,255,255,.85);border-radius:14px;padding:8px 12px}

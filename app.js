@@ -1490,10 +1490,17 @@ function statsCard(c){
 // (later = better), then by boldness of the losing pick (weaker team = better).
 // STATS : paris de la prochaine journée (option « Paris visibles »)
 function nextVotesCard(c){
-  const lg=c.lg; if(!c.pick || !picksVisible(lg)) return '';
+  const lg=c.lg; if(!c.pick) return '';
   const r=c.rounds.find(r=>t(r.deadline)>now()); if(!r) return '';
   const who=(c.status==='upcoming'?c.mem:c.alive); if(!who.length) return '';
   const n=((c.info[r.k]||{}).n||(c.rounds.findIndex(x=>x.k===r.k)+1));
+  if(!picksVisible(lg)){
+    // Paris cachés : aperçu flouté avec des données factices (les vrais choix ne sont pas mis dans la page)
+    const teams=[]; matchesOf(r).forEach(m=>{ teams.push(m.h.n, m.a.n); }); const T=i=>esc(teams[i%Math.max(1,teams.length)]||'Équipe');
+    const top=[0,3,6].map((k,i)=>`<div class="nv-top"><span>${i+1}.</span><b>${T(k)}</b><em>${[42,25,13][i]} %</em></div>`).join('');
+    const list=who.slice(0,6).map((u,i)=>`<div class="nv-r">${avatarOf(u)}<span class="nv-n">${esc(nameOf(u))}</span><span class="nv-p"><b>${T(i*5+1)}</b></span></div>`).join('');
+    return `<div class="card nv nv-hid"><div class="stitle">${IC.eye} Paris de la journée ${n}</div><div class="nv-blur" aria-hidden="true"><div class="nv-fun"><div class="nv-f"><span>${IC.flame}</span><div><small>Les plus choisies</small><div>${top}</div></div></div></div><div class="nv-list">${list}</div></div><div class="nv-lock"><span>${IC.eyeOff}</span><b>Les choix de la journée seront révélés le ${fmtDT(r.deadline)}</b></div></div>`;
+  }
   const rows=[], cnt={}, none=[]; let bold=null;
   who.forEach(u=>{ const p=pickOf(u,lg.id,r.k);
     if(!p){ none.push(u); return; }
