@@ -628,3 +628,4 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .hs{font-size:11.5px;font-weight:700;border-radius:8px;padding:3px 7px;background:#EEE}
 .hs.W{background:#DDF1E3;color:#1E7A3C}.hs.L{background:#FBE1DE;color:#C0392B}.hs.D{background:#EEEDEA;color:#555}
 .schips .chip.off{opacity:.4}
+.lopt-x{display:block;font-style:normal;font-size:11.5px;line-height:1.35;color:var(--muted);opacity:.85;margin-top:4px}

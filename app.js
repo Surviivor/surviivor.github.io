@@ -385,7 +385,7 @@ function lastsOf(c){
   for(const r of c.rounds){ const ri=c.info[r.k]; if(ri&&ri.out&&ri.out.length) return ri.out.filter(u=>!c.winners.includes(u)); }
   return [];
 }
-const LAST_RULES={wins:{ico:'🏆',t:'Le dernier gagne également'}, drink:{ico:'🍺',t:'Le dernier doit un verre au premier'}};
+const LAST_RULES={wins:{ico:'🏆',t:'Le dernier gagne aussi'}, drink:{ico:'🍺',t:'Le dernier doit un verre au premier'}};
 const C = lid => { const c=compute(lid); if(!c) return c; c.lastRule=(c.points&&LAST_RULES[c.lg.lastRule])?c.lg.lastRule:null; c.lasts=c.lastRule?lastsOf(c):[]; c.firstsW=c.points?c.firsts:c.winners; return c; };
 const wonBy=(c,u)=>c.winners.includes(u)||(c.lastRule==='wins'&&c.lasts.includes(u));
 function lastBanner(c){
@@ -666,8 +666,8 @@ const A = {
   newCat(v){ if(HIDDEN_CATS.includes(v)) return; S.view.newCat=v; render(); },
   newFmt(v){ S.view.newFmt=v; render(); },
   newLast(v){ S.view.newLast=v; render(); },
-  newLives(v){ if(v==='lives') S.view.newLives=S.view.newLives?0:1; else if(v==='joker') S.view.newJoker=!S.view.newJoker; else if(v==='sabotage') S.view.newSabotage=!S.view.newSabotage; else if(v==='lantern') S.view.newLantern=!S.view.newLantern; else if(v.startsWith('vis:')) S.view.newVis=v.slice(4); else S.view.newAway=!S.view.newAway; render(); },
-  setLives(v){ const [lid,k]=v.split('|'); const lg=S.leagues[lid]; if(!lg) return; const patch=k==='lives'?{lives:(+lg.lives?0:1)}:k==='joker'?{joker:!lg.joker}:k==='sabotage'?{sabotage:!lg.sabotage}:k==='lantern'?{redLantern:!lg.redLantern}:k.startsWith('vis:')?{picksVis:k.slice(4)}:{awayBonus:!lg.awayBonus}; writeLeague(lid,patch).then(()=>toast('Option mise à jour.')); },
+  newLives(v){ if(v==='lastwins') S.view.newLast=S.view.newLast==='wins'?'':'wins'; else if(v==='lives') S.view.newLives=S.view.newLives?0:1; else if(v==='joker') S.view.newJoker=!S.view.newJoker; else if(v==='sabotage') S.view.newSabotage=!S.view.newSabotage; else if(v==='lantern') S.view.newLantern=!S.view.newLantern; else if(v.startsWith('vis:')) S.view.newVis=v.slice(4); else S.view.newAway=!S.view.newAway; render(); },
+  setLives(v){ const [lid,k]=v.split('|'); const lg=S.leagues[lid]; if(!lg) return; const patch=k==='lastwins'?{lastRule:lg.lastRule==='wins'?null:'wins'}:k==='lives'?{lives:(+lg.lives?0:1)}:k==='joker'?{joker:!lg.joker}:k==='sabotage'?{sabotage:!lg.sabotage}:k==='lantern'?{redLantern:!lg.redLantern}:k.startsWith('vis:')?{picksVis:k.slice(4)}:{awayBonus:!lg.awayBonus}; writeLeague(lid,patch).then(()=>toast('Option mise à jour.')); },
   setLast(v){ const [lid,k]=v.split('|'); if(!S.leagues[lid]) return; writeLeague(lid,{lastRule:k||null}).then(()=>toast(k?'Option activée : '+LAST_RULES[k].t.toLowerCase()+'.':'Option désactivée.')); },
   setFmt(v){ const [lid,f]=v.split('|'); const lg=S.leagues[lid]; if(!lg) return;
     const name=fullName(stripPrefix(lg.name), f).slice(0,60);
@@ -682,7 +682,7 @@ const A = {
     const k=S.view.newCat, cc=cat(k);
     const id=S.isOwner ? 'l'+rid() : S.me;
     const pts=cc.mode==='pick'&&S.view.newFmt==='points'; const nr=Math.min(40,Math.max(10,+((g('nl-nr')||{}).value)||POINTS_N));
-    const lg={...(pts?{scoring:'points',target:nr}:{}),name:name.slice(0,60),category:k,mode:cc.mode,comp:(cc.comps.includes(compFromName(name))?compFromName(name):cc.comps[0])||null,startAt:new Date(d+'T'+h).toISOString(),createdAt:new Date().toISOString(),createdBy:S.me,private:!S.isOwner,...(pts&&S.view.newLast&&LAST_RULES[S.view.newLast]?{lastRule:S.view.newLast}:{}),...(!pts&&cc.mode==='pick'?{lives:S.view.newLives?1:0,awayBonus:!!S.view.newAway,joker:!!S.view.newJoker}:{}),...(cc.mode==='pick'?{sabotage:!!S.view.newSabotage,redLantern:!!S.view.newLantern,picksVis:S.view.newVis==='visible'?'visible':'hidden'}:{}),code:genCode(),cover:'auto',rules:'',rounds:{}};
+    const lg={...(pts?{scoring:'points',target:nr}:{}),name:name.slice(0,60),category:k,mode:cc.mode,comp:(cc.comps.includes(compFromName(name))?compFromName(name):cc.comps[0])||null,startAt:new Date(d+'T'+h).toISOString(),createdAt:new Date().toISOString(),createdBy:S.me,private:!S.isOwner,...(pts&&S.view.newLast==='wins'?{lastRule:'wins'}:{}),...(!pts&&cc.mode==='pick'?{lives:S.view.newLives?1:0,awayBonus:!!S.view.newAway,joker:!!S.view.newJoker}:{}),...(cc.mode==='pick'?{sabotage:!!S.view.newSabotage,redLantern:!!S.view.newLantern,picksVis:S.view.newVis==='visible'?'visible':'hidden'}:{}),code:genCode(),cover:'auto',rules:'',rounds:{}};
     writeLeague(id,lg,'set').then(()=>{ if(!isMember(id)) writeMe({leagues:{[id]:new Date().toISOString()}}); toast('Ligue créée ! Code : '+lg.code); A.manage(id); setTimeout(()=>autoImport(id),400); });
   },
   saveInfo(lid){
@@ -1208,16 +1208,38 @@ function rulesPics(lg){
 function livesRulesHtml(lg){
   if(!isPickMode(lg)) return '';
   let h='';
-  if(lg.sabotage) h+=`<p class="lrule">💣 <b>Sabotage :</b> une fois par ligue, interdis une équipe à un adversaire pour la journée. Il découvre qui l'a saboté au moment de parier.</p>`;
-  if(lg.redLantern) h+=`<p class="lrule">🔴 <b>Lanterne rouge :</b> gagne avec la dernière équipe du classement et tu remportes ${isPoints(lg)?'<b>2 points bonus</b>':'<b>1 vie</b>'}.</p>`;
+  if(lg.sabotage) h+=`<p class="lrule">💣 <b>Sabotage :</b> une fois par ligue, un joueur peut interdire une équipe à un adversaire pour une journée. La victime découvre qui l'a saboté au moment de parier.</p>`;
+  if(lg.redLantern) h+=`<p class="lrule">🔴 <b>Lanterne rouge :</b> si un joueur gagne avec la dernière équipe du classement, il ${isPoints(lg)?'marque <b>2 points bonus</b>':'gagne <b>1 vie supplémentaire</b>'}.</p>`;
   h+=`<p class="lrule">${picksVisible(lg)?'👀 <b>Paris visibles :</b> tu peux voir les choix des autres avant l\'heure limite.':'🙈 <b>Paris cachés :</b> les choix des autres sont dévoilés à l\'heure limite.'}</p>`;
   if(isPoints(lg)) return h;
   if(+lg.lives>0) h+=`<p class="lrule">❤️ <b>Option de la ligue :</b> chaque joueur a droit à <b>une erreur</b> : il perd sa vie mais reste en jeu.</p>`;
-  if(lg.joker) h+=`<p class="lrule">${JOKER_ICO}<b>Joker « double chance » :</b> une fois par ligue, choisis <b>2 équipes</b> sur une journée : tu survis si <b>au moins une des 2</b> gagne.</p>`;
-  if(lg.awayBonus) h+=`<p class="lrule">✈️ <b>Bonus extérieur :</b> si tu paries <b>3 fois</b> sur des équipes <b>à l'extérieur</b>, tu gagnes <b>1 vie supplémentaire</b>.</p>`;
+  if(lg.joker) h+=`<p class="lrule">${JOKER_ICO}<b>Joker « double chance » :</b> une fois par ligue, un joueur peut choisir <b>2 équipes</b> sur une journée : il survit si <b>au moins une des 2 équipes</b> gagne.</p>`;
+  if(lg.awayBonus) h+=`<p class="lrule">✈️ <b>Bonus extérieur :</b> si un joueur parie <b>3 fois</b> sur des équipes <b>à l'extérieur</b>, il gagne <b>1 vie supplémentaire</b>.</p>`;
   return h;
 }
 // Options communes Survivor + Race : sabotage, lanterne rouge, visibilité des choix
+// Réglages d'une ligue : OPTIONS (règles) / JOKERS (à utiliser par les joueurs) / PARIS DES AUTRES
+function optionsBlock(lg, pts, act, lid, locked){
+  lg=lg||{}; const v=lid?lid+'|':'';
+  const opt=(k,on,title,desc,extra)=>`<button class="lopt-b ${on?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}${k}"`}><i></i><span><b>${title}</b><small>${desc}</small>${extra?`<em class="lopt-x">${extra}</em>`:''}</span></button>`;
+  let o='', j='';
+  if(pts){
+    o+=opt('lastwins', lg.lastRule==='wins', '🏆 Le dernier gagne aussi', 'Le dernier du classement à la fin remporte lui aussi la ligue.', 'Deux courses en une : les joueurs décrochés ne lâchent rien et misent sur les équipes qui vont perdre. Tout le monde reste à fond jusqu’au bout.');
+  } else {
+    o+=opt('lives', +lg.lives>0, '❤️ Une vie en réserve', 'Chaque joueur a droit à une erreur : il perd sa vie mais reste en jeu.');
+    o+=opt('away', !!lg.awayBonus, '✈️ Bonus extérieur', 'Si un joueur parie 3 fois sur des équipes à l’extérieur, il gagne 1 vie supplémentaire.');
+  }
+  o+=opt('lantern', !!lg.redLantern, '🔴 Lanterne rouge', pts?'Si un joueur gagne avec la dernière équipe du classement, il marque 2 points bonus.':'Si un joueur gagne avec la dernière équipe du classement, il gagne 1 vie supplémentaire.');
+  if(!pts) j+=opt('joker', !!lg.joker, `${JOKER_ICO}Double chance`, 'Une fois par ligue, un joueur peut choisir 2 équipes sur une journée : il survit si au moins une des 2 équipes gagne.');
+  j+=opt('sabotage', !!lg.sabotage, '💣 Sabotage', 'Une fois par ligue, un joueur peut interdire une équipe à un adversaire pour une journée. La victime découvre qui l’a saboté au moment de parier.');
+  const VIS=lg.picksVis==='visible';
+  return `<label class="f fbig">Options</label><div class="lopt">${o}</div>
+  <label class="f fbig">Jokers</label><div class="lopt">${j}</div>
+  <label class="f fbig">Paris des autres</label><div class="chips in" style="flex-wrap:wrap">
+    <button class="chip ${VIS?'':'on'}" ${locked?'disabled':`data-a="${act}" data-v="${v}vis:hidden"`}>🙈 Cachés jusqu'à l'heure limite</button>
+    <button class="chip ${VIS?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}vis:visible"`}>👀 Visibles tout de suite</button>
+  </div>${locked?'<div class="help" style="margin:6px 0 10px">Réglages figés une fois la ligue commencée.</div>':''}`;
+}
 function extraBlock(lg, act, lid, locked, pts, noTitle){
   const v=lid?lid+'|':'', SB=!!(lg&&lg.sabotage), RL=!!(lg&&lg.redLantern), VIS=(lg&&lg.picksVis)==='visible';
   return `${noTitle?'':`<label class="f fbig">Jokers</label>`}<div class="lopt" ${noTitle?'style="margin-top:-6px"':''}>
@@ -1469,8 +1491,7 @@ function viewAdmin(){
       <label class="f fbig">Catégories</label><div class="chips in">${Object.entries(CATS).filter(([kk])=>!HIDDEN_CATS.includes(kk)).map(([kk,v])=>`<button class="chip ${kk===k?'on':''}" data-a="newCat" data-v="${kk}">${esc(v.label)}</button>`).join('')}</div>
       <div class="help" style="margin:0">${cc.mode==='pick'?`Chaque joueur choisit UN seul match par journée et parie dessus. Interdit de reprendre une équipe déjà jouée.${cc.draw&&S.view.newFmt!=='points'?' Le match nul peut être parié.':''}`:'Chaque question oppose 2 options : ceux qui votent comme la minorité sont éliminés.'}</div>
       ${cc.mode==='pick'?fmtBlock(S.view.newFmt,'newFmt',null,POINTS_N,false):''}
-      ${(cc.mode==='pick'&&S.view.newFmt==='points')?lastBlock(S.view.newLast,'newLast',null,false)+extraBlock({sabotage:S.view.newSabotage,redLantern:S.view.newLantern,picksVis:S.view.newVis},'newLives',null,false,true):''}
-      ${(cc.mode==='pick'&&S.view.newFmt!=='points')?livesBlock({lives:S.view.newLives,awayBonus:S.view.newAway,joker:S.view.newJoker,sabotage:S.view.newSabotage,redLantern:S.view.newLantern,picksVis:S.view.newVis},'newLives',null,false):''}
+      ${cc.mode==='pick'?optionsBlock({lastRule:S.view.newLast,lives:S.view.newLives,awayBonus:S.view.newAway,joker:S.view.newJoker,sabotage:S.view.newSabotage,redLantern:S.view.newLantern,picksVis:S.view.newVis},S.view.newFmt==='points','newLives',null,false):''}
       <label class="f">Fin des inscriptions (date + heure)</label><div class="row2"><input class="in" type="date" id="nl-date" value="${dateIn(d)}"><input class="in" type="time" id="nl-time" value="20:00"></div>
       <button class="btn pop full" style="margin-top:18px" data-a="createLeague">CRÉER LA LIGUE</button></div>`;
   }
@@ -1497,8 +1518,7 @@ function viewManage(lid){
     <label class="f">Lot à gagner (optionnel)</label><input class="in w" id="ei-prize" maxlength="80" placeholder="un maillot de Kaká" value="${esc(prizeOf(lg))}"><div class="help" style="margin:-4px 0 12px">Affiché dans l'onglet ${isPoints(lg)?'Classement':'Survivants'} : « ${isPoints(lg)?'Le gagnant':'Le dernier survivant'} de cette ligue gagne … ».</div>
     ${c.status==='upcoming'?`<label class="f">Date de début (fin des inscriptions)</label><div class="row2"><input class="in w" type="date" id="ei-date" value="${dateIn(sd)}"><input class="in w" type="time" id="ei-time" value="${timeIn(sd)}"></div><div class="help">La ligue démarre le ${fmtDT(lg.startAt)}.</div>`:''}
     ${isPickMode(lg)?fmtBlock(isPoints(lg)?'points':'survivor','setFmt',lid,lg.target,c.rounds.some(r=>t(r.deadline)<=now())):''}
-    ${isPoints(lg)?lastBlock(lg.lastRule,'setLast',lid,c.status!=='upcoming')+extraBlock(lg,'setLives',lid,c.status!=='upcoming',true):''}
-    ${(!isPoints(lg)&&isPickMode(lg))?livesBlock(lg,'setLives',lid,c.status!=='upcoming'):''}
+    ${isPickMode(lg)?optionsBlock(lg,isPoints(lg),'setLives',lid,c.status!=='upcoming'):''}
     <label class="f fbig">Catégories</label><div class="chips in" style="flex-wrap:wrap">${Object.entries(CATS).filter(([kk])=>!HIDDEN_CATS.includes(kk)).map(([k,v])=>`<button class="chip sm ${k===lg.category?'on':''}" ${c.rounds.length?'disabled title="Catégorie figée après la 1re journée"':`data-a="setCat" data-v="${lid}|${k}"`}>${esc(v.label)}</button>`).join('')}</div>
     ${cc.comps.length?`<label class="f">Championnat</label><div class="chips in" style="flex-wrap:wrap">${cc.comps.map(k=>`<button class="chip sm ${k===lg.comp?'on':''}" data-a="setComp" data-v="${lid}|${k}">${esc(COMP_NAMES[k])}</button>`).join('')}</div><div class="help" style="margin:-4px 0 12px;font-size:13px">Sert pour le classement, les stats et l'import des journées.</div>`:''}
     <button class="btn pop full" style="margin-top:6px" data-a="saveInfo" data-v="${lid}">ENREGISTRER</button></div>`;
