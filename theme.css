@@ -696,3 +696,12 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .nv-top em{font-style:normal;font-weight:800;background:#16181D;color:#fff;border-radius:999px;padding:1px 7px;font-size:11px}
 .nv-top{margin-top:5px;font-size:14px}
 .nv-top em{background:none;color:var(--on);font-size:15px;font-weight:800;padding:0;min-width:46px;text-align:right}
+/* votes des autres : jauge sous chaque choix */
+.tile .vbar{display:block;width:70%;height:5px;border-radius:5px;background:rgba(22,24,29,.1);margin-top:2px;overflow:hidden}
+.tile .vbar i{display:block;height:100%;background:#F6C343;border-radius:5px}
+.tile.sel .vbar{background:rgba(255,255,255,.22)}
+.tile .vlab{font-size:12px;font-weight:700;color:#8A8F98;margin-top:-2px}
+.tile.sel .vlab{color:#F6C343}
+.vleg{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin:0 0 10px}
+.vleg .vbar.mini{display:inline-block;width:28px;height:5px;border-radius:5px;background:rgba(22,24,29,.1);overflow:hidden;flex:none}
+.vleg .vbar.mini i{display:block;height:100%;background:#F6C343}

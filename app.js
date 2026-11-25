@@ -1032,7 +1032,7 @@ function tileHtml(c, r, m, side, opts){
   if(res){ if(res.r===side) cls+=' win'; else if(sel) cls+=' lose'; }
   const bd = side==='D' ? '<b class="eq">=</b>' : (logoOf(sd)?`<img src="${esc(logoOf(sd))}" data-fb="${esc(initials(sd.n).slice(0,1))}" alt="">`:esc(initials(sd.n).slice(0,1)));
   const name = side==='D' ? 'Nul' : esc(sd.n);
-  let pct=''; if(opts.dist){ const tot=opts.dist.tot; const k=m.k+'|'+side; const v=tot?Math.round((opts.dist.c[k]||0)*100/tot):0; if(v) pct=`<span class="vpill">${v}%</span>`; }
+  let pct=''; if(opts.dist){ const tot=opts.dist.tot; const k=m.k+'|'+side; const v=tot?Math.round((opts.dist.c[k]||0)*100/tot):0; if(v) pct=`<span class="vbar"><i style="width:${v}%"></i></span><span class="vlab">${v} %</span>`; }
   const act = can && !used ? `data-a="pick" data-v="${lg.id}|${r.k}|${m.k}|${side}"` : 'disabled';
   return `<button class="${cls}" ${act}>${sel?`<span class="ck">${I.check}</span>`:''}${ban?'<span class="bomb" title="Sabotée">💣</span>':''}<span class="bd">${bd}</span><span class="nm">${name}</span>${lant?`<span class="lnt">🔴 ${c.points?'+2 pts':'+1 vie'}</span>`:''}${pct}</button>`;
 }
@@ -1116,6 +1116,7 @@ function roundCard(c, r, o={}){
   if(!closed && o.hint!==false) h+=`<div class="hint">Choisis UN seul match et parie dessus.${allowDraw(lg)?'':' Pas de match nul.'} Les équipes déjà jouées sont grisées.</div>`;
   h+=saboAlert(c,r);
   const used=usedTeams(c,S.me,r.k), ban=saboOn(lg)?new Set(sabosOn(lg.id,S.me,r.k).map(x=>x.team)):null; const dist=(closed||picksVisible(lg))?roundDist(c,r):null;
+  if(dist&&dist.tot) h+=`<div class="vleg"><span class="vbar mini"><i style="width:60%"></i></span>La jauge indique la part des joueurs qui ont choisi chaque option.</div>`;
   matchesOf(r).forEach(m=>{
     const res=matchResult(lg,m); const sc=matchScore(lg,m);
     const chosen=o.compact && pickSides(my).some(x=>x.m===m.k);
@@ -1123,7 +1124,6 @@ function roundCard(c, r, o={}){
     if(!o.compact || o.mline) h+=`<div class="mline"><span class="tm">${logoTag(m.h)}<span>${esc(m.h.n)}</span>${rankTag(lg,m,m.h)}</span><span class="vs">${sc?`<span class="res">${esc(sc)}</span>`:'VS'}</span><span class="tm r">${logoTag(m.a)}<span>${esc(m.a.n)}</span>${rankTag(lg,m,m.a)}</span></div>`;
     h+=`<div class="tiles ${allowDraw(lg)?'':'two'}">${tileHtml(c,r,m,'H',{can,used,dist,ban})}${allowDraw(lg)?tileHtml(c,r,m,'D',{can,used,dist,ban}):''}${tileHtml(c,r,m,'A',{can,used,dist,ban})}</div></div>`;
   });
-  if(dist&&dist.tot) h+=`<div class="vleg"><span class="vpill">%</span> Part des joueurs qui ont choisi cette option.</div>`;
   return h+roundFoot(c,r)+'</div>';
 }
 function roundFoot(c,r){
