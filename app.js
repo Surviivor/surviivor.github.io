@@ -981,12 +981,12 @@ function dashCard(myL, todo){
   const ratio=open?done/open:1, C0=94.25, arc=Math.max(todo?4:0,Math.round(ratio*C0*10)/10);
   const ring=`<svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" stroke-opacity=".18" stroke-width="4"/><circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="${arc} 200"/></svg>`;
   const tag=(tt,lbl)=>tt?`<span class="dtag">${I.clock}${lbl||''}<em class="cdl" data-t="${tt}">${cdText(tt)}</em></span>`:'';
-  let h=todo
-    ? `<button class="dtodo" data-a="tab" data-v="paris"><span class="dring">${ring}<b>${todo}</b></span><span class="dtx"><b>pari${todo>1?'s':''} à valider</b>${tag(next)}</span><span class="dgo">${I.arrow}</span></button>`
-    : `<button class="dtodo zero" data-a="tab" data-v="paris"><span class="dring">${ring}<b>${IC.thumb}</b></span><span class="dtx"><b>0 pari à valider !</b>${nextAll?`<span class="dtag">${I.clock}Limite dans ${cdText(nextAll).replace('encore ','')}</span>`:''}</span><span class="dgo">${I.arrow}</span></button>`;
+  const CHV='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+  const pill=todo?`<button class="zp" data-a="tab" data-v="paris"><span class="n">${todo}</span>pari${todo>1?'s':''} à valider${CHV}</button>`:`<button class="zp" data-a="tab" data-v="paris">${IC.thumb}0 pari à valider</button>`;
+  let h='';
   const L=myL.filter(c=>c.status!=='finished').sort((a,b)=>(a.status==='upcoming')-(b.status==='upcoming'));
   if(L.length){
-    h+=`<div class="dh"><span>Tes ligues en cours</span><small>${L.length}</small></div><div class="dlg">`+L.map(c=>{
+    h+=`<div class="dh"><span>Tes ligues en cours</span>${pill}</div><div class="dlg">`+L.map(c=>{
       const nm="X "+esc(stripPrefix(c.lg.name)), kind=c.points?'Race':'Survivor'; let st, pct, cls='', sub='';
       if(c.status==='upcoming'){ const n=c.mem.length; st=`<b>${n}</b> inscrit${n>1?'s':''}`; pct=100; cls='soon'; sub=` · début dans ${shortDur(t(c.lg.startAt))}`; }
       else if(c.points){ const me=c.rankOf[S.me]||{}; st=`<b>${me.pos||'–'}${me.pos===1?'er':'e'}</b> · ${me.pts||0} pts sur ${c.N}`; pct=Math.min(100,Math.round((me.pts||0)*100/c.N)); }
@@ -995,6 +995,7 @@ function dashCard(myL, todo){
       else { st=`<b>${c.alive.length}</b> survivants sur ${c.mem.length}`; pct=Math.max(2,Math.round(c.alive.length*100/c.mem.length)); }
       return `<button class="drow" data-a="open" data-v="${c.lg.id}"><span class="nm"><small class="dk">${WM(c.points?'oneshot':'survivor',true)}${sub?`<span>${sub}</span>`:''}</small><span class="nm-l">${nm}<i class="nm-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></i></span></span><span class="st ${cls}">${st}</span><span class="bar ${cls}"><i style="width:${pct}%"></i></span></button>`; }).join('')+`</div>`;
   }
+  if(!h) return '';
   return `<div class="nh-card2 dash">${h}</div>`;
 }
 function viewHome(){

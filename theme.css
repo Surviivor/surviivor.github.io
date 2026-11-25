@@ -821,3 +821,10 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .drow .nm small.dk .wm{height:11px;width:auto;opacity:.6;display:block}
 .drow .nm small.dk span{white-space:pre}
 .jhow-l{font-size:14px;line-height:1.4;font-weight:600}
+/* Option C : pastille « paris à valider » dans le titre */
+.dash .dh{margin:2px 4px 4px;align-items:center;gap:10px}
+.dash .dh>span{white-space:nowrap;font-size:12px;letter-spacing:.8px}
+.zp{display:inline-flex;align-items:center;gap:7px;flex:none;white-space:nowrap;background:var(--yel);color:var(--on);border:0;border-radius:999px;padding:4px 10px 4px 4px;font-family:var(--bold);font-weight:800;font-size:12.5px;cursor:pointer}
+.zp .n{width:22px;height:22px;border-radius:50%;background:var(--on);color:var(--yel);display:flex;align-items:center;justify-content:center;font-size:12px;letter-spacing:0}
+.zp svg{width:12px;height:12px}
+.zp .ic{width:15px;height:15px;margin-left:5px}
