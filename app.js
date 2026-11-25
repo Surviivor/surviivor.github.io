@@ -1230,7 +1230,7 @@ function livesRulesHtml(lg){
   if(lg.redLantern) h+=`<p class="lrule">🔴 <b>Lanterne rouge :</b> si un joueur gagne avec la dernière équipe du classement, il ${isPoints(lg)?'marque <b>2 points bonus</b>':'gagne <b>1 vie supplémentaire</b>'}.</p>`;
   h+=`<p class="lrule">${picksVisible(lg)?'👀 <b>Paris visibles :</b> tu peux voir les choix des autres avant l\'heure limite.':'🙈 <b>Paris cachés :</b> les choix des autres sont dévoilés à l\'heure limite.'}</p>`;
   if(isPoints(lg)) return h;
-  if(+lg.lives>0) h+=`<p class="lrule">❤️ <b>Option de la ligue :</b> chaque joueur a droit à <b>une erreur</b> : il perd sa vie mais reste en jeu.</p>`;
+  if(+lg.lives>0) h+=`<p class="lrule">❤️ <b>Option de la ligue :</b> chaque joueur a droit à <b>une erreur</b> : si son pari est raté, il perd sa vie mais reste en jeu.</p>`;
   if(lg.joker) h+=`<p class="lrule">${JOKER_ICO}<b>Joker « double chance » :</b> une fois par ligue, un joueur peut choisir <b>2 équipes</b> sur une journée : il survit si <b>au moins une des 2 équipes</b> gagne.</p>`;
   if(lg.awayBonus) h+=`<p class="lrule">✈️ <b>Bonus extérieur :</b> si un joueur parie <b>3 fois</b> sur des équipes <b>à l'extérieur</b>, il gagne <b>1 vie supplémentaire</b>.</p>`;
   return h;
@@ -1244,7 +1244,7 @@ function optionsBlock(lg, pts, act, lid, locked){
   if(pts){
     o+=opt('lastwins', lg.lastRule==='wins', '🏆 Le dernier gagne aussi', 'Le dernier du classement à la fin remporte lui aussi la ligue.', 'Deux courses en une : les joueurs décrochés ne lâchent rien et misent sur les équipes qui vont perdre. Tout le monde reste à fond jusqu’au bout.');
   } else {
-    o+=opt('lives', +lg.lives>0, '❤️ Une vie en réserve', 'Chaque joueur a droit à une erreur : il perd sa vie mais reste en jeu.');
+    o+=opt('lives', +lg.lives>0, '❤️ Une vie en réserve', 'Chaque joueur a droit à une erreur : si son pari est raté, il perd sa vie mais reste en jeu.');
     o+=opt('away', !!lg.awayBonus, '✈️ Bonus extérieur', 'Si un joueur parie 3 fois sur des équipes à l’extérieur, il gagne 1 vie supplémentaire.');
   }
   o+=opt('lantern', !!lg.redLantern, '🔴 Lanterne rouge', pts?'Si un joueur gagne avec la dernière équipe du classement, il marque 2 points bonus.':'Si un joueur gagne avec la dernière équipe du classement, il gagne 1 vie supplémentaire.');
@@ -1272,7 +1272,7 @@ function extraBlock(lg, act, lid, locked, pts, noTitle){
 function livesBlock(lg, act, lid, locked){
   const v=lid?lid+'|':'', L=+(lg&&lg.lives)||0, B=!!(lg&&lg.awayBonus), J=!!(lg&&lg.joker);
   return `<label class="f fbig">Options</label><div class="lopt">
-    <button class="lopt-b ${L?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}lives"`}><i></i><span><b>❤️ Une vie en réserve</b><small>Chaque joueur a droit à une erreur : il perd sa vie mais reste en jeu.</small></span></button>
+    <button class="lopt-b ${L?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}lives"`}><i></i><span><b>❤️ Une vie en réserve</b><small>Chaque joueur a droit à une erreur : si son pari est raté, il perd sa vie mais reste en jeu.</small></span></button>
     <button class="lopt-b ${B?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}away"`}><i></i><span><b>✈️ Bonus extérieur</b><small>Si un joueur parie 3 fois sur des équipes à l'extérieur, il gagne 1 vie supplémentaire.</small></span></button>
     <button class="lopt-b ${J?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}joker"`}><i></i><span><b>${JOKER_ICO}Joker « double chance »</b><small>Une fois par ligue, choisis 2 équipes sur une journée : tu survis si au moins une des 2 équipes gagne.</small></span></button>
   </div>${extraBlock(lg,act,lid,locked,false,true)}${locked?'<div class="help" style="margin:-4px 0 10px">Options figées une fois la ligue commencée.</div>':''}`;
