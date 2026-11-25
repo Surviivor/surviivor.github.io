@@ -249,6 +249,7 @@ const IC=(()=>{ const sv=(d,extra='')=>`<svg class="ic" viewBox="0 0 24 24" fill
   flame:sv('<path d="M12 22c4 0 7-2.8 7-7 0-4.5-4-6.5-4-11-3 1.5-5 4.5-5 7.5-1.5-.8-2.2-2.3-2.3-3.5C5.5 9.6 5 11.8 5 15c0 4.2 3 7 7 7z"/>'),
   bolt:sv('<path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/>'),
   skull:sv('<path d="M12 3a8 8 0 0 0-5 14.2V20h10v-2.8A8 8 0 0 0 12 3z"/><circle cx="9" cy="11.5" r="1.6" fill="currentColor"/><circle cx="15" cy="11.5" r="1.6" fill="currentColor"/><path d="M10.5 20v-2M13.5 20v-2"/>'),
+  thumb:sv('<path d="M7 10v11H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h3z"/><path d="M7 10l4-8a2.5 2.5 0 0 1 2.5 2.5V9h5.6a2 2 0 0 1 2 2.3l-1.4 8a2 2 0 0 1-2 1.7H7"/>'),
   check:sv('<path d="M4 12.5l5 5L20 6.5"/>'),
   x:sv('<path d="M6 6l12 12M18 6L6 18"/>'),
   minus:sv('<path d="M5 12h14"/>'),
@@ -962,6 +963,31 @@ function leagueCardNew(c){ let h='';
       </div></div>`;
   return h;
 }
+// Tableau de bord de l'accueil : paris à valider (anneau) + situation dans chaque ligue en cours
+function dashCard(myL, todo){
+  if(S.guest) return '';
+  let open=0, done=0, next=null, nextAll=null;
+  myL.forEach(c=>{ if(c.status!=='live'||!c.alive.includes(S.me)) return; const r=c.rounds.find(r=>t(r.deadline)>now()); if(!r) return; open++;
+    const ok=!!pickOf(S.me,c.lg.id,r.k), tt=t(r.deadline); if(ok) done++; else if(!next||tt<next) next=tt; if(!nextAll||tt<nextAll) nextAll=tt; });
+  const ratio=open?done/open:1, C0=94.25, arc=Math.max(todo?4:0,Math.round(ratio*C0*10)/10);
+  const ring=`<svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" stroke-opacity=".18" stroke-width="4"/><circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="${arc} 200"/></svg>`;
+  const tag=(tt,lbl)=>tt?`<span class="dtag">${I.clock}${lbl||''}<em class="cdl" data-t="${tt}">${cdText(tt)}</em></span>`:'';
+  let h=todo
+    ? `<button class="dtodo" data-a="tab" data-v="paris"><span class="dring">${ring}<b>${todo}</b></span><span class="dtx"><b>pari${todo>1?'s':''} à valider</b>${tag(next)}</span><span class="dgo">${I.arrow}</span></button>`
+    : `<button class="dtodo zero" data-a="tab" data-v="paris"><span class="dring">${ring}<b>${IC.thumb}</b></span><span class="dtx"><b>0 pari à valider !</b>${nextAll?`<span class="dtag">${I.clock}Limite dans ${cdText(nextAll).replace('encore ','')}</span>`:''}</span><span class="dgo">${I.arrow}</span></button>`;
+  const L=myL.filter(c=>c.status!=='finished').sort((a,b)=>(a.status==='upcoming')-(b.status==='upcoming'));
+  if(L.length){
+    h+=`<div class="dh"><span>Tes ligues en cours</span><small>${L.length}</small></div><div class="dlg">`+L.map(c=>{
+      const nm="X "+esc(stripPrefix(c.lg.name)), kind=c.points?'Race':'Survivor'; let st, pct, cls='';
+      if(c.status==='upcoming'){ st=`Début dans ${untilJH(c.lg.startAt)}`; pct=0; cls='mut'; }
+      else if(c.points){ const me=c.rankOf[S.me]||{}; st=`<b>${me.pos||'–'}${me.pos===1?'er':'e'}</b> · ${me.pts||0} pts sur ${c.N}`; pct=Math.min(100,Math.round((me.pts||0)*100/c.N)); }
+      else if(!c.alive.includes(S.me)){ st='Éliminé'; pct=Math.round(c.alive.length*100/c.mem.length); cls='mut'; }
+      else if(c.alive.length===1){ st='Dernier survivant !'; pct=100; cls='ok'; }
+      else { st=`<b>${c.alive.length}</b> survivants sur ${c.mem.length}`; pct=Math.max(2,Math.round(c.alive.length*100/c.mem.length)); }
+      return `<button class="drow" data-a="open" data-v="${c.lg.id}"><span class="nm"><small class="wm-txt">${kind}</small>${nm}</span><span class="st ${cls}">${st}</span><span class="bar ${cls}"><i style="width:${pct}%"></i></span></button>`; }).join('')+`</div>`;
+  }
+  return `<div class="nh-card2 dash">${h}</div>`;
+}
 function viewHome(){
   const all=Object.values(S.leagues).filter(visible).map(l=>C(l.id)).filter(Boolean);
   const order={upcoming:0,live:1,finished:2};
@@ -988,11 +1014,7 @@ function viewHome(){
     if(!nextDl || (nextDl.done && !done) || (nextDl.done===done && cand.t<nextDl.t)) nextDl=cand; });
   const avImg=`<img src="${me.avatar?blobUrl(me.avatar):DEFAULT_AVATAR}" data-fb="${esc(initials(nm))}" alt="">`;
   let h=(S.guest?`<div class="nh-top"><div class="nh-hi"><small>Bienvenue sur</small><span class="nh-logo">${WM()}</span></div><button class="btn sm brand" data-a="tab" data-v="profil">Se connecter</button></div>`:`<div class="nh-top"><button class="nh-av" data-a="tab" data-v="profil" aria-label="Profil">${avImg}</button><div class="nh-hi"><small>Salut,</small><b>${esc(nm)}</b></div><span class="nh-logo">${WM()}</span></div>`)+installBand()+avatarBand()+`
-  <div class="nh-card2">
-    <div class="nh-l"><b>${inGame}</b><span>ligue${inGame>1?'s':''} où tu es<br>encore en jeu</span></div>
-    <button class="nh-todo ${todo?'':'zero'}" data-a="tab" data-v="paris"><b>${todo}</b><span>pari${todo>1?'s':''} à valider</span><i>${I.arrow}</i></button>
-    ${(nextDl&&nextDl.done&&!todo)?`<div class="nh-next ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v11H4a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h3z"/><path d="M7 10l4-8a2.5 2.5 0 0 1 2.5 2.5V9h5.6a2 2 0 0 1 2 2.3l-1.4 8a2 2 0 0 1-2 1.7H7"/></svg><span>Tous tes choix sont validés :)</span></div>`:nextDl?`<div class="nh-next">${I.clock}<span>${nextDl.done?`Modifiable · <b>${esc(nextDl.name)}</b>`:`Fais ton choix pour la <b>${esc(nextDl.name)}</b>`}</span><em class="cdl" data-t="${nextDl.t}">${cdText(nextDl.t)}</em></div>`:''}
-  </div>
+  ${dashCard(myL,todo)}
   <div class="how-card ${howOpen?'open':''}"><div class="how"><button class="how-t how-tg" data-a="toggle" data-v="howX" aria-expanded="${howOpen}"><span>Comment on joue&nbsp;?</span>${I.chev}</button>${howOpen?`
     <div class="how-sw" role="tablist"><button role="tab" class="${fmt==='survivor'?'on':''}" data-a="fmt" data-v="survivor" aria-label="Survivor">${WM('survivor', false)}</button><button role="tab" class="${fmt==='oneshot'?'on':''}" data-a="fmt" data-v="oneshot" aria-label="Race">${WM('oneshot', false)}</button></div></div>
   <div class="how-d">${fmt==='oneshot'?'– Cumule des points –':'– Le dernier en vie gagne –'}</div>
@@ -1027,12 +1049,6 @@ ${fmt==='oneshot'?`    <div class="sl slide "><div class="sl-ph"><div class="il 
   order2.forEach(g=>{ const L2=grp[g]; if(!L2.length) return;
     L2.forEach(c=>{ h+=leagueCardNew(c); });
   });
-  // Joueur habitué : « Mes ligues » en premier, avant « Comment on joue »
-  if(!S.guest && (S.visits||0)>3){
-    const mine=all.filter(c=>isMember(c.lg.id) && c.status!=='finished');
-    if(mine.length){ const k=h.indexOf('<div class="how-card');
-      if(k>=0) h=h.slice(0,k)+`<div class="nh-sec"><span>Mes ligues</span><small>${mine.length} ligue${mine.length>1?'s':''}</small></div>`+mine.map(leagueCardNew).join('')+`<div class="nh-gap"></div>`+h.slice(k); }
-  }
   h+=`<button class="nc-join" data-a="joinCode">${I.key} Rejoindre une ligue privée avec un code</button>`;
   h+=`<button class="nc-join nc-create" data-a="tab" data-v="admin">${I.plus} Créer une ligue et invite tes amis</button>`;
   return h;
