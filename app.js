@@ -1166,7 +1166,9 @@ function jokersCard(c, r){
   if(!c.points && +lg.lives>0) how.push([TI('heart'),'Une vie en réserve','Chaque joueur démarre avec une vie : à sa première erreur, il la perd mais reste en jeu.']);
   if(lg.redLantern) how.push([TI('lantern'),'Lanterne rouge',c.points?'Une victoire avec la dernière équipe du classement : +2 points bonus.':'Une victoire avec la dernière équipe du classement : +1 vie.']);
   const myL=!c.points&&c.lives?c.lives[S.me]||0:0, st=0;
-  const howH=how.length?`<div class="jhow"><div class="jhow-t">${c.points?'Comment gagner des points bonus':'Les vies'}</div>${!c.points?`<div class="jhow-me">Tes vies : <b>${myL?(CI.heart.repeat(Math.min(myL,5))+' '+myL):'aucune pour l’instant'}</b>${c.points?'':'<div class="jhow-why">Une vie te sauve d’une élimination : si ton pari est perdu, tu perds une vie au lieu d’être éliminé, et tu restes en jeu. Les vies se cumulent.</div><div class="jhow-t2">Comment en gagner</div>'}</div>`:''}${how.map(([i,tt,d])=>`<div class="jhow-r"><span>${i}</span><div><b>${tt}</b><small>${d}</small></div></div>`).join('')}</div>`:'';
+  const howH=!how.length?'':c.points
+    ? `<div class="jhow"><div class="jhow-t">Comment gagner des points bonus</div>${how.map(([i,tt,d])=>`<div class="jhow-r"><span>${i}</span><div><b>${tt}</b><small>${d}</small></div></div>`).join('')}</div>`
+    : `<div class="jhow"><div class="jhow-t">Les vies</div><div class="jhow-me">Tes vies : <b>${myL?(CI.heart.repeat(Math.min(myL,5))+' '+myL):'aucune pour l’instant'}</b></div><div class="jhow-why">Pari perdu ? Ta vie t’évite l’élimination : tu la perds et tu restes en jeu.</div>${+lg.lives>0?`<div class="jhow-r"><span>${TI('heart')}</span><div><b>1 vie au départ</b><small>Chaque joueur commence la ligue avec une vie.</small></div></div>`:''}${lg.redLantern?`<div class="jhow-r"><span>${TI('lantern')}</span><div><b>Gagner une vie</b><small>Gagne avec la dernière équipe du classement (lanterne rouge).</small></div></div>`:''}</div>`;
   return `<details class="card coll jkc" ${op?'open':''}><summary data-a="toggle" data-v="${k}"><span class="ctitle">${JOKER_ICO}Jokers (${n})</span>${I.chev}</summary><div class="jlist">${body}</div>${regain}${howH}</details>`;
 }
 // sabotage reçu : reste toujours visible dans « Mon choix »
@@ -1349,7 +1351,7 @@ function rulesCard(lg){
   const lv=[];
   if(!pts && +lg.lives>0) lv.push(row(TI('heart'),'Une vie en réserve','Chaque joueur démarre avec une vie : à sa première erreur, il la perd mais reste en jeu.'));
   if(lg.redLantern) lv.push(row(TI('lantern'),'Lanterne rouge',pts?'Si un joueur gagne avec la dernière équipe du classement, il marque 2 points bonus.':'Si un joueur gagne avec la dernière équipe du classement, il gagne 1 vie supplémentaire.'));
-  const lvH=lv.length?`<div class="rsec">${pts?'Points bonus':'Les vies'}</div>${lv.join('')}${!pts?'<div class="rnote">Une vie sauve d’une élimination : le joueur la perd et reste en jeu. Les vies se cumulent.</div>':''}`:'';
+  const lvH=lv.length?`<div class="rsec">${pts?'Points bonus':'Les vies'}</div>${lv.join('')}${!pts?'<div class="rnote">Une vie sauve d’une élimination : le joueur la perd et reste en jeu.</div>':''}`:'';
   // jokers
   const jk=[];
   if(jokerOn(lg)) jk.push(row(TI('joker'),'Double chance','Un joueur choisit 2 équipes sur une journée : il survit si au moins une des 2 équipes gagne. Les 2 équipes comptent ensuite comme jouées.'));
