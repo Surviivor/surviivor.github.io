@@ -1373,7 +1373,7 @@ function h2hSection(c, f){
       return `<span class="hs ${res}" title="${esc(x.d)}">${x.h===hid?`${x.hs}-${x.as}`:`${x.as}-${x.hs}`}</span>`; }).join('');
     return `<div class="h2h"><div class="h2h-t">${logoTag(m.h)}<b>${esc(m.h.n)}</b><span class="vs">VS</span><b>${esc(m.a.n)}</b>${logoTag(m.a)}</div><div class="h2h-l">${dots}</div></div>`;
   }).join('');
-  return rows?`<div class="ssec"><div class="stitle">${I.flash}Confrontations directes</div><div class="muted" style="font-size:12px;margin:-4px 0 8px">5 derniers matchs entre les 2 équipes (score vu de l'équipe à domicile de la journée).</div>${rows}</div>`:'';
+  return rows?`<div class="ssec"><div class="stitle">${I.flash}Confrontations directes</div><div class="muted" style="font-size:12px;margin:-4px 0 8px">5 derniers matchs entre les 2 équipes.</div>${rows}</div>`:'';
 }
 function statsCard(c){
   const lg=c.lg; const key=lg.comp;
