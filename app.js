@@ -653,6 +653,19 @@ const A = {
     writeMe({picks:{[lid]:{[rk]:{m:mk||null,p,m2:null,p2:null,j:false,at}}}}).then(()=>toast(cur?'Choix modifié !':'Choix enregistré !'));
   },
   toggle(v){ S.open[v]=!S.open[v]; render(); },
+  async exportEmails(){
+    if(!S.isOwner) return;
+    if(S.mode==='demo') return toast('Export indisponible en mode démo.',true);
+    if(!window.survivorContacts) return toast('Recharge la page puis réessaie.',true);
+    let rows; try{ rows=await window.survivorContacts(); }catch(e){ return toast('Accès refusé : pense à publier les nouvelles règles Firestore.',true); }
+    if(!rows.length) return toast('Aucun e-mail enregistré pour l’instant : ils s’ajoutent à la prochaine connexion de chaque joueur.',true);
+    const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+    const lines=[['Pseudo','E-mail','Inscrit le','Dernière visite','Ligues'].map(q).join(';')];
+    rows.sort((a,b)=>(a.first||'').localeCompare(b.first||'')).forEach(r=>{ const p=S.players[r.id]||{}; const lg=Object.keys(p.leagues||{}).map(l=>S.leagues[l]&&S.leagues[l].name).filter(Boolean).join(', ');
+      lines.push([nameOf(r.id)||r.name||'', r.email, (r.first||'').slice(0,10), (r.last||'').slice(0,10), lg].map(q).join(';')); });
+    const blob=new Blob(['\ufeff'+lines.join('\n')],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='survivor-emails-'+new Date().toISOString().slice(0,10)+'.csv'; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1000);
+    toast(rows.length+' e-mail'+(rows.length>1?'s':'')+' exporté'+(rows.length>1?'s':'')+' !');
+  },
   saboStart(v){ if(guard()) return; const [lid,rk]=v.split('|'); S.view.sab={lid,rk}; render(); },
   saboTo(v){ if(!S.view.sab) return; S.view.sab.to=v; S.view.sab.team=null; render(); },
   saboTeam(v){ if(!S.view.sab) return; const i=v.indexOf('|'); S.view.sab.team=v.slice(0,i); S.view.sab.tn=v.slice(i+1); render(); },
@@ -1085,7 +1098,7 @@ function jokersCard(c, r){
   if(!c.points && lg.awayBonus) how.push(['✈️','Bonus extérieur','Tous les 3 paris sur une équipe qui joue à l’extérieur : +1 vie.']);
   if(lg.redLantern) how.push(['🔴','Lanterne rouge',c.points?'Une victoire avec la dernière équipe du classement : +2 points bonus.':'Une victoire avec la dernière équipe du classement : +1 vie.']);
   const myL=!c.points&&c.lives?c.lives[S.me]||0:0, st=!c.points&&lg.awayBonus&&c.streak?c.streak[S.me]||0:0;
-  const howH=how.length?`<div class="jhow"><div class="jhow-t">${c.points?'Comment gagner des points bonus':'Comment gagner des vies'}</div>${!c.points?`<div class="jhow-me">Tes vies : <b>${myL?('❤️'.repeat(Math.min(myL,5))+' '+myL):'aucune pour l’instant'}</b>${lg.awayBonus?` · Bonus extérieur : <b>${st}/3</b>`:''}</div>`:''}${how.map(([i,tt,d])=>`<div class="jhow-r"><span>${i}</span><div><b>${tt}</b><small>${d}</small></div></div>`).join('')}</div>`:'';
+  const howH=how.length?`<div class="jhow"><div class="jhow-t">${c.points?'Comment gagner des points bonus':'Les vies'}</div>${!c.points?`<div class="jhow-me">Tes vies : <b>${myL?('❤️'.repeat(Math.min(myL,5))+' '+myL):'aucune pour l’instant'}</b>${lg.awayBonus?` · Bonus extérieur : <b>${st}/3</b>`:''}${c.points?'':'<div class="jhow-why">Une vie te sauve d’une élimination : si ton pari est perdu, tu perds une vie au lieu d’être éliminé, et tu restes en jeu. Les vies se cumulent.</div><div class="jhow-t2">Comment en gagner</div>'}</div>`:''}${how.map(([i,tt,d])=>`<div class="jhow-r"><span>${i}</span><div><b>${tt}</b><small>${d}</small></div></div>`).join('')}</div>`:'';
   return `<details class="card coll jkc" ${op?'open':''}><summary data-a="toggle" data-v="${k}"><span class="ctitle">${JOKER_ICO}Jokers (${n})</span>${I.chev}</summary><div class="jlist">${body}</div>${regain}${howH}</details>`;
 }
 // sabotage reçu : reste toujours visible dans « Mon choix »
@@ -1538,6 +1551,7 @@ function viewAdmin(){
       <button class="btn pop full" style="margin-top:18px" data-a="createLeague">CRÉER LA LIGUE</button></div>`;
   }
   if(mineL.length){
+    if(owner) h+=`<div class="card exp"><div><b>📧 E-mails des joueurs</b><small>Télécharge la liste des inscrits (pseudo, e-mail, ligues) au format CSV, pour Excel ou Google Sheets.</small></div><button class="btn sm brand" data-a="exportEmails">Exporter</button></div>`;
     h+=`<div class="sec">${owner?'Gérer les ligues':'Ma ligue'}</div>`;
     mineL.map(l=>C(l.id)).filter(Boolean).sort((a,b)=>(+(b.lg.pin||0))-(+(a.lg.pin||0)) || t(b.lg.createdAt)-t(a.lg.createdAt)).forEach(c=>{
       const todo=c.rounds.filter(r=>(c.info[r.k]||{}).state==='waiting').length;

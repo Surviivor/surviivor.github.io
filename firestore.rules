@@ -26,6 +26,15 @@ service cloud.firestore {
       allow write: if signedIn() && (uid == request.auth.uid || isAdmin());
     }
 
+    // Carnet d'adresses : l'e-mail de chaque joueur, lisible uniquement par l'admin.
+    // Chacun n'écrit que le sien, avec l'e-mail de son propre compte.
+    match /contacts/{uid} {
+      allow read: if isAdmin();
+      allow write: if signedIn() && uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email;
+      allow delete: if signedIn() && (uid == request.auth.uid || isAdmin());
+    }
+
     // Choix des joueurs : un document par joueur, ligue et journée.
     // Le serveur refuse tout choix créé ou modifié après l'heure limite.
     match /picks/{pid} {

@@ -664,3 +664,9 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .rrow b{display:block;font-family:var(--bold);font-weight:800;font-size:14px}
 .rrow small{display:block;color:var(--muted);font-size:12.5px;line-height:1.4;margin-top:2px}
 .rnote{font-size:12px;color:var(--muted);background:var(--bg);border-radius:10px;padding:8px 10px;margin-top:6px;line-height:1.4}
+.jhow-why{font-size:13px;line-height:1.4;background:#FDECEC;color:#7A1F1F;border-radius:12px;padding:9px 11px;margin:2px 0 10px}
+.jhow-t2{font-family:var(--bold);font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:10px 0 4px}
+.card.exp{display:flex;align-items:center;gap:12px}
+.card.exp>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.card.exp b{font-family:var(--bold);font-weight:800;font-size:15px}
+.card.exp small{color:var(--muted);font-size:12.5px;line-height:1.35}

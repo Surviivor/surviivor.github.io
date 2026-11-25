@@ -143,6 +143,7 @@ window.survivorDeleteAccount = async () => {
   const mine = await getDocs(query(collection(fs, 'picks'), where('uid', '==', u.uid)));
   const batch = writeBatch(fs); mine.forEach(d => batch.delete(d.ref)); await batch.commit();
   await deleteDoc(doc(fs, 'players', u.uid));
+  try { await deleteDoc(doc(fs, 'contacts', u.uid)); } catch (e) {}
   started = 'deleted';
   await deleteUser(u);
   location.reload();
@@ -273,7 +274,17 @@ async function ensurePlayer(u) {
     if (!cur.exists()) await setDoc(ref, { id: u.uid, pseudo: (pendingPseudo || u.displayName || (u.email || 'Joueur').split('@')[0]).slice(0, 24), leagues: {} });
     try { sessionStorage.removeItem('survivor-pseudo'); } catch (e) {}
   } catch (e) { console.warn(e); }
+  // Carnet d'adresses privé (lisible uniquement par l'admin) : e-mail du joueur
+  if (u.email) {
+    try {
+      const cref = doc(fs, 'contacts', u.uid);
+      const c = await getDoc(cref);
+      await setDoc(cref, { email: u.email, name: u.displayName || '', last: new Date().toISOString(), ...(c.exists() ? {} : { first: (u.metadata && u.metadata.creationTime) ? new Date(u.metadata.creationTime).toISOString() : new Date().toISOString() }) }, { merge: true });
+    } catch (e) { /* règles pas encore à jour : on ignore */ }
+  }
 }
+// Export des e-mails (admin uniquement : les règles Firestore refusent les autres)
+window.survivorContacts = async () => { const s = await getDocs(collection(fs, 'contacts')); return s.docs.map(d => ({ id: d.id, ...d.data() })); };
 onAuthStateChanged(auth, async u => {
   if (!u) {
     if (started === 'user') return location.reload();
