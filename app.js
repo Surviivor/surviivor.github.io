@@ -1542,7 +1542,6 @@ function viewLeague(lid){
       if(voters.length) h+=`<div class="card" style="margin-top:-6px"><span class="lbl">Choix des joueurs</span>`+voters.map(u=>{ const p=pickOf(u,lid,r.k); const res=c.pick&&p?(ri.res||{})[p.m]:null; const ok=c.pick?(p&&res&&res===p.p):(p&&ri.win?p.p===ri.win:null); return `<div class="prow">${avatarOf(u)}<div class="nm">${esc(nameOf(u))}<small>${p?esc(pickLabel(lg,r,p)):'pas de choix'}</small></div>${c.points?(ri.pts&&ri.pts[u]!==undefined?`<span class="pill ${ri.pts[u]===3?'green':ri.pts[u]===1?'grey':'red'}">+${ri.pts[u]}</span>`:''):ri.state==='done'?(ri.out.includes(u)?'<span class="pill red">Éliminé</span>':'<span class="pill green">OK</span>'):ok===null||ri.state!=='done'?'':''}</div>`; }).join('')+'</div>';
     });
   }
-  if(isMember(lid) && !S.guest) h+=`<button class="leave-btn" data-a="leave" data-v="${lid}">${I.back} Quitter la ligue</button>`;
   return h;
 }
 
