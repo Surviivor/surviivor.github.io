@@ -25,6 +25,7 @@ const DEFAULT_RULES = {
 };
 
 const I = {
+  logout:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5"/><path d="M5 12h11"/></svg>',
   crop:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>',
   down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l7 7 4-4 7 7"/><path d="M15 16h6v-6"/></svg>',
   trophy:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 3h10v2h3a1 1 0 0 1 1 1v2a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V18h3v3H8v-3h3v-3.1A5 5 0 0 1 7.3 12H7a4 4 0 0 1-4-4V6a1 1 0 0 1 1-1h3V3zm10 4v3a2 2 0 0 0 2-2V7h-2zM5 7v1a2 2 0 0 0 2 2V7H5z"/></svg>',
@@ -1192,7 +1193,6 @@ function roundCard(c, r, o={}){
   if(!closed && o.hint!==false) h+=`<div class="hint">Choisis UN seul match et parie dessus.${allowDraw(lg)?'':' Pas de match nul.'} Les équipes déjà jouées sont grisées.</div>`;
   h+=saboAlert(c,r);
   const used=usedTeams(c,S.me,r.k), ban=saboOn(lg)?new Set(sabosOn(lg.id,S.me,r.k).map(x=>x.team)):null; const dist=(closed||picksVisible(lg))?roundDist(c,r):null;
-  if(dist&&dist.tot) h+=`<div class="vleg"><span class="vbar mini"><i style="width:60%"></i></span>La jauge indique la part des joueurs qui ont choisi chaque option.</div>`;
   matchesOf(r).forEach(m=>{
     const res=matchResult(lg,m); const sc=matchScore(lg,m);
     const chosen=o.compact && pickSides(my).some(x=>x.m===m.k);
@@ -1605,7 +1605,7 @@ function viewParis(){
   if(!next.length) h+=`<div class="card muted" style="text-align:center;font-size:15px">Rien à jouer pour le moment 👌</div>`;
   next.forEach(([c,r])=>{
     const my=pickOf(S.me,c.lg.id,r.k); const nm=c.pick?matchesOf(r).length:0;
-    const info=c.pick?`<div class="dl open" style="font-size:15px">${nm} match${nm>1?'s':''} · ${my?'ton choix est en surbrillance':'à toi de choisir'} · modifiable jusqu'au ${fmtDT(r.deadline)}</div>`:`<div class="dl open" style="font-size:15px">Vote modifiable jusqu'au ${fmtDT(r.deadline)}</div>`;
+    const info=`<div class="dl open" style="font-size:15px">Modifiable jusqu'au ${fmtDT(r.deadline)}</div>`;
     let card=roundCard(c,r,{header:`<h3>${c.pick?'Mon choix':'Mon vote'}</h3>`+info, compact:true, mline:true, hint:false});
     card=card.replace(/<div class="dl open">[\s\S]*?<\/div>/,''); // header already shows deadline
     // Encart déroulant par ligue : ouvert par défaut tant que le choix n'est pas fait
@@ -1753,15 +1753,15 @@ function viewProfil(){
   const wins=my.filter(c=>c.winners.includes(S.me)).length, alive=my.filter(c=>c.status!=='finished'&&c.alive.includes(S.me)).length;
   let h=`<div class="ptitle">${titleImg('title-profil.png','PROFIL')}</div>`;
   h+=`<div style="text-align:center"><button class="avatar-big" data-a="uploadAvatar"><img src="${me.avatar?blobUrl(me.avatar):DEFAULT_AVATAR}" data-fb="${esc(initials(name))}" alt=""><span class="cam">${I.cam}</span></button><div style="margin:18px 0 22px;display:flex;gap:22px;justify-content:center"><button class="link" data-a="uploadAvatar">Changer la photo</button>${me.avatar?'<button class="link" data-a="recropAvatar">Recadrer</button>':''}</div></div>`;
-  h+=`<div class="card" style="display:flex;align-items:center;gap:14px"><div style="flex:1;min-width:0"><div class="lbl">Nom d'utilisateur</div><div class="pname" style="margin-top:10px">${esc(name)}</div>${S.email?`<div class="pmail">${esc(S.email)}</div>`:'<div style="height:10px"></div>'}${S.isOwner?`<span class="badge">${I.shield}ADMIN</span>`:''}</div><button class="circ" data-a="editName" aria-label="Modifier">${I.edit}</button></div>`;
-  h+=`<a class="fb-btn" href="https://wa.me/33650710675?text=${encodeURIComponent('Salut ! Une remarque / idée pour Survivor : ')}" target="_blank" rel="noopener"><span class="fb-ic">${IC.chat}</span><span class="fb-tx"><b>Une remarque, une idée ?</b><small>Écris-moi directement sur WhatsApp</small></span><span class="fb-go">${I.arrow}</span></a>`;
+  h+=`<div class="card pcard" style="position:relative"><button class="pedit" data-a="editName" aria-label="Modifier">${I.edit}</button><div style="min-width:0"><div class="lbl">Nom d'utilisateur</div><div class="pname" style="margin-top:10px">${esc(name)}</div>${S.email?`<div class="pmail">${esc(S.email)}</div>`:'<div style="height:10px"></div>'}${S.isOwner?`<span class="badge">${I.shield}ADMIN</span>`:''}</div></div>`;
+  h+=`<a class="fb-btn" href="https://wa.me/33650710675?text=${encodeURIComponent('Salut ! Une remarque / idée pour Survivor : ')}" target="_blank" rel="noopener"><span class="fb-ic">${IC.chat}</span><span class="fb-tx"><b>Une remarque, une idée ?</b><small>Fais-nous tes retours</small></span><span class="fb-go">${I.arrow}</span></a>`;
   if(S.mode==='demo') h+=`<div class="card" style="font-size:14px;line-height:1.5"><b>Site de test.</b> Nouveau design avec des données fictives : rien n'est enregistré.</div>`;
   if(S.readOnly) h+=`<div class="card" style="background:var(--brand-soft);font-size:14px;line-height:1.5"><b>Lecture seule.</b> Pour jouer, l'organisateur doit t'inviter sur le site avec le rôle Éditeur.</div>`;
   const jl=my.filter(c=>c.started && c.rounds.some(r=>t(r.deadline)<=now()));
   if(jl.length){ h+=`<div class="sec">Mon parcours</div>`+jl.map(c=>journey(c,S.me,{title:true,share:true})).join(''); }
   if(CREDITS && Object.keys(CREDITS).length) h+=`<details class="card coll" style="margin-top:14px"><summary><span class="lbl">Crédits photos</span>${I.chev}</summary><div class="credits">${PHOTOS.filter(p=>CREDITS[p.k]).map(p=>`<p><b>${esc(p.label)}</b> — ${creditLine(p.k)}</p>`).join('')}</div></details>`;
   h+=installCard('profil');
-  if(window.survivorLogout) h+=`<button class="btn line full" style="margin-top:18px" data-a="logout">SE DÉCONNECTER</button>`;
+  if(window.survivorLogout) h+=`<button class="logout-btn" data-a="logout"><span>${I.logout}</span>Se déconnecter</button>`;
   h+=`<div style="text-align:center;margin-top:26px"><button class="link red" style="color:var(--err)" data-a="${window.survivorDeleteAccount?'deleteAccount':'wipe'}">${I.trash.replace('<svg','<svg width="22" height="22"')} ${window.survivorDeleteAccount?'Supprimer mon compte':'Supprimer mes données'}</button></div>`;
   return h;
 }

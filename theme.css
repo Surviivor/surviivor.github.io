@@ -838,3 +838,20 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .oc{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--bg,#F2EFE8);border-radius:10px;height:32px;font-weight:800;font-size:14px}
 .oc i{font-style:normal;font-size:11px;font-weight:700;color:var(--muted)}
 .oc.fav{background:var(--yel);color:var(--on)}.oc.fav i{color:var(--on);opacity:.6}
+/* Profil */
+.avatar-big{box-shadow:none}
+.pcard{padding-right:56px}
+.pedit{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(22,24,29,.15);background:#fff;color:var(--on);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.pedit svg{width:17px;height:17px}
+.fb-btn{background:#25D366;color:#fff}
+.fb-btn .fb-ic{background:rgba(255,255,255,.22);color:#fff}
+.fb-btn .fb-tx small{color:rgba(255,255,255,.9)}
+.fb-btn .fb-go{background:#fff;color:#128C7E}
+.logout-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin:22px 0 6px;height:52px;border-radius:16px;border:0;background:#FDECEC;color:#C0392B;font-family:var(--bold);font-weight:700;font-size:15px;cursor:pointer}
+.logout-btn svg{width:19px;height:19px;display:block}
+/* Mes paris : pas de cadre noir autour du match choisi */
+.match.chosen{border:0;padding:0;margin:12px 0 0}
+/* logo Survivor de l'accueil un peu plus grand */
+.nh-logo .wm{height:25px}
+/* titre « Paris de la journée » dans la police des onglets */
+.nv .stitle{font-family:var(--title);font-weight:600}
