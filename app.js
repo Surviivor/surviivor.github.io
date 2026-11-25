@@ -1501,6 +1501,7 @@ function pickPill(c, r, p, blur){
   return `<span class="spks">${parts}</span>`;
 }
 // Onglet CLASSEMENT d'une Race : tableau (rang, joueur, points, pari de la prochaine journée) puis « Les plus choisies »
+const LOCK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 function raceRanking(c){
   const lg=c.lg, lid=lg.id, r=c.rounds.find(r=>t(r.deadline)>now()), vis=picksVisible(lg);
   const n=r?((c.info[r.k]||{}).n||(c.rounds.indexOf(r)+1)):0;
@@ -1508,7 +1509,7 @@ function raceRanking(c){
   const sides=[]; if(r) matchesOf(r).forEach(m=>{ sides.push(m.h, m.a); }); const F=i=>sides[i%Math.max(1,sides.length)]||{n:'Équipe'};
   const showPk=r && c.status!=='finished';
   const pill=(u,i)=>{ const p=pickOf(u,lid,r.k); if(!p) return `<span class="rpk none">–</span>`;
-    if(!vis && u!==S.me){ const sd=F(i*5+1); return `<span class="rpk bl" aria-hidden="true">${logoTag(sd,'rpk-im')}<span>${esc(sd.n)}</span></span>`; }
+    if(!vis && u!==S.me) return `<span class="rpk hid">${LOCK}<span>Parié</span></span>`;
     const x=pickSides(p)[0]; const m=(r.matches||{})[x.m]; if(!m) return `<span class="rpk none">–</span>`;
     if(x.p==='D') return `<span class="rpk">${logoTag(m.h,'rpk-im')}<span>Nul</span></span>`;
     const sd=x.p==='H'?m.h:m.a; return `<span class="rpk">${logoTag(sd,'rpk-im')}<span>${esc(sd.n)}</span></span>`; };
@@ -1546,7 +1547,7 @@ function survivorsView(c){
     if(r && c.status!=='finished'){ const p=pickOf(u,lid,r.k);
       if(!p) right=`<span class="spk none">Pas encore choisi</span>`;
       else if(vis||u===S.me) right=pickPill(c,r,p);
-      else { const sd=F(i*5+1); right=`<span class="spks bl" aria-hidden="true"><span class="spk">${logoTag(sd,'spk-im')}<span>${esc(sd.n)}</span></span></span>`; } }
+      else right=`<span class="spks"><span class="spk hid">${LOCK}<span>Parié</span></span></span>`; }
     return `<div class="sv-r">${avatarOf(u)}<div class="sv-n">${esc(nameOf(u))}${u===S.me?' <em>(toi)</em>':''}${lv?`<small>${CI.heart} ${lv} vie${lv>1?'s':''}</small>`:''}</div>${right}</div>`; }).join('');
   h+=`</div>`;
   // éliminés : du dernier tombé au premier

@@ -999,3 +999,10 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .rpk.none{background:none;justify-content:center;color:var(--muted)}
 .rpk.bl{filter:blur(4px);user-select:none}
 .rk-note{font-size:11.5px;color:var(--muted);margin-top:10px}
+/* Classement Race : pas de surlignage du 1er */
+.rk-tr.first{background:none}
+/* Pari caché : pastille « Parié » avec cadenas (au lieu du flou) */
+.rpk.hid,.spk.hid{background:none;border:1.5px dashed #CFC6B3;color:var(--muted);justify-content:center;gap:5px;padding:0 10px;height:30px;font-weight:700}
+.rpk.hid svg,.spk.hid svg{width:14px;height:14px;flex:none}
+.spk.hid{height:32px}
+.rk-tr.first .rpk{background:#F5F2EA}.rk-tr.first .rpk.hid,.rk-tr.first .rpk.none{background:none}
