@@ -1490,6 +1490,10 @@ function statsCard(c){
 // Final/ongoing ranking: survivors share the top; the eliminated are ranked by elimination day
 // (later = better), then by boldness of the losing pick (weaker team = better).
 // STATS : paris de la prochaine journée (option « Paris visibles »)
+// « Les plus choisies » : barres de progression avec logos
+function top3Bars(items, extra=''){
+  return `<div class="t3"><div class="t3-t">${IC.flame}Les plus choisies</div>${items.map(([nm,pc,sides],i)=>`<div class="t3-r ${i?'':'first'}"><span class="t3-lg">${sides.map(sd=>logoTag(sd,'t3-im')).join('')||'<i></i>'}</span><div class="t3-l"><b>${esc(nm)}</b><div class="t3-bar"><i style="width:${Math.max(3,pc)}%"></i></div></div><em>${pc} %</em></div>`).join('')}${extra}</div>`;
+}
 function nextVotesCard(c){
   const lg=c.lg; if(!c.pick) return '';
   const r=c.rounds.find(r=>t(r.deadline)>now()); if(!r) return '';
@@ -1498,15 +1502,15 @@ function nextVotesCard(c){
   if(!picksVisible(lg)){
     // Paris cachés : même encadré, joueurs visibles, choix et podium floutés (données factices : les vrais choix ne sont pas mis dans la page)
     const sides=[]; matchesOf(r).forEach(m=>{ sides.push(m.h, m.a); }); const F=i=>sides[i%Math.max(1,sides.length)]||{n:'Équipe'};
-    const top=[0,3,6].map((k,i)=>`<div class="nv-top"><span>${i+1}.</span><b>${esc(F(k).n)}</b><em>${[42,25,13][i]} %</em></div>`).join('');
+    const top=top3Bars([0,3,6].map((k,i)=>[F(k).n,[42,25,13][i],[F(k)]]));
     const list=who.map((u,i)=>{ const sd=F(i*5+1); return `<div class="nv-r">${avatarOf(u)}<span class="nv-n">${esc(nameOf(u))}${u===S.me?' <em>(toi)</em>':''}</span><span class="nv-p nv-bl" aria-hidden="true">${logoTag(sd,'nv-lg')}<b>${esc(sd.n)}</b></span></div>`; }).join('');
-    return `<div class="card nv nv-hid"><div class="stitle">${IC.eye} Paris de la journée ${n}</div><div class="nv-fun"><div class="nv-f nv-fh"><div class="nv-bl" aria-hidden="true" style="display:flex;gap:8px"><span>${IC.flame}</span><div><small>Les plus choisies</small><div>${top}</div></div></div><div class="nv-lock">${IC.eyeOff}<b>Les choix de la journée seront révélés le ${fmtDT(r.deadline)}</b></div></div></div><div class="nv-list">${list}</div></div>`;
+    return `<div class="card nv nv-hid"><div class="stitle">${IC.eye} Paris de la journée ${n}</div><div class="nv-fh"><div class="nv-bl" aria-hidden="true">${top}</div><div class="nv-lock">${IC.eyeOff}<b>Les choix de la journée seront révélés le ${fmtDT(r.deadline)}</b></div></div><div class="nv-list">${list}</div></div>`;
   }
 
-  const rows=[], cnt={}, none=[]; let bold=null;
+  const rows=[], cnt={}, none=[], logoK={}; let bold=null;
   who.forEach(u=>{ const p=pickOf(u,lg.id,r.k);
     if(!p){ none.push(u); return; }
-    pickSides(p).forEach(x=>{ const m=(r.matches||{})[x.m]; if(!m) return; const sd=x.p==='H'?m.h:x.p==='A'?m.a:null; const key=x.p==='D'?'Nul '+m.h.n+' – '+m.a.n:sd.n; cnt[key]=(cnt[key]||0)+1;
+    pickSides(p).forEach(x=>{ const m=(r.matches||{})[x.m]; if(!m) return; const sd=x.p==='H'?m.h:x.p==='A'?m.a:null; const key=x.p==='D'?'Nul '+m.h.n+' – '+m.a.n:sd.n; cnt[key]=(cnt[key]||0)+1; if(!logoK[key]) logoK[key]=x.p==='D'?[m.h,m.a]:[sd];
       if(sd){ const rk=sideRank(lg,m,sd); if(rk){ if(!bold||rk>bold.rk) bold={rk,n:sd.n,us:[u]}; else if(rk===bold.rk && !bold.us.includes(u)) bold.us.push(u); } } });
     rows.push([u,p]); });
   const me=pickOf(S.me,lg.id,r.k), sameU=me?rows.filter(([u,p])=>u!==S.me&&p.m===me.m&&p.p===me.p).map(([u])=>u):[], same=sameU.length;
@@ -1514,10 +1518,10 @@ function nextVotesCard(c){
   const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];
   const fun=[];
   const tot=rows.length; const top3=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,3);
-  if(top3.length) fun.push([IC.flame,'Les plus choisies',top3.map(([k,v],i)=>`<div class="nv-top"><span>${i+1}.</span><b>${esc(k)}</b><em>${Math.round(v*100/tot)} %</em></div>`).join('')]);
+  if(top3.length) fun.push(['top3',top3Bars(top3.map(([k,v])=>[k,Math.round(v*100/tot),logoK[k]||[]]))]);
   const list=rows.map(([u,p])=>`<div class="nv-r">${avatarOf(u)}<span class="nv-n">${esc(nameOf(u))}${u===S.me?' <em>(toi)</em>':''}</span><span class="nv-p">${pickSides(p).map(x=>{ const m=(r.matches||{})[x.m]; if(!m) return ''; const sd=x.p==='H'?m.h:x.p==='A'?m.a:null; return sd?`${logoTag(sd)}<b>${esc(sd.n)}</b>`:(logoOf(m.h)&&logoOf(m.a)?`${logoTag(m.h)}<b>Nul</b>${logoTag(m.a)}`:`<b>Nul</b> <small>(${esc(m.h.n)} – ${esc(m.a.n)})</small>`); }).join('<i>+</i>')}</span></div>`).join('')
     + none.map(u=>`<div class="nv-r off">${avatarOf(u)}<span class="nv-n">${esc(nameOf(u))}</span><span class="nv-p"><small>pas encore choisi</small></span></div>`).join('');
-  return `<div class="card nv"><div class="stitle">${IC.eye} Paris de la journée ${n}</div><div class="nv-fun">${fun.map(([i,tt,v])=>`<div class="nv-f"><span>${i}</span><div><small>${tt}</small><div>${v}</div></div></div>`).join('')}</div><div class="nv-list">${list}</div><div class="muted" style="font-size:12px;margin-top:8px">Les choix peuvent encore changer jusqu’à l’heure limite (${fmtDT(r.deadline)}).</div></div>`;
+  return `<div class="card nv"><div class="stitle">${IC.eye} Paris de la journée ${n}</div>${fun.map(([k,v])=>v).join('')}<div class="nv-list">${list}</div><div class="muted" style="font-size:12px;margin-top:8px">Les choix peuvent encore changer jusqu’à l’heure limite (${fmtDT(r.deadline)}).</div></div>`;
 }
 function journeyData(c,u){
   const lg=c.lg; const out=[];
@@ -1578,7 +1582,7 @@ function leagueHero(c, lid){
     const done=c.rounds.filter(r=>['done','cancelled'].includes((c.info[r.k]||{}).state)).length;
     gauge=G(c.alive.length*100/Math.max(1,n),`<b>${c.alive.length} survivant${c.alive.length>1?'s':''}</b> sur ${n}`,done?`après ${done} journée${done>1?'s':''}`:'');
   }
-  return `<div class="lhero ${canManage(lg)?'adm':''}">${canManage(lg)?`<button class="lh-c lh-gear" data-a="manage" data-v="${lid}" aria-label="Gérer la ligue">${I.gear}</button>`:''}${title}<div class="lh-chips" style="grid-template-columns:repeat(${chips.length},1fr)">${chips.map(([k,x])=>`<span class="lh-chip ${k}">${x}</span>`).join('')}</div>${gauge}</div>`;
+  return `<button class="lh-back" data-a="back" aria-label="Retour">${I.back}</button><div class="lhero ${canManage(lg)?'adm':''}">${canManage(lg)?`<button class="lh-c lh-gear" data-a="manage" data-v="${lid}" aria-label="Gérer la ligue">${I.gear}</button>`:''}${title}<div class="lh-chips" style="grid-template-columns:repeat(${chips.length},1fr)">${chips.map(([k,x])=>`<span class="lh-chip ${k}">${x}</span>`).join('')}</div>${gauge}</div>`;
 }
 function viewLeague(lid){
   const c=C(lid);

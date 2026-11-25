@@ -924,3 +924,24 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .pf-out{margin-top:22px}
 .pf-del{margin-top:10px;color:#C0392B}
 .nc-join .ic{width:18px;height:18px}
+/* Les plus choisies : barres */
+.t3{background:var(--bg);border-radius:16px;padding:14px 14px 6px;margin:6px 0 12px}
+.t3-t{display:flex;align-items:center;gap:8px;font-family:var(--title);font-weight:700;font-size:14px;letter-spacing:.6px;text-transform:uppercase;margin-bottom:6px}
+.t3-t .ic{width:18px;height:18px;color:#E5493A}
+.t3-r{display:grid;grid-template-columns:auto minmax(0,1fr) 46px;align-items:center;gap:10px;margin:10px 0}
+.t3-lg{display:flex;gap:2px;min-width:24px}.t3-lg .t3-im{width:24px;height:24px;object-fit:contain}
+.t3-l b{display:block;font-family:var(--bold);font-weight:700;font-size:14px;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t3-bar{height:8px;border-radius:8px;background:rgba(22,24,29,.08);overflow:hidden}.t3-bar i{display:block;height:100%;background:var(--on);border-radius:8px}
+.t3-r.first .t3-bar i{background:var(--yel)}
+.t3-r em{font-style:normal;font-family:var(--bold);font-weight:800;font-size:16px;text-align:right}
+.nv-fh{position:relative;overflow:hidden;border-radius:16px;margin:6px 0 12px}.nv-fh .t3{margin:0}
+/* bouton retour au-dessus de la carte noire */
+.lh-back{width:42px;height:42px;border-radius:50%;background:#fff;border:0;display:flex;align-items:center;justify-content:center;color:var(--on);margin:calc(14px + var(--safe-t)) 0 0;cursor:pointer}
+.lh-back svg{width:20px;height:20px}
+.demo ~ .page .lh-back{margin-top:14px}
+.lhero{margin-top:12px!important}
+/* titre long : passe à la ligne plutôt que d'être coupé */
+.lhero .ltitle{white-space:normal;overflow:visible;text-overflow:clip;line-height:1}
+.lhero{position:relative;padding:18px 16px 16px}
+.lhero .lh-gear{position:absolute;top:14px;right:14px}
+.lhero.adm .ltitle{padding-right:44px}
