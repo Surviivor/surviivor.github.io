@@ -947,3 +947,7 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .lhero.adm .ltitle{padding-right:44px}
 .lh-back{margin-top:calc(26px + var(--safe-t,0px))}.demo ~ .page .lh-back{margin-top:22px}
 .odd-t b:last-of-type{text-align:right}.odd-t .vs{margin:0 6px}
+/* Paris de la journée : plus d'air entre titre, encadré et liste */
+.nv .stitle{margin-bottom:14px}
+.nv .t3,.nv .nv-fh{margin:0 0 20px}
+.nv .nv-list{padding-top:6px}
