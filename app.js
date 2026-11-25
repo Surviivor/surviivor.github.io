@@ -314,7 +314,7 @@ function compute(lid){
       const anyPick=A.some(u=>pickOf(u,lid,r.k));
       if(!anyPick){ ri.state='cancelled'; ri.out=[]; }
       // tous les survivants perdent la même journée : tout le monde est repêché, la journée est annulée pour eux
-      else if(!correct.length && !A.some(u=>lives[u]>0)){ ri.state='cancelled'; ri.out=[]; ri.rescued=true; }
+      else if(!correct.length && !A.some(u=>lives[u]>0)){ const out=A.filter(u=>!pickOf(u,lid,r.k)); out.forEach(u=>elimAt[u]=r.k); if(out.length){ alive=new Set(A.filter(u=>!out.includes(u))); } ri.state=out.length?'done':'cancelled'; ri.out=out; ri.rescued=true; }
       else {
         // bonus extérieur : tous les 3 paris sur une équipe qui joue à l'extérieur (gagnés ou non, pas forcément de suite) = +1 vie
         if(lg.redLantern){ ri.lantern=[]; A.forEach(u=>{ const p=effPick(u,lid,r); if(p && !p.j && correct.includes(u) && isLantern(lg,r,p)){ lives[u]++; ri.lantern.push(u); } }); }
@@ -1139,7 +1139,7 @@ function roundFoot(c,r){
   if(ri.state==='cancelled') f+=`<div class="note">🛟 ${ri.rescued?'Tous les survivants ont perdu : tout le monde est repêché, la journée est annulée.':'Journée annulée : personne n\'est éliminé.'}</div>`;
   if(ri.state==='tiebreak'){ const ws=Object.keys(ri.tb||{}).filter(u=>!ri.out.includes(u)); f+=`<div class="note">⚖️ Tous les survivants sont tombés : départagés à l'audace (rang moyen des équipes jouées). ${ws.map(u=>`<b>${esc(nameOf(u))}</b> ${ri.tb[u]?'('+ri.tb[u].toFixed(1).replace('.',',')+'e de moyenne)':''}`).join(' et ')} ${ws.length>1?'gagnent':'gagne'}.</div>`; }
   if(ri.bold){ const p=pickOf(ri.bold.u,lg.id,r.k); f+=`<div class="note bold">🦁 Choix le plus audacieux : <b>${esc(nameOf(ri.bold.u))}</b> avec ${esc(pickLabel(lg,r,p))} (${ri.bold.rk}e)</div>`; }
-  if((ri.state==='done'||ri.state==='tiebreak') && alive){ f+= ri.out.includes(S.me)?`<div class="note bad">✗ Raté… tu es éliminé sur cette journée.</div>`:`<div class="note ok">✓ Bien joué, tu restes en vie !</div>`; }
+  if((ri.state==='done'||ri.state==='tiebreak') && alive){ f+= ri.out.includes(S.me)?`<div class="note bad">✗ ${ri.rescued?'Pas de choix : tu es éliminé.':'Raté… tu es éliminé sur cette journée.'}</div>`:ri.rescued?`<div class="note">🛟 Tous les survivants ont perdu : tu es repêché !</div>`:(ri.saved&&ri.saved.includes(S.me))?`<div class="note">❤️ Raté… mais ta vie te sauve, tu restes en jeu !</div>`:`<div class="note ok">✓ Bien joué, tu restes en vie !</div>`; }
   if(ri.state==='done' && ri.out.length) f+=`<div class="note">☠️ ${ri.out.length} éliminé${ri.out.length>1?'s':''}</div>`;
   return f;
 }
