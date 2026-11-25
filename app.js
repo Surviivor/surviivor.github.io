@@ -1445,7 +1445,7 @@ function viewAdmin(){
     h+=`<div class="sec">${owner?'Gérer les ligues':'Ma ligue'}</div>`;
     mineL.map(l=>C(l.id)).filter(Boolean).sort((a,b)=>(+(b.lg.pin||0))-(+(a.lg.pin||0)) || t(b.lg.createdAt)-t(a.lg.createdAt)).forEach(c=>{
       const todo=c.rounds.filter(r=>(c.info[r.k]||{}).state==='waiting').length;
-      h+=`<button class="lrow" data-a="manage" data-v="${c.lg.id}"><span class="th">${coverHtml(c.lg)}</span><span class="x">${leagueTitle(c.lg.name)}<small>${c.lg.pin?'⭐ En premier · ':''}${c.mem.length} joueurs · ${c.rounds.length} journées · code ${esc(c.lg.code||'')}</small></span>${todo?'<span class="pill orange">Résultats</span>':statusPill(c)}</button>`;
+      h+=`<button class="lrow" data-a="manage" data-v="${c.lg.id}"><span class="th">${coverHtml(c.lg)}</span><span class="x">${leagueTitle(c.lg.name)}<small>${c.lg.pin?'⭐ En premier · ':''}${c.mem.length} joueurs · ${c.rounds.length} journées · code ${esc(c.lg.code||'')}${c.lg.createdBy&&c.lg.createdBy!==S.me?`<em class="byu">Créée par ${esc(nameOf(c.lg.createdBy))}</em>`:''}</small></span>${todo?'<span class="pill orange">Résultats</span>':statusPill(c)}</button>`;
     });
   }
   return h;

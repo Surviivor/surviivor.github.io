@@ -581,3 +581,4 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .tile.used.ban .nm:after{content:"sabotée";color:#E5493A}
 .schips .chip:not(.on){background:#fff}
 .schips .chip.on{background:var(--on);color:#fff}
+.lrow small .byu{display:block;font-style:normal;font-weight:700;color:#E5493A;margin-top:2px}
