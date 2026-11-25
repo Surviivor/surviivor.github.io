@@ -1700,10 +1700,11 @@ function viewParis(){
     card=card.replace(/<div class="dl open">[\s\S]*?<\/div>/,''); // header already shows deadline
     // Encart déroulant par ligue : ouvert par défaut tant que le choix n'est pas fait
     const k='mp'+c.lg.id, todo=!my, op=(k in S.open)?S.open[k]:todo;
-    const pill=todo?`<span class="mp-st todo">À valider · ${until(r.deadline)||"1 min"}</span>`:`<span class="mp-st ok">✓ Choix fait</span>`;
+    const pkLogos=(!todo&&c.pick)?pickSides(my).map(x=>{ const m=(r.matches||{})[x.m]; if(!m) return ''; return x.p==='D'?logoTag(m.h,'mp-lg')+logoTag(m.a,'mp-lg'):logoTag(x.p==='H'?m.h:m.a,'mp-lg'); }).join(''):'';
+    const pill=todo?`<span class="mp-st todo">À valider · ${until(r.deadline)||"1 min"}</span>`:`<span class="mp-st ok">✓ Choix fait${pkLogos?`<span class="mp-lgs">${pkLogos}</span>`:''}</span>`;
     h+=`<details class="mpl" ${op?'open':''}><summary class="mp-sum" data-a="mpTog" data-v="${c.lg.id}|${todo?1:0}"><div class="mp-nm">${(()=>{const sb=splitBrand(c.lg.name);return sb?`${WM(sb.k)}<span>${xify(esc(sb.rest))}</span>`:`<span>${esc(c.lg.name)}</span>`})()}</div><div class="mp-row">${pill}${(()=>{ const n=(jokerOn(c.lg)&&!jokerRound(c.lg.id,S.me)?1:0)+(saboOn(c.lg)&&!mySabo(c.lg.id)?1:0); return n?'<span class="mp-st jk" title="Jokers disponibles">'+JOKER_ICO+n+' joker'+(n>1?'s':'')+'</span>':''; })()}<span class="mp-d">${c.pick?'J':'Q'}${((c.info[r.k]||{}).n||(c.rounds.findIndex(x=>x.k===r.k)+1))} · ${fmtD(r.deadline).slice(0,5)}</span>${I.chev}</div></summary><div class="mp-body">${c.pick?statsCard(c):''}${jokersCard(c,r)}${card}</div></details>`;
   });
-  if(wait.length){ h+=`<div class="sec2">EN ATTENTE DES RÉSULTATS</div>`; wait.forEach(([c,r])=>{ h+=`<div class="card"><div style="font-family:var(--bold);font-weight:800">${esc(c.lg.name)} · Journée ${((c.info[r.k]||{}).n||(c.rounds.findIndex(x=>x.k===r.k)+1))}</div><div class="muted" style="margin-top:4px">Ton choix : <b style="color:var(--on)">${esc(pickLabel(c.lg,r,pickOf(S.me,c.lg.id,r.k)))}</b></div></div>`; }); }
+  if(wait.length){ h+=`<div class="sec2">EN ATTENTE DES RÉSULTATS</div>`; wait.forEach(([c,r])=>{ h+=`<div class="card"><div class="mp-nm wt">${(()=>{const sb=splitBrand(c.lg.name);return sb?`${WM(sb.k)}<span>${xify(esc(sb.rest))}</span>`:esc(c.lg.name);})()}</div><div style="font-family:var(--bold);font-weight:700;font-size:14px;margin-top:6px">Journée ${((c.info[r.k]||{}).n||(c.rounds.findIndex(x=>x.k===r.k)+1))}</div><div class="muted" style="margin-top:4px">Ton choix : <b style="color:var(--on)">${esc(pickLabel(c.lg,r,pickOf(S.me,c.lg.id,r.k)))}</b></div></div>`; }); }
   return h;
 }
 
