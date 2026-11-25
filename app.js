@@ -244,8 +244,11 @@ function sabosOn(lid, uid, rk){ const out=[]; Object.entries(S.players).forEach(
 const mySabo = lid => { const p=S.players[S.me]; return (p&&p.sabo&&p.sabo[lid])||null; };
 // pari « effectif » : on retire les équipes sabotées
 function effPick(u, lid, r){
-  const p=pickOf(u,lid,r.k); if(!p) return null; const lg=S.leagues[lid]; if(!saboOn(lg)) return p;
-  const ban=new Set(sabosOn(lid,u,r.k).map(x=>x.team)); if(!ban.size) return p;
+  const p=pickOf(u,lid,r.k); if(!p) return null; const lg=S.leagues[lid];
+  // une équipe déjà jouée lors d'une journée précédente ne compte pas (règle « une seule fois par équipe », vérifiée aussi au calcul)
+  const ban=new Set(saboOn(lg)?sabosOn(lid,u,r.k).map(x=>x.team):[]);
+  const r0t=t(r.deadline); roundsOf(lg).forEach(q=>{ if(q.k===r.k || t(q.deadline)>=r0t) return; pickSides(pickOf(u,lid,q.k)).forEach(x=>{ if(x.p==='D') return; const m=(q.matches||{})[x.m]; if(m) ban.add(teamKey(x.p==='H'?m.h:m.a)); }); });
+  if(!ban.size) return p;
   const ok=pickSides(p).filter(x=>{ if(x.p==='D') return true; const m=(r.matches||{})[x.m]; return !m || !ban.has(teamKey(x.p==='H'?m.h:m.a)); });
   if(!ok.length) return null; if(ok.length===pickSides(p).length) return p;
   return {...p, m:ok[0].m, p:ok[0].p, m2:null, p2:null, j:false};
