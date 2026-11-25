@@ -946,3 +946,4 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .lhero .lh-gear{position:absolute;top:14px;right:14px}
 .lhero.adm .ltitle{padding-right:44px}
 .lh-back{margin-top:calc(26px + var(--safe-t,0px))}.demo ~ .page .lh-back{margin-top:22px}
+.odd-t b:last-of-type{text-align:right}.odd-t .vs{margin:0 6px}
