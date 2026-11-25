@@ -900,3 +900,8 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .dsec{padding-top:14px;margin-top:14px}
 .dsec>summary .dchev svg{transform:none!important}
 .dsec[open]>summary .dchev svg{transform:rotate(180deg)!important}
+/* Cotes : noms de clubs sur une ligne, coupés si trop longs */
+.odd-t{white-space:nowrap;min-width:0}
+.odd-t b{overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
+.odd-t img.lg,.odd-t .vs{flex:none}
+.odd-t b{flex:1 1 0}

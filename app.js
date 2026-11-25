@@ -1481,8 +1481,8 @@ function statsCard(c){
   const best=pts.slice().sort((a,b)=>b[1]-a[1]||a[2]-b[2]).slice(0,3), worst=pts.slice().sort((a,b)=>a[1]-b[1]||b[2]-a[2]).slice(0,3);
   const row=([id,p,n])=>statRow(f,id,`<b>${p}</b><span>pts</span>`,formDots(form[id]));
   const maxN=Math.max(...pts.map(x=>x[2]));
-  let h=trend+`<div class="ssec"><div class="stitle">${I.flash}Les plus en forme</div><div class="slist">${best.map(row).join('')}</div></div>`;
-  h+=`<div class="ssec"><div class="stitle">${I.down}À la peine</div><div class="slist">${worst.map(row).join('')}</div><div class="muted" style="font-size:12px;margin-top:14px">Points pris sur les ${maxN} dernières journées${maxN<5?' (seules celles-ci sont disponibles pour l\'instant)':''}. Données du ${fmtDT(f.updatedAt)}.</div></div>`;
+  let h=trend+`<div class="ssec"><div class="stitle">${I.flash}Les plus en forme</div><div class="slist">${best.map(row).join('')}</div><div class="muted" style="font-size:12px;margin-top:12px">Points pris sur les ${maxN} dernières journées.</div></div>`;
+  h+=`<div class="ssec"><div class="stitle">${I.down}À la peine</div><div class="slist">${worst.map(row).join('')}</div><div class="muted" style="font-size:12px;margin-top:12px">Points pris sur les ${maxN} dernières journées.</div></div>`;
   h+=tbl+oddsSection(c,f)+lastFiveSection(c,f)+h2hSection(c,f);
   return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${dsecs(h,lg.id)}</details>`;
 }
