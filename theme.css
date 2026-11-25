@@ -1006,3 +1006,8 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .rpk.hid svg,.spk.hid svg{width:14px;height:14px;flex:none}
 .spk.hid{height:32px}
 .rk-tr.first .rpk{background:#F5F2EA}.rk-tr.first .rpk.hid,.rk-tr.first .rpk.none{background:none}
+/* bouton retour : même espace au-dessus (bord de l'écran) et en dessous (carte noire) */
+.lh-backw{padding-top:calc(16px + env(safe-area-inset-top,0px))}
+.demo ~ .page .lh-backw{padding-top:16px}
+.lh-back,.demo ~ .page .lh-back{margin:0!important}
+.lhero{margin-top:16px!important}
