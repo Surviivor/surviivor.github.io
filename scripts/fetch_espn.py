@@ -67,6 +67,39 @@ def fetch_h2h(key, sport, lg, events, today):
         out[pk] = rows[:5]
     return out
 
+
+# Cotes 1/N/2 (DraftKings via ESPN, format américain converti en décimal) pour les matchs des prochains jours.
+# Clé = « idDomicile_idExtérieur ».
+def dec(x):
+    try:
+        v = float(str(x).replace('+', ''))
+        return round(1 + (v / 100 if v > 0 else 100 / -v), 2)
+    except Exception: return None
+def fetch_odds(sport, lg, events, today, days=6, cap=45):
+    out = {}; calls = 0
+    for e in sorted(events.values(), key=lambda e: e.get('date', '')):
+        try:
+            comp = e['competitions'][0]; cs = comp['competitors']
+            if comp['status']['type']['state'] != 'pre': continue
+            d = datetime.datetime.fromisoformat(e['date'].replace('Z', '+00:00')).replace(tzinfo=None)
+            if d > today + datetime.timedelta(days=days): continue
+            h = next(c for c in cs if c.get('homeAway') == 'home'); a = next(c for c in cs if c.get('homeAway') == 'away')
+        except Exception: continue
+        if calls >= cap: break
+        j = get(f'https://site.api.espn.com/apis/site/v2/sports/{sport}/{lg}/summary?event={e["id"]}'); calls += 1; time.sleep(PAUSE)
+        for pc in (j or {}).get('pickcenter') or []:
+            ml = pc.get('moneyline') or {}
+            g = lambda side: dec((((ml.get(side) or {}).get('close') or {}).get('odds')) or (((ml.get(side) or {}).get('open') or {}).get('odds')))
+            o = {'h': g('home'), 'a': g('away'), 'n': g('draw')}
+            if o['h'] is None: o['h'] = dec((pc.get('homeTeamOdds') or {}).get('moneyLine'))
+            if o['a'] is None: o['a'] = dec((pc.get('awayTeamOdds') or {}).get('moneyLine'))
+            if o['n'] is None: o['n'] = dec((pc.get('drawOdds') or {}).get('moneyLine'))
+            if o['h'] and o['a']:
+                if sport != 'soccer': o.pop('n', None)
+                o['p'] = ((pc.get('provider') or {}).get('name') or '')
+                out[f"{h['team']['id']}_{a['team']['id']}"] = o; break
+    return out
+
 for key, (sport, lg, back, fwd, use_cal) in COMPS.items():
     base = get(f'https://site.api.espn.com/apis/site/v2/sports/{sport}/{lg}/scoreboard'); time.sleep(PAUSE)
     events = {e['id']: e for e in (base or {}).get('events', [])}
@@ -89,8 +122,9 @@ for key, (sport, lg, back, fwd, use_cal) in COMPS.items():
         time.sleep(PAUSE)
     st = get(f'https://site.api.espn.com/apis/v2/sports/{sport}/{lg}/standings'); time.sleep(PAUSE)
     h2h = fetch_h2h(key, sport, lg, events, today)
-    dump['comps'][key] = {'scoreboard': {'events': list(events.values())}, 'standings': st, 'h2h': h2h}
-    print(key, len(events), 'matchs', 'classement OK' if st else 'pas de classement')
+    odds = fetch_odds(sport, lg, events, today, days=3 if sport == 'basketball' else 6) if key != 'top14' else {}
+    dump['comps'][key] = {'scoreboard': {'events': list(events.values())}, 'standings': st, 'h2h': h2h, 'odds': odds}
+    print(key, len(events), 'matchs', len(odds), 'cotes', 'classement OK' if st else 'pas de classement')
 
 # logos manquants uniquement
 have = set(os.listdir(LOGO_DIR)) if os.path.isdir(LOGO_DIR) else set()

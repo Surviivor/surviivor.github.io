@@ -1417,6 +1417,19 @@ function trendSection(c){
   return h+'</div>';
 }
 // Confrontations directes (5 dernières) pour les matchs de la prochaine journée
+// Cotes 1 / N / 2 des matchs de la prochaine journée (DraftKings via ESPN)
+function oddsSection(c, f){
+  if(!f||!f.odds) return '';
+  const r=c.rounds.find(r=>t(r.deadline)>now()); if(!r) return '';
+  const fx=v=>v?v.toFixed(2).replace('.',','):'–'; let prov='';
+  const rows=matchesOf(r).map(m=>{
+    const o=f.odds[String(m.h.id||'')+'_'+String(m.a.id||'')]; if(!o) return ''; prov=prov||o.p;
+    const vals=[o.h,o.n,o.a].filter(Boolean), min=Math.min(...vals);
+    const cell=(lbl,v)=>v?`<span class="oc ${v===min?'fav':''}"><i>${lbl}</i>${fx(v)}</span>`:'';
+    return `<div class="odd"><div class="odd-t">${logoTag(m.h)}<b>${esc(m.h.n)}</b><span class="vs">–</span><b>${esc(m.a.n)}</b>${logoTag(m.a)}</div><div class="odd-l">${cell('1',o.h)}${cell('N',o.n)}${cell('2',o.a)}</div></div>`;
+  }).join('');
+  return rows?`<div class="ssec"><div class="stitle">${IC.chart}Cotes</div><div class="muted" style="font-size:12px;margin:-4px 0 8px">Cotes ${esc(prov||'')} à la française, mises à jour 2 fois par jour. En jaune : le favori.</div>${rows}</div>`:'';
+}
 function h2hSection(c, f){
   if(!f||!f.h2h) return '';
   const r=c.rounds.find(r=>t(r.deadline)>now()); if(!r) return '';
@@ -1435,17 +1448,17 @@ function statsCard(c){
   const f=key?S.feeds[key]:null; if(key&&!f) loadFeed(key);
   const tbl=c.lg.category==='tuprefere'?'':standingsCard(lg,'body');
   const wrap=body=>`<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${body}</details>`;
-  if(!f||f.missing||c.lg.category==='tuprefere'){ { const hh=h2hSection(c,f); if(!trend&&!tbl&&!hh) return ''; return wrap(trend+tbl+hh); } return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${trend}</details>`; }
+  if(!f||f.missing||c.lg.category==='tuprefere'){ { const hh=oddsSection(c,f)+h2hSection(c,f); if(!trend&&!tbl&&!hh) return ''; return wrap(trend+tbl+hh); } return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${trend}</details>`; }
   const form=teamForm(f);
   const pts=Object.keys(form).map(id=>[id, form[id].slice(0,5).reduce((a,r)=>a+(r==='W'?3:r==='D'?1:0),0), Math.min(5,form[id].length)]).filter(x=>x[2]>=2);
-  if(pts.length<6){ { const hh=h2hSection(c,f); if(!trend&&!tbl&&!hh) return ''; return wrap(trend+tbl+hh); } return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${trend}</details>`; }
+  if(pts.length<6){ { const hh=oddsSection(c,f)+h2hSection(c,f); if(!trend&&!tbl&&!hh) return ''; return wrap(trend+tbl+hh); } return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${trend}</details>`; }
   const best=pts.slice().sort((a,b)=>b[1]-a[1]||a[2]-b[2]).slice(0,3), worst=pts.slice().sort((a,b)=>a[1]-b[1]||b[2]-a[2]).slice(0,3);
   const row=([id,p,n])=>statRow(f,id,`<b>${p}</b><span>pts</span>`,formDots(form[id]));
   const maxN=Math.max(...pts.map(x=>x[2]));
   let h=trend+`<div class="ssec"><div class="stitle">${I.flash}Les plus en forme</div><div class="slist">${best.map(row).join('')}</div></div>`;
   h+=`<div class="ssec"><div class="stitle">${I.down}À la peine</div><div class="slist">${worst.map(row).join('')}</div></div>`;
   h+=`<div class="muted" style="font-size:12px;margin-top:14px">Points pris sur les ${maxN} dernières journées${maxN<5?' (seules celles-ci sont disponibles pour l\'instant)':''}. Données du ${fmtDT(f.updatedAt)}.</div>`;
-  h+=tbl+h2hSection(c,f);
+  h+=tbl+oddsSection(c,f)+h2hSection(c,f);
   return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${h}</details>`;
 }
 // Final/ongoing ranking: survivors share the top; the eliminated are ranked by elimination day

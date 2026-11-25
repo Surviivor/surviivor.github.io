@@ -18,6 +18,7 @@ for path in SRC.split(','):
             cur['scoreboard']['events']=[e for e in cur['scoreboard']['events'] if e['id'] not in ids]+v['scoreboard']['events']
         if v.get('standings'): cur['standings']=v['standings']
         if v.get('h2h'): cur.setdefault('h2h',{}).update(v['h2h'])
+        if v.get('odds'): cur.setdefault('odds',{}).update(v['odds'])
 LOGOS={}
 for href,b64 in DUMP.get('logos',{}).items():
     path=href.split('espncdn.com')[-1].split('?')[0]; LOGOS[path.strip('/').replace('/','_')]=base64.b64decode(b64)
@@ -188,6 +189,8 @@ for key in NAMES:
           'teams':teams,'events':events,'rounds':rounds,'standings':groups}
     h2h=DUMP['comps'][key].get('h2h')
     if h2h: feed['h2h']=h2h
+    odds=DUMP['comps'][key].get('odds')
+    if odds: feed['odds']=odds
     if key=='nba': feed['ptsLabel']='V'
     fix_logos(key, feed)
     json.dump(feed,open(f'{DST}/feeds/{key}.json','w'),separators=(',',':'),ensure_ascii=False)
