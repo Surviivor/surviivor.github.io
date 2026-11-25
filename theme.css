@@ -979,3 +979,23 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .mp-st.ok{display:inline-flex;align-items:center;gap:6px}
 .mp-lgs{display:inline-flex;gap:3px;margin-left:2px}
 .mp-lg{width:24px;height:24px;object-fit:contain;background:#fff;border-radius:50%;padding:2px}
+/* Classement Race */
+.rk-card{padding:16px}
+.rk-th,.rk-tr{display:grid;grid-template-columns:24px 36px minmax(0,1fr) 40px 84px;gap:8px;align-items:center}
+.rk-card.nopk .rk-th,.rk-card.nopk .rk-tr{grid-template-columns:24px 36px minmax(0,1fr) 40px}
+.rk-th{font-size:10.5px;font-weight:800;letter-spacing:.7px;color:var(--muted);text-transform:uppercase;padding:0 8px 6px;margin:0 -8px 4px;border-bottom:1px solid rgba(22,24,29,.08)}
+.rk-th span:nth-child(4),.rk-pts{text-align:right}.rk-th span:nth-child(5){text-align:center}
+.rk-tr{padding:8px;margin:0 -8px;border-radius:14px}.rk-tr+.rk-tr{margin-top:2px}
+.rk-tr.first{background:var(--yel)}
+.rk-tr .av,.rk-tr img.av{width:36px;height:36px}
+.rk-pos{font-family:var(--bold);font-weight:800;font-size:15px;text-align:center}
+.rk-nm b{display:block;font-family:var(--bold);font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rk-pts{font-family:var(--bold);font-weight:800;font-size:18px}
+.toi{font-size:10px;font-weight:800;background:var(--on);color:#fff;border-radius:999px;padding:1px 6px;margin-left:5px;vertical-align:2px;letter-spacing:.5px}
+.rpk{display:flex;align-items:center;gap:4px;background:#F5F2EA;border-radius:999px;height:30px;padding:0 8px 0 3px;font-family:var(--bold);font-weight:700;font-size:11.5px;overflow:hidden;min-width:0}
+.rk-tr.first .rpk{background:rgba(255,255,255,.7)}
+.rpk .rpk-im{width:24px;height:24px;object-fit:contain;flex:none}
+.rpk span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rpk.none{background:none;justify-content:center;color:var(--muted)}
+.rpk.bl{filter:blur(4px);user-select:none}
+.rk-note{font-size:11.5px;color:var(--muted);margin-top:10px}
