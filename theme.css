@@ -874,3 +874,19 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .l5>b{font-size:13px;font-weight:800;line-height:1.2}
 .l5 small{font-size:9.5px;font-weight:700;color:var(--muted);letter-spacing:.4px}
 .jbtn,.jitem .jt .jbtn{color:#fff}
+/* En-tête de ligue : carte noire */
+.lhero{background:var(--on);color:#fff;border-radius:26px;padding:14px 16px 16px;margin:calc(12px + var(--safe-t)) 0 16px}
+.demo ~ .page .lhero{margin-top:12px}
+.lh-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.lh-c{width:34px;height:34px;border-radius:50%;background:#2A2D34;border:0;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;padding:0}
+.lh-c svg{width:16px;height:16px}
+.lhero .ltitle{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lhero .ltitle .wm,.lhero .ltitle .wm-txt{font-size:24px!important;height:.9em;display:inline-block;vertical-align:-2px}
+.lhero .ltitle .rest{display:inline!important;font-size:30px!important;margin:0 0 0 8px!important;color:#fff}
+.lhero .ltitle .rest .xm{height:.72em}
+.lh-chips{display:grid;gap:6px;margin-top:14px}
+.lh-chip{display:flex;align-items:center;justify-content:center;gap:5px;height:34px;padding:0 6px;border-radius:999px;background:#2A2D34;color:#fff;font-family:var(--bold);font-weight:700;font-size:12.5px;white-space:nowrap}
+.lh-chip svg,.lh-chip .ic{width:14px;height:14px}
+.lh-chip.ok{background:var(--yel);color:var(--on)}.lh-chip.bad{background:#E5493A;color:#fff}
+.lh-g{margin-top:14px}.lh-g .bar{height:6px;border-radius:6px;background:#33363D;overflow:hidden}.lh-g .bar i{display:block;height:100%;background:var(--yel);border-radius:6px}
+.lh-g small{display:flex;justify-content:space-between;font-size:11.5px;color:#9A9DA4;margin-top:6px;font-weight:600}.lh-g small b{color:#fff}

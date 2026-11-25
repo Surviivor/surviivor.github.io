@@ -211,12 +211,12 @@ function resolveNames(){
 const feedReq={};
 function loadFeed(key){
   if(!key || S.feeds[key] || feedReq[key]) return;
-  feedReq[key]=fetch('data/feeds/'+encodeURIComponent(key)+'.json').then(r=>r.ok?r.json():null).then(j=>{ S.feeds[key]=j||{missing:true}; render(); setTimeout(autoImportAll,300); }).catch(()=>{ S.feeds[key]={missing:true}; render(); });
+  feedReq[key]=fetch('data/feeds/'+encodeURIComponent(key)+'.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(j=>{ S.feeds[key]=j||{missing:true}; render(); setTimeout(autoImportAll,300); }).catch(()=>{ S.feeds[key]={missing:true}; render(); });
 }
 function loadFeedIndex(){
   if(S.feedIndex) return;
   S.feedIndex={loading:true};
-  fetch('data/feeds/index.json').then(r=>r.ok?r.json():null).then(j=>{ S.feedIndex=j||{comps:[]}; render(); }).catch(()=>{ S.feedIndex={comps:[]}; render(); });
+  fetch('data/feeds/index.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(j=>{ S.feedIndex=j||{comps:[]}; render(); }).catch(()=>{ S.feedIndex={comps:[]}; render(); });
 }
 const teamOf = (feed,id) => (feed && feed.teams && feed.teams[id]) || {n:'?'};
 // Logos corrigés (ESPN renvoie un mauvais logo ou aucun pour ces clubs de rugby)
@@ -340,7 +340,7 @@ function compute(lid){
   // Vies (Survivor) : lg.lives = vie(s) en réserve au départ ; lg.awayBonus = +1 vie après 3 paris gagnés de suite sur l'équipe à l'extérieur
   const lives={}, streak={}; mem.forEach(u=>{ lives[u]=pick?(+lg.lives||0):0; streak[u]=0; });
   for(const r of rounds){
-    n++; const ri={n:r.n||n, aliveBefore:[...alive], state:'open'}; info[r.k]=ri;
+    n++; const ri={n, aliveBefore:[...alive], state:'open'}; info[r.k]=ri;
     const closed=t(r.deadline)<=now();
     if(!closed){ ri.state='open'; continue; }
     if(finished){ ri.state='after'; continue; }
@@ -387,7 +387,7 @@ function computePoints(lg, mem, rounds){
   mem.forEach(u=>{ pts[u]=0; w[u]=0; d[u]=0; l[u]=0; ga[u]=0; });
   let played=0, finished=false, firsts=[];
   rounds.forEach((r,i)=>{
-    const ri={n:r.n||i+1, idx:i+1, aliveBefore:[...mem], state:'open', out:[], pts:{}, ga:{}}; info[r.k]=ri;
+    const ri={n:i+1, idx:i+1, aliveBefore:[...mem], state:'open', out:[], pts:{}, ga:{}}; info[r.k]=ri;
     if(finished){ ri.state='after'; return; }
     if(t(r.deadline)>now()) return;
     const ms=matchesOf(r), res={}, sco={}; let all=!!ms.length;
@@ -1187,7 +1187,7 @@ function roundCard(c, r, o={}){
   const my=pickOf(S.me,lg.id,r.k);
   let h=`<div class="card round">`;
   if(o.header) h+=o.header;
-  else h+=`<h3>Journée ${ri.n||r.n||''}</h3>`;
+  else h+=`<h3>Journée ${ri.n||(c.rounds.findIndex(x=>x.k===r.k)+1)}</h3>`;
   if(!o.noDl) h+=dlLine(r);
   if(!c.pick) return h+duelHtml(c,r,{can,closed})+roundFoot(c,r)+'</div>';
   if(!closed && o.hint!==false) h+=`<div class="hint">Choisis UN seul match et parie dessus.${allowDraw(lg)?'':' Pas de match nul.'} Les équipes déjà jouées sont grisées.</div>`;
@@ -1484,7 +1484,7 @@ function nextVotesCard(c){
   const lg=c.lg; if(!c.pick || !picksVisible(lg)) return '';
   const r=c.rounds.find(r=>t(r.deadline)>now()); if(!r) return '';
   const who=(c.status==='upcoming'?c.mem:c.alive); if(!who.length) return '';
-  const n=(c.info[r.k]||{}).n||r.n||'';
+  const n=((c.info[r.k]||{}).n||(c.rounds.findIndex(x=>x.k===r.k)+1));
   const rows=[], cnt={}, none=[]; let bold=null;
   who.forEach(u=>{ const p=pickOf(u,lg.id,r.k);
     if(!p){ none.push(u); return; }
@@ -1508,7 +1508,7 @@ function journeyData(c,u){
     if(c.points){ const sc=(ri.pts||{})[u]; ok=sc===3?true:sc===1?'c':sc===0?false:null; }
     else if(ri.state==='done'||ri.state==='tiebreak') ok=!ri.out.includes(u); else if(ri.state==='cancelled') ok='c';
     let logo=''; if(c.pick&&p&&r.matches&&r.matches[p.m]){ const m=r.matches[p.m]; const sd=p.p==='H'?m.h:p.p==='A'?m.a:null; logo=sd&&logoOf(sd)||''; }
-    out.push({n:ri.n||r.n, label:p?pickLabel(lg,r,p):'Pas de choix', logo, ok, rk:c.pick?pickRank(lg,r,p):null});
+    out.push({n:ri.n||(c.rounds.findIndex(x=>x.k===r.k)+1), label:p?pickLabel(lg,r,p):'Pas de choix', logo, ok, rk:c.pick?pickRank(lg,r,p):null});
   }
   return out;
 }
@@ -1532,6 +1532,36 @@ function standingRows(c){
   list.sort((a,b)=>b.s[0]-a.s[0]||b.s[1]-a.s[1]||nameOf(a.u).localeCompare(nameOf(b.u)));
   return list.map(x=>{ const better=list.filter(y=>y.s[0]>x.s[0]||(y.s[0]===x.s[0]&&y.s[1]>x.s[1])).length; const tie=list.filter(y=>y!==x&&y.s[0]===x.s[0]&&y.s[1]===x.s[1]).length>0; return {u:x.u,pos:better+1,tie}; });
 }
+// En-tête de page ligue : carte noire (retour, gérer, titre, 3 infos, jauge)
+function leagueHero(c, lid){
+  const lg=c.lg, mine=isMember(lid), alive=c.alive.includes(S.me);
+  const title=leagueTitle(lg.name).replace(/src="img\/(survivor|race|oneshot|x)\.png/g,'src="img/$1-white.png');
+  const curR=c.rounds.find(r=>t(r.deadline)>now())||c.rounds[c.rounds.length-1];
+  const jn=curR?((c.info[curR.k]||{}).n||(c.rounds.indexOf(curR)+1)):0;
+  const cal='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>';
+  const n=c.mem.length, chips=[]; let gauge='';
+  const G=(w,l,r)=>`<div class="lh-g"><div class="bar"><i style="width:${Math.max(2,Math.min(100,w))}%"></i></div><small><span>${l}</span><span>${r||''}</span></small></div>`;
+  if(c.status==='upcoming'){
+    if(mine) chips.push(['ok',`${IC.check}Inscrit`]);
+    chips.push(['',`${n} joueur${n>1?'s':''}`],['',`${IC.clock}${shortDur(t(lg.startAt))}`]);
+  } else if(c.points){
+    const me=c.rankOf[S.me]||{};
+    if(c.status==='finished') chips.push(['ok',wonBy(c,S.me)?`${IC.trophy}Gagnant`:'Terminée']);
+    else if(mine) chips.push(['ok',`${me.pos||'–'}${me.pos===1?'er':'e'}`]);
+    if(mine) chips.push(['',`${me.pts||0} / ${c.N} pts`]); else chips.push(['',`${n} joueurs`]);
+    if(c.status!=='finished') chips.push(['',`${cal}J${jn}`]);
+    if(mine && c.status!=='finished'){ const lead=Math.max(0,...Object.values(c.pts||{})); gauge=G((me.pts||0)*100/c.N,`<b>${me.pts||0} pts</b> sur ${c.N} pour gagner`,`le 1er a ${lead} pt${lead>1?'s':''}`); }
+  } else {
+    if(c.status==='finished') chips.push(['ok',c.winners.includes(S.me)?`${IC.trophy}Gagnant`:'Terminée']);
+    else if(mine) chips.push(alive?['ok','En vie']:['bad',`Éliminé J${(c.info[c.elimAt[S.me]]||{}).n||'?'}`]);
+    if(mine && alive && c.status!=='finished' && (+lg.lives>0||lg.redLantern)) chips.push(['',`${CI.heart}${(c.lives||{})[S.me]||0}`]);
+    else chips.push(['',`${n} joueurs`]);
+    if(c.status!=='finished') chips.push(['',`${cal}J${jn}`]);
+    const done=c.rounds.filter(r=>['done','cancelled'].includes((c.info[r.k]||{}).state)).length;
+    gauge=G(c.alive.length*100/Math.max(1,n),`<b>${c.alive.length} survivant${c.alive.length>1?'s':''}</b> sur ${n}`,done?`après ${done} journée${done>1?'s':''}`:'');
+  }
+  return `<div class="lhero"><div class="lh-top"><button class="lh-c" data-a="back" aria-label="Retour">${I.back}</button>${canManage(lg)?`<button class="lh-c" data-a="manage" data-v="${lid}" aria-label="Gérer la ligue">${I.gear}</button>`:''}</div>${title}<div class="lh-chips" style="grid-template-columns:repeat(${chips.length},1fr)">${chips.map(([k,x])=>`<span class="lh-chip ${k}">${x}</span>`).join('')}</div>${gauge}</div>`;
+}
 function viewLeague(lid){
   const c=C(lid);
   if(!c) return `<div class="empty"><div class="ico">🤷</div><h3>LIGUE INTROUVABLE</h3><p>Elle a peut-être été supprimée.</p><button class="btn" data-a="back">RETOUR</button></div>`;
@@ -1541,17 +1571,11 @@ function viewLeague(lid){
   if(c.points && mine && c.status!=='upcoming') pill = wonBy(c,S.me)?'<span class="pill round" style="background:var(--brand)">🏆 GAGNANT</span>':`<span class="pill round">${me_.pos}${me_.pos===1?'er':'e'} · ${me_.pts} PT${me_.pts>1?'S':''}</span>`;
   else if(mine && c.status!=='upcoming') pill = wonBy(c,S.me)?'<span class="pill round" style="background:var(--brand)">🏆 GAGNANT</span>':alive?'<span class="pill round green"><span class="dot"></span>EN VIE</span>':'<span class="pill round red"><span class="dot"></span>ÉLIMINÉ</span>';
   else if(mine) pill='<span class="pill round green">INSCRIT</span>';
-  let h=`<div class="lhead"><button class="cback" data-a="back" aria-label="Retour">${I.back}</button><div class="grow">${leagueTitle(lg.name)}</div>${pill}</div>`;
-  if(canManage(lg)) h+=`<button class="link grey" style="margin:-4px 0 14px" data-a="manage" data-v="${lid}">${I.gear.replace('<svg','<svg width="18" height="18"')} Gérer la ligue</button>`;
+  let h=leagueHero(c,lid);
   if(c.points && c.status==='finished') h+= c.firsts.includes(S.me)?`<div class="banner win"><span class="ico">🏆</span>Tu es le premier à ${c.N} points : tu gagnes la ligue !</div>`:`<div class="banner dead"><span class="ico">🏁</span>Ligue terminée · ${c.firsts.map(w=>esc(nameOf(w))).join(' & ')} ${c.firsts.length>1?'gagnent':'gagne'} en atteignant ${c.N} points</div>`;
-  else if(c.points && mine && c.status==='live') h+=`<div class="banner alive"><span class="ico">📊</span>Tu es ${me_.pos}${me_.pos===1?'er':'e'} avec ${me_.pts} pt${me_.pts>1?'s':''} sur ${c.N} · goal-average ${me_.ga>0?'+':''}${me_.ga}</div>`;
   else if(c.status==='finished') h+= c.winners.includes(S.me)?`<div class="banner win"><span class="ico">🏆</span>${c.winners.length>1?'Tu fais partie des 2 derniers survivants !':'Tu es le grand gagnant !'}</div>`:`<div class="banner dead"><span class="ico">🏁</span>Ligue terminée · ${c.winners.map(w=>esc(nameOf(w))).join(' & ')} ${c.winners.length>1?'gagnent':'gagne'}</div>`;
   else if(!mine) h+= c.status==='upcoming'?`<div class="banner info"><span class="ico">🎟️</span><div style="flex:1">Inscriptions ouvertes jusqu'au ${fmtDT(lg.startAt)}</div><button class="btn sm green" data-a="join" data-v="${lid}">JE M'INSCRIS</button></div>`:`<div class="banner info"><span class="ico">🔒</span>Inscriptions closes. Tu suis la ligue en spectateur.</div>`;
-  else if(c.status==='upcoming') h+=`<div class="banner alive"><span class="ico svgico">${I.clock}</span>Inscrit ! Début de la ligue dans ${untilJH(lg.startAt)}</div>`;
-  else if(alive) h+=`<div class="banner alive"><span class="ico">💚</span>${c.alive.length===1?'Tu es le dernier survivant !':`Tu es dans les ${c.alive.length} survivants !`}${(c.lives&&c.lives[S.me])?` · ${IC.heart} ${c.lives[S.me]} vie${c.lives[S.me]>1?'s':''} en réserve`:''}</div>`;
-  else h+=`<div class="banner dead"><span class="ico">☠️</span>Tu es éliminé. Tente ta chance dans une autre ligue…</div>`;
   h+=lastBanner(c);
-  h+=survMeter(c,false);
   const tab=S.view.ltab;
   h+=`<div class="seg"><button class="${tab==='paris'?'on':''}" data-a="ltab" data-v="paris">${c.pick?'Paris':'Vote'}</button><button class="${tab==='surv'?'on':''}" data-a="ltab" data-v="surv">${c.points?'Classement':'Survivants'}</button><button class="${tab==='hist'?'on':''}" data-a="ltab" data-v="hist">Stats</button></div>`;
   if(tab==='paris'){
@@ -1559,7 +1583,7 @@ function viewLeague(lid){
     const waiting=c.rounds.filter(r=>t(r.deadline)<=now() && ['waiting'].includes((c.info[r.k]||{}).state));
     if(c.status==='finished') h+=`<div class="empty"><div class="ico">🏁</div><h3>C'EST FINI</h3><p>Revis la ligue dans l'historique.</p></div>`+rulesCard(lg);
     else {
-      if(open.length) h+=open.map(r=>`<div class="jbig">${c.pick?'Journée':'Question'} ${(c.info[r.k]||{}).n||r.n||''}</div><div class="jsub">${I.clock}<span>Choix ouvert jusqu'au ${fmtDT(r.deadline)}</span></div>`+(c.pick?statsCard(c):'')+jokersCard(c,r)+roundCard(c,r,{header:`<h3>${c.pick?'Mon choix':'Mon vote'}</h3>`, noDl:true})).join('');
+      if(open.length) h+=open.map(r=>`<div class="jbig">${c.pick?'Journée':'Question'} ${((c.info[r.k]||{}).n||(c.rounds.findIndex(x=>x.k===r.k)+1))}</div><div class="jsub">${I.clock}<span>Choix ouvert jusqu'au ${fmtDT(r.deadline)}</span></div>`+(c.pick?statsCard(c):'')+jokersCard(c,r)+roundCard(c,r,{header:`<h3>${c.pick?'Mon choix':'Mon vote'}</h3>`, noDl:true})).join('');
       else h+=(c.pick?statsCard(c):'')+`<div class="card muted" style="text-align:center;font-size:15px">Pas de journée ouverte pour l'instant.${canManage(lg)?' Importe la prochaine depuis « Gérer la ligue ».':' La prochaine arrive bientôt !'}</div>`;
       h+=rulesCard(lg);
       if(waiting.length) h+=`<div class="sec2">EN ATTENTE DES RÉSULTATS</div>`+waiting.map(r=>roundCard(c,r)).join('');
@@ -1625,9 +1649,9 @@ function viewParis(){
     // Encart déroulant par ligue : ouvert par défaut tant que le choix n'est pas fait
     const k='mp'+c.lg.id, todo=!my, op=(k in S.open)?S.open[k]:todo;
     const pill=todo?`<span class="mp-st todo">À valider · ${until(r.deadline)||"1 min"}</span>`:`<span class="mp-st ok">✓ Choix fait</span>`;
-    h+=`<details class="mpl" ${op?'open':''}><summary class="mp-sum" data-a="mpTog" data-v="${c.lg.id}|${todo?1:0}"><div class="mp-nm">${(()=>{const sb=splitBrand(c.lg.name);return sb?`${WM(sb.k)}<span>${xify(esc(sb.rest))}</span>`:`<span>${esc(c.lg.name)}</span>`})()}</div><div class="mp-row">${pill}${(()=>{ const n=(jokerOn(c.lg)&&!jokerRound(c.lg.id,S.me)?1:0)+(saboOn(c.lg)&&!mySabo(c.lg.id)?1:0); return n?'<span class="mp-st jk" title="Jokers disponibles">'+JOKER_ICO+n+' joker'+(n>1?'s':'')+'</span>':''; })()}<span class="mp-d">${c.pick?'J':'Q'}${(c.info[r.k]||{}).n||''} · ${fmtD(r.deadline).slice(0,5)}</span>${I.chev}</div></summary><div class="mp-body">${c.pick?statsCard(c):''}${jokersCard(c,r)}${card}</div></details>`;
+    h+=`<details class="mpl" ${op?'open':''}><summary class="mp-sum" data-a="mpTog" data-v="${c.lg.id}|${todo?1:0}"><div class="mp-nm">${(()=>{const sb=splitBrand(c.lg.name);return sb?`${WM(sb.k)}<span>${xify(esc(sb.rest))}</span>`:`<span>${esc(c.lg.name)}</span>`})()}</div><div class="mp-row">${pill}${(()=>{ const n=(jokerOn(c.lg)&&!jokerRound(c.lg.id,S.me)?1:0)+(saboOn(c.lg)&&!mySabo(c.lg.id)?1:0); return n?'<span class="mp-st jk" title="Jokers disponibles">'+JOKER_ICO+n+' joker'+(n>1?'s':'')+'</span>':''; })()}<span class="mp-d">${c.pick?'J':'Q'}${((c.info[r.k]||{}).n||(c.rounds.findIndex(x=>x.k===r.k)+1))} · ${fmtD(r.deadline).slice(0,5)}</span>${I.chev}</div></summary><div class="mp-body">${c.pick?statsCard(c):''}${jokersCard(c,r)}${card}</div></details>`;
   });
-  if(wait.length){ h+=`<div class="sec2">EN ATTENTE DES RÉSULTATS</div>`; wait.forEach(([c,r])=>{ h+=`<div class="card"><div style="font-family:var(--bold);font-weight:800">${esc(c.lg.name)} · Journée ${(c.info[r.k]||{}).n||''}</div><div class="muted" style="margin-top:4px">Ton choix : <b style="color:var(--on)">${esc(pickLabel(c.lg,r,pickOf(S.me,c.lg.id,r.k)))}</b></div></div>`; }); }
+  if(wait.length){ h+=`<div class="sec2">EN ATTENTE DES RÉSULTATS</div>`; wait.forEach(([c,r])=>{ h+=`<div class="card"><div style="font-family:var(--bold);font-weight:800">${esc(c.lg.name)} · Journée ${((c.info[r.k]||{}).n||(c.rounds.findIndex(x=>x.k===r.k)+1))}</div><div class="muted" style="margin-top:4px">Ton choix : <b style="color:var(--on)">${esc(pickLabel(c.lg,r,pickOf(S.me,c.lg.id,r.k)))}</b></div></div>`; }); }
   return h;
 }
 
@@ -1723,7 +1747,7 @@ function viewManage(lid){
     h+=`<div class="card"><div class="h-disp" style="font-size:24px">CRÉER UN MATCH</div>
       <div class="row2 eq"><div><label class="f">Domicile</label><input class="in w" id="am-h" maxlength="40" placeholder="PSG"></div><div><label class="f">Extérieur</label><input class="in w" id="am-a" maxlength="40" placeholder="OM"></div></div>
       <label class="f">Date et heure du match</label><div class="row2"><input class="in w" type="date" id="am-d" value="${dateIn(d)}"><input class="in w" type="time" id="am-t" value="21:00"></div>
-      <label class="f">Ajouter à</label><select class="in w" id="am-r"><option value="new">Nouvelle journée</option>${futureRounds.map(r=>`<option value="${r.k}">Journée ${(c.info[r.k]||{}).n||''} (${fmtD(r.deadline)})</option>`).join('')}</select>
+      <label class="f">Ajouter à</label><select class="in w" id="am-r"><option value="new">Nouvelle journée</option>${futureRounds.map(r=>`<option value="${r.k}">Journée ${((c.info[r.k]||{}).n||(c.rounds.findIndex(x=>x.k===r.k)+1))} (${fmtD(r.deadline)})</option>`).join('')}</select>
       <button class="btn pop full" style="margin-top:16px" data-a="addMatch" data-v="${lid}">AJOUTER LE MATCH</button></div>`;
   } else {
     const ti=S.tmpImg||{};
@@ -1794,7 +1818,7 @@ function findVerdict(){
   return best;
 }
 function verdictHtml(v){
-  const c=C(v.lid); if(!c) return ''; const r=v.r, ri=c.info[r.k]||{}, n=ri.n||r.n||'';
+  const c=C(v.lid); if(!c) return ''; const r=v.r, ri=c.info[r.k]||{}, n=ri.n||(c.rounds.findIndex(x=>x.k===r.k)+1);
   const names=us=>{ const L=us.map(u=>esc(nameOf(u))); return L.length>6?L.slice(0,6).join(', ')+` et ${L.length-6} autre${L.length-6>1?'s':''}`:L.join(', ').replace(/, ([^,]*)$/,' et $1'); };
   let ico, title, body='';
   if(c.points){
