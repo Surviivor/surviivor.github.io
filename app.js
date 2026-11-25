@@ -1310,7 +1310,7 @@ function rulesCard(lg){
   if(pz) o.push(['🎁','À gagner',esc(pz)]);
   const optH=(o.length?`<div class="rsec">Options de la ligue</div>${o.map(([i,tt,d])=>row(i,tt,d)).join('')}`:'')+lvH+jkH;
   const custom=(lg.rules||'').trim();
-  const cH=custom?`<div class="rsec">Le mot de l’organisateur</div>${custom.split(/\n+/).map(p=>`<p class="rtxt">${esc(p)}</p>`).join('')}`:(!steps?defaultRules(lg).split(/\n+/).map(p=>`<p class="rtxt">${esc(p)}</p>`).join(''):'');
+  const cH=(!steps?defaultRules(lg).split(/\n+/).map(p=>`<p class="rtxt">${esc(p)}</p>`).join(''):'');
   return `<details class="card coll" ${S.open['rules'+lg.id]?'open':''}><summary data-a="toggle" data-v="rules${lg.id}"><span class="ctitle">${I.book}Règles du jeu</span>${I.chev}</summary><div class="rules-body r2">${stepsH}${warn}${optH}${cH}</div></details>`;
 }
 function standingsCard(lg, openDefault){
@@ -1603,8 +1603,6 @@ function viewManage(lid){
     h+=`</div>`;
   }
   // rules
-  h+=`<div class="card"><div class="h-disp">RÈGLES DU JEU</div><div class="help" style="margin:-6px 0 12px;font-size:14px">Ce texte s'affiche en haut de la ligue pour tous les joueurs.</div><textarea class="in w" id="ru-txt" style="min-height:220px;font-size:16px">${esc((lg.rules||'').trim()||DEFAULT_RULES[c.pick?'pick':'majority'])}</textarea>
-    <div style="display:flex;gap:10px;margin-top:14px;align-items:center"><button class="btn" style="flex:1.6" data-a="saveRules" data-v="${lid}">ENREGISTRER</button><button class="link grey" style="flex:1;justify-content:center" data-a="defRules" data-v="${lid}">PAR DÉFAUT</button></div></div>`;
   // registrations
   h+=`<div class="card"><div class="h-disp" style="font-size:24px">INSCRIPTIONS</div>${c.status==='upcoming'?`<div class="help green" style="margin:0 0 14px">Ouvertes jusqu'au ${fmtDT(lg.startAt)} · ${c.mem.length} inscrit${c.mem.length>1?'s':''}</div><button class="btn line full" data-a="startNow" data-v="${lid}">DÉMARRER MAINTENANT (CLÔTURER)</button>`:`<div class="help" style="margin:0">Closes depuis le ${fmtDT(lg.startAt)} · ${c.mem.length} inscrit${c.mem.length>1?'s':''}</div>`}</div>`;
   // manual create
