@@ -1481,8 +1481,6 @@ function nextVotesCard(c){
   const fun=[];
   const tot=rows.length; const top3=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,3);
   if(top3.length) fun.push([IC.flame,'Les plus choisies',top3.map(([k,v],i)=>`<div class="nv-top"><span>${i+1}.</span><b>${esc(k)}</b><em>${Math.round(v*100/tot)} %</em></div>`).join('')]);
-  if(bold && bold.us.length<=5) fun.push([IC.bolt,bold.us.length>1?'Les plus audacieux':'Le plus audacieux',`${names(bold.us)} avec ${esc(bold.n)} (${bold.rk}<sup>e</sup>)`]);
-  if(me && same<=5) fun.push([IC.users,'Même choix que toi',same?names(sameU):'Personne : tu es seul sur ce coup !']);
   const list=rows.map(([u,p])=>`<div class="nv-r">${avatarOf(u)}<span class="nv-n">${esc(nameOf(u))}${u===S.me?' <em>(toi)</em>':''}</span><span class="nv-p">${pickSides(p).map(x=>{ const m=(r.matches||{})[x.m]; if(!m) return ''; const sd=x.p==='H'?m.h:x.p==='A'?m.a:null; return sd?`${logoTag(sd)}<b>${esc(sd.n)}</b>`:(logoOf(m.h)&&logoOf(m.a)?`${logoTag(m.h)}<b>Nul</b>${logoTag(m.a)}`:`<b>Nul</b> <small>(${esc(m.h.n)} – ${esc(m.a.n)})</small>`); }).join('<i>+</i>')}</span></div>`).join('')
     + none.map(u=>`<div class="nv-r off">${avatarOf(u)}<span class="nv-n">${esc(nameOf(u))}</span><span class="nv-p"><small>pas encore choisi</small></span></div>`).join('');
   return `<div class="card nv"><div class="stitle">${IC.eye} Paris de la journée ${n}</div><div class="nv-fun">${fun.map(([i,tt,v])=>`<div class="nv-f"><span>${i}</span><div><small>${tt}</small><div>${v}</div></div></div>`).join('')}</div><div class="nv-list">${list}</div><div class="muted" style="font-size:12px;margin-top:8px">Les choix peuvent encore changer jusqu’à l’heure limite (${fmtDT(r.deadline)}).</div></div>`;

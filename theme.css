@@ -855,3 +855,5 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .nh-logo .wm{height:25px}
 /* titre « Paris de la journée » dans la police des onglets */
 .nv .stitle{font-family:var(--title);font-weight:600}
+.nv-f small{font-size:14px;color:var(--on);font-family:var(--title);font-weight:700;letter-spacing:.6px;margin-bottom:6px}
+.nv-f>span .ic{width:20px;height:20px}
