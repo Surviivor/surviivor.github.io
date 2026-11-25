@@ -234,7 +234,7 @@ const roundsOf = lg => Object.entries(lg.rounds||{}).map(([k,r])=>({...r,k})).so
 const matchesOf = r => Object.entries(r.matches||{}).map(([k,m])=>({...m,k})).sort((a,b)=>t(a.d)-t(b.d)||a.k.localeCompare(b.k));
 const teamKey = side => side ? String(side.id || side.n || '').toLowerCase() : '';
 function pickOf(uid, lid, rk){ const p=S.players[uid]; return p && p.picks && p.picks[lid] && p.picks[lid][rk] ? p.picks[lid][rk] : null; }
-const JOKER_ICO='<svg class="jki" viewBox="0 0 30 40" aria-hidden="true"><rect x="1" y="1" width="28" height="38" rx="6" fill="#26282E"/><path d="M8 19.5l1.2-6.3 3.4 3.4 2.4-5 2.4 5 3.4-3.4 1.2 6.3z" fill="#fff"/><circle cx="9.2" cy="12.4" r="1.7" fill="#fff"/><circle cx="15" cy="10.2" r="1.7" fill="#fff"/><circle cx="20.8" cy="12.4" r="1.7" fill="#fff"/><rect x="8" y="21" width="14" height="1.8" rx=".6" fill="#fff"/><text x="15" y="32" text-anchor="middle" font-family="Georgia,serif" font-size="6.4" font-weight="700" fill="#fff" letter-spacing=".3">JOKER</text></svg>';
+const JOKER_ICO='<img class="jki" src="img/jester.png" alt="">';
 // Joker « double chance » (Survivor, 1 fois par ligue) : le pari contient une 2e équipe (m2/p2, j:true)
 const jokerOn = lg => !!lg && !!lg.joker && isPickMode(lg) && !isPoints(lg);
 const pickSides = p => !p ? [] : [{m:p.m,p:p.p}, ...(p.j && p.m2 && p.p2 ? [{m:p.m2,p:p.p2}] : [])];
@@ -322,9 +322,9 @@ function compute(lid){
       }
       else if(!correct.length && !A.some(u=>lives[u]>0)){ ri.state='cancelled'; ri.out=[]; }
       else {
-        // bonus extérieur : 3 paris gagnés (pas forcément de suite) sur l'équipe qui joue à l'extérieur = +1 vie
+        // bonus extérieur : tous les 3 paris sur une équipe qui joue à l'extérieur (gagnés ou non, pas forcément de suite) = +1 vie
         if(lg.redLantern){ ri.lantern=[]; A.forEach(u=>{ const p=effPick(u,lid,r); if(p && !p.j && correct.includes(u) && isLantern(lg,r,p)){ lives[u]++; ri.lantern.push(u); } }); }
-        if(lg.awayBonus){ ri.gained=[]; A.forEach(u=>{ const p=effPick(u,lid,r); if(p && !p.j && p.p==='A' && correct.includes(u)){ streak[u]++; if(streak[u]>=3){ lives[u]++; streak[u]=0; ri.gained.push(u); } } }); }
+        if(lg.awayBonus){ ri.gained=[]; A.forEach(u=>{ const p=effPick(u,lid,r); if(p && !p.j && p.p==='A'){ streak[u]++; if(streak[u]>=3){ lives[u]++; streak[u]=0; ri.gained.push(u); } } }); }
         const wrong=A.filter(u=>!correct.includes(u)), saved=wrong.filter(u=>lives[u]>0); saved.forEach(u=>lives[u]--);
         const out=wrong.filter(u=>!saved.includes(u)); out.forEach(u=>elimAt[u]=r.k); alive=new Set(A.filter(u=>!out.includes(u))); ri.state='done'; ri.out=out; ri.saved=saved;
       }
@@ -657,7 +657,7 @@ const A = {
   saboTo(v){ if(!S.view.sab) return; S.view.sab.to=v; S.view.sab.team=null; render(); },
   saboTeam(v){ if(!S.view.sab) return; const i=v.indexOf('|'); S.view.sab.team=v.slice(0,i); S.view.sab.tn=v.slice(i+1); render(); },
   saboCancel(){ S.view.sab=null; render(); },
-  saboGo(){ const sb=S.view.sab; if(!sb||!sb.to||!sb.team) return; const c=C(sb.lid), r=c&&c.lg.rounds[sb.rk]; if(!r||t(r.deadline)<=now()) return toast('Trop tard pour cette journée.',true); if(mySabo(sb.lid)) return toast('Tu as déjà utilisé ton sabotage.',true);
+  saboGo(){ const sb=S.view.sab; if(!sb||!sb.to||!sb.team) return; const c=C(sb.lid), r=c&&c.lg.rounds[sb.rk]; if(!r||t(r.deadline)<=now()) return toast('Trop tard pour cette journée.',true); if(mySabo(sb.lid)) return toast('Tu as déjà utilisé ton sabotage.',true); if(sabosOn(sb.lid,sb.to,sb.rk).length) return toast(nameOf(sb.to)+' est déjà saboté pour cette journée.',true);
     const doc={to:sb.to, team:sb.team, tn:sb.tn, rk:sb.rk, at:new Date().toISOString()}; S.view.sab=null;
     writeMe({sabo:{[sb.lid]:doc}}).then(()=>toast('💣 Sabotage lancé contre '+nameOf(doc.to)+' !')); },
   jokerUse(v){ if(guard()) return; S.view.jk=v; render(); toast('Joker activé : choisis 2 équipes de 2 matchs différents.'); },
@@ -1046,9 +1046,9 @@ function jokerItems(c, r){
   if(jokerOn(lg)){
     const used=jokerRound(lg.id,S.me), here=used===r.k, act=S.view.jk===lg.id+'|'+r.k;
     const it={k:'joker', ico:JOKER_ICO, t:'Double chance', d:'Choisis 2 équipes sur une journée : tu survis si au moins une des 2 équipes gagne.', avail:!used};
-    if(here&&my&&my.j){ it.state='on'; it.note='Utilisé sur cette journée : tes 2 équipes sont choisies.'; if(can) it.btn=`<button class="jbtn ghost2" data-a="jokerCancel" data-v="${lg.id}|${r.k}">Annuler le joker</button>`; it.avail=true; }
+    if(here&&my&&my.j){ it.state='on'; it.note='Utilisé sur cette journée : tes 2 équipes sont choisies.'; if(can) it.btn=`<button class="jx" data-a="jokerCancel" data-v="${lg.id}|${r.k}" title="Annuler le joker" aria-label="Annuler le joker">${I.x||'✕'}</button>`; it.avail=true; }
     else if(used){ it.state='used'; it.note='Utilisé'+(jn(used)?' ('+jn(used)+')':'')+'.'; }
-    else if(act){ it.state='on'; it.note=my?'Activé : choisis ta 2e équipe dans un autre match.':'Activé : choisis 2 équipes dans 2 matchs différents.'; it.btn=`<button class="jbtn ghost2" data-a="jokerCancel" data-v="${lg.id}|${r.k}">Annuler</button>`; }
+    else if(act){ it.state='on'; it.note=my?'Activé : choisis ta 2e équipe dans un autre match.':'Activé : choisis 2 équipes dans 2 matchs différents.'; it.btn=`<button class="jx" data-a="jokerCancel" data-v="${lg.id}|${r.k}" title="Annuler" aria-label="Annuler">${I.x||'✕'}</button>`; }
     else if(can) it.btn=`<button class="jbtn" data-a="jokerUse" data-v="${lg.id}|${r.k}">Utiliser</button>`;
     out.push(it);
   }
@@ -1060,7 +1060,7 @@ function jokerItems(c, r){
       const st=S.view.sab&&S.view.sab.lid===lg.id&&S.view.sab.rk===r.k?S.view.sab:null;
       if(!st) it.btn=`<button class="jbtn red" data-a="saboStart" data-v="${lg.id}|${r.k}">Utiliser</button>`;
       else {
-        let x=`<div class="sab-step"><b>Qui veux-tu saboter ?</b><div class="schips">${foes.map(u=>`<button class="chip sm ${st.to===u?'on':''}" data-a="saboTo" data-v="${u}">${esc(nameOf(u))}</button>`).join('')}</div>`;
+        let x=`<div class="sab-step"><b>Qui veux-tu saboter ?</b><div class="schips">${foes.map(u=>{ const hit=sabosOn(lg.id,u,r.k).length>0; return `<button class="chip sm ${st.to===u?'on':''} ${hit?'off':''}" ${hit?'disabled title="Déjà saboté pour cette journée"':`data-a="saboTo" data-v="${u}"`}>${hit?'💣 ':''}${esc(nameOf(u))}</button>`; }).join('')}</div>${foes.some(u=>sabosOn(lg.id,u,r.k).length)?'<div class="help" style="margin:6px 0 0">💣 = déjà saboté par un autre joueur pour cette journée.</div>':''}`;
         if(st.to){ const used=usedTeams(c,st.to,r.k);
           x+=`<b style="margin-top:12px">Quelle équipe lui interdire ?</b><div class="schips">${matchesOf(r).flatMap(m=>[m.h,m.a]).map(sd=>{ const k=teamKey(sd), u=used.has(k), lo=logoOf(sd);
             return `<button class="chip sm tchip ${st.team===k?'on':''} ${u?'off':''}" ${u?'disabled title="Déjà jouée par ce joueur"':`data-a="saboTeam" data-v="${esc(k)}|${esc(sd.n)}"`}>${lo?`<img src="${esc(lo)}" alt="">`:''}${esc(sd.n)}</button>`; }).join('')}</div><div class="help" style="margin:6px 0 0">Les équipes grisées ont déjà été jouées par ${esc(nameOf(st.to))}.</div>`; }
@@ -1077,7 +1077,7 @@ function jokersCard(c, r){
   const items=jokerItems(c,r); if(!items.length) return '';
   const n=items.filter(x=>x.avail && x.state!=='used').length, k='jkc'+lg.id;
   const op=S.open[k] || (S.view.jk&&S.view.jk.startsWith(lg.id+'|')) || (S.view.sab&&S.view.sab.lid===lg.id);
-  const body=items.map(x=>`<div class="jitem ${x.state||''}"><div class="jt">${x.ico}<b>${x.t}</b>${x.state==='used'?'<span class="jtag">Utilisé</span>':x.state==='on'?'<span class="jtag on">En cours</span>':''}</div><small>${x.d}</small>${x.note?`<div class="jnote">${x.note}</div>`:''}${x.panel||''}${x.btn?`<div class="jbtns">${x.btn}</div>`:''}</div>`).join('');
+  const body=items.map(x=>`<div class="jitem ${x.state||''}"><div class="jt">${x.ico}<b>${x.t}</b>${x.state==='used'?'<span class="jtag">Utilisé</span>':x.state==='on'&&!x.btn?'<span class="jtag on">En cours</span>':''}${x.btn||''}</div><small>${x.d}</small>${x.note?`<div class="jnote">${x.note}</div>`:''}${x.panel||''}</div>`).join('');
   const regain=n===0?'<div class="help" style="margin:10px 0 0">Chaque joker ne s\'utilise qu\'une fois par ligue : aucun moyen d\'en récupérer.</div>':'';
   return `<details class="card coll jkc" ${op?'open':''}><summary data-a="toggle" data-v="${k}"><span class="ctitle">${JOKER_ICO}Jokers (${n})</span>${I.chev}</summary><div class="jlist">${body}</div>${regain}</details>`;
 }
@@ -1214,7 +1214,7 @@ function livesRulesHtml(lg){
   if(isPoints(lg)) return h;
   if(+lg.lives>0) h+=`<p class="lrule">❤️ <b>Option de la ligue :</b> chaque joueur a droit à <b>une erreur</b> : il perd sa vie mais reste en jeu.</p>`;
   if(lg.joker) h+=`<p class="lrule">${JOKER_ICO}<b>Joker « double chance » :</b> une fois par ligue, choisis <b>2 équipes</b> sur une journée : tu survis si <b>au moins une des 2</b> gagne.</p>`;
-  if(lg.awayBonus) h+=`<p class="lrule">✈️ <b>Bonus extérieur :</b> toutes les <b>3 victoires</b> avec une équipe <b>à l'extérieur</b> : <b>+1 vie</b>.</p>`;
+  if(lg.awayBonus) h+=`<p class="lrule">✈️ <b>Bonus extérieur :</b> si tu paries <b>3 fois</b> sur des équipes <b>à l'extérieur</b>, tu gagnes <b>1 vie supplémentaire</b>.</p>`;
   return h;
 }
 // Options communes Survivor + Race : sabotage, lanterne rouge, visibilité des choix
@@ -1233,7 +1233,7 @@ function livesBlock(lg, act, lid, locked){
   const v=lid?lid+'|':'', L=+(lg&&lg.lives)||0, B=!!(lg&&lg.awayBonus), J=!!(lg&&lg.joker);
   return `<label class="f fbig">Options</label><div class="lopt">
     <button class="lopt-b ${L?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}lives"`}><i></i><span><b>❤️ Une vie en réserve</b><small>Chaque joueur a droit à une erreur : il perd sa vie mais reste en jeu.</small></span></button>
-    <button class="lopt-b ${B?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}away"`}><i></i><span><b>✈️ Bonus extérieur</b><small>Toutes les 3 victoires avec une équipe à l'extérieur : +1 vie.</small></span></button>
+    <button class="lopt-b ${B?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}away"`}><i></i><span><b>✈️ Bonus extérieur</b><small>Si un joueur parie 3 fois sur des équipes à l'extérieur, il gagne 1 vie supplémentaire.</small></span></button>
     <button class="lopt-b ${J?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}joker"`}><i></i><span><b>${JOKER_ICO}Joker « double chance »</b><small>Une fois par ligue, choisis 2 équipes sur une journée : tu survis si au moins une des 2 équipes gagne.</small></span></button>
   </div>${extraBlock(lg,act,lid,locked,false,true)}${locked?'<div class="help" style="margin:-4px 0 10px">Options figées une fois la ligue commencée.</div>':''}`;
 }
@@ -1287,23 +1287,36 @@ function trendSection(c){
   if(next) h+=`<div class="muted" style="font-size:12px;margin-top:8px">Prochains choix révélés le ${fmtDT(next.deadline)}.</div>`;
   return h+'</div>';
 }
+// Confrontations directes (5 dernières) pour les matchs de la prochaine journée
+function h2hSection(c, f){
+  if(!f||!f.h2h) return '';
+  const r=c.rounds.find(r=>t(r.deadline)>now()); if(!r) return '';
+  const rows=matchesOf(r).map(m=>{
+    const hid=String(m.h.id||''), aid=String(m.a.id||''); if(!hid||!aid) return '';
+    const L=f.h2h[[hid,aid].sort().join('_')]; if(!L||!L.length) return `<div class="h2h"><div class="h2h-t">${logoTag(m.h)}<b>${esc(m.h.n)}</b><span class="vs">VS</span><b>${esc(m.a.n)}</b>${logoTag(m.a)}</div><div class="muted" style="font-size:12px">Jamais affrontés récemment.</div></div>`;
+    let w=0,d=0,l=0; const dots=L.map(x=>{ const hg=x.h===hid?x.hs:x.as, ag=x.h===hid?x.as:x.hs; const res=hg>ag?'W':hg<ag?'L':'D'; if(res==='W') w++; else if(res==='L') l++; else d++;
+      return `<span class="hs ${res}" title="${esc(x.d)}">${x.h===hid?`${x.hs}-${x.as}`:`${x.as}-${x.hs}`}</span>`; }).join('');
+    return `<div class="h2h"><div class="h2h-t">${logoTag(m.h)}<b>${esc(m.h.n)}</b><span class="vs">VS</span><b>${esc(m.a.n)}</b>${logoTag(m.a)}</div><div class="h2h-sum"><span class="w">${w} V</span><span class="d">${d} N</span><span class="l">${l} D</span><span class="muted">pour ${esc(m.h.n)}</span></div><div class="h2h-l">${dots}</div></div>`;
+  }).join('');
+  return rows?`<div class="ssec"><div class="stitle">${I.flash}Confrontations directes</div><div class="muted" style="font-size:12px;margin:-4px 0 8px">5 derniers matchs entre les 2 équipes (score vu de l'équipe à domicile de la journée).</div>${rows}</div>`:'';
+}
 function statsCard(c){
   const lg=c.lg; const key=lg.comp;
   const trend='';
   const f=key?S.feeds[key]:null; if(key&&!f) loadFeed(key);
   const tbl=c.lg.category==='tuprefere'?'':standingsCard(lg,'body');
   const wrap=body=>`<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${body}</details>`;
-  if(!f||f.missing||c.lg.category==='tuprefere'){ if(!trend&&!tbl) return ''; return wrap(trend+tbl); return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${trend}</details>`; }
+  if(!f||f.missing||c.lg.category==='tuprefere'){ { const hh=h2hSection(c,f); if(!trend&&!tbl&&!hh) return ''; return wrap(trend+hh+tbl); } return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${trend}</details>`; }
   const form=teamForm(f);
   const pts=Object.keys(form).map(id=>[id, form[id].slice(0,5).reduce((a,r)=>a+(r==='W'?3:r==='D'?1:0),0), Math.min(5,form[id].length)]).filter(x=>x[2]>=2);
-  if(pts.length<6){ if(!trend&&!tbl) return ''; return wrap(trend+tbl); return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${trend}</details>`; }
+  if(pts.length<6){ { const hh=h2hSection(c,f); if(!trend&&!tbl&&!hh) return ''; return wrap(trend+hh+tbl); } return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${trend}</details>`; }
   const best=pts.slice().sort((a,b)=>b[1]-a[1]||a[2]-b[2]).slice(0,3), worst=pts.slice().sort((a,b)=>a[1]-b[1]||b[2]-a[2]).slice(0,3);
   const row=([id,p,n])=>statRow(f,id,`<b>${p}</b><span>pts</span>`,formDots(form[id]));
   const maxN=Math.max(...pts.map(x=>x[2]));
   let h=trend+`<div class="ssec"><div class="stitle">${I.flash}Les plus en forme</div><div class="slist">${best.map(row).join('')}</div></div>`;
   h+=`<div class="ssec"><div class="stitle">${I.down}À la peine</div><div class="slist">${worst.map(row).join('')}</div></div>`;
   h+=`<div class="muted" style="font-size:12px;margin-top:14px">Points pris sur les ${maxN} dernières journées${maxN<5?' (seules celles-ci sont disponibles pour l\'instant)':''}. Données du ${fmtDT(f.updatedAt)}.</div>`;
-  h+=tbl;
+  h+=h2hSection(c,f)+tbl;
   return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${h}</details>`;
 }
 // Final/ongoing ranking: survivors share the top; the eliminated are ranked by elimination day

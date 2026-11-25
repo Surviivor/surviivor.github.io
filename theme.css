@@ -605,3 +605,26 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .tchip img{width:18px;height:18px;object-fit:contain}
 .tchip.off{opacity:.35;text-decoration:line-through}
 .sab-step .help{font-size:12px!important;line-height:1.35}
+/* Jokers v2 : picto bonnet, bouton sur la ligne du titre */
+.jki{width:20px;height:20px;object-fit:contain;vertical-align:-4px;margin-right:6px}
+.jkc .ctitle .jki{width:24px;height:24px;vertical-align:-6px;margin-right:10px}
+.jitem .jt .jki{width:22px;height:22px;margin:0}
+.jitem .jt{min-height:30px}
+.jitem .jt .jbtn{height:30px;padding:0 14px;font-size:12.5px;margin-left:auto}
+.jx{flex:none;width:30px;height:30px;border-radius:50%;border:1.5px solid rgba(22,24,29,.15);background:#fff;color:var(--on);font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;margin-left:auto}
+.jitem.on .jx{border-color:#5B3FD6;color:#5B3FD6}
+.mp-st.jk .jki{width:14px;height:14px;margin:0;vertical-align:-2px}
+.jbox .jki,.lrule .jki,.lopt-b .jki{width:20px;height:20px;vertical-align:-4px}
+/* Confrontations directes */
+.h2h{padding:10px 0;border-top:1px solid rgba(22,24,29,.07)}
+.h2h:first-of-type{border-top:0}
+.h2h-t{display:flex;align-items:center;gap:6px;font-size:13.5px}
+.h2h-t img.lg{width:20px;height:20px;object-fit:contain}
+.h2h-t .vs{color:var(--muted);font-size:11px;font-weight:700;margin:0 4px}
+.h2h-sum{display:flex;gap:8px;align-items:center;font-size:12.5px;font-weight:700;margin-top:6px}
+.h2h-sum .w{color:#1E7A3C}.h2h-sum .d{color:#8A8F98}.h2h-sum .l{color:#C0392B}
+.h2h-sum .muted{font-weight:500}
+.h2h-l{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+.hs{font-size:11.5px;font-weight:700;border-radius:8px;padding:3px 7px;background:#EEE}
+.hs.W{background:#DDF1E3;color:#1E7A3C}.hs.L{background:#FBE1DE;color:#C0392B}.hs.D{background:#EEEDEA;color:#555}
+.schips .chip.off{opacity:.4}

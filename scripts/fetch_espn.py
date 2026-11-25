@@ -36,6 +36,37 @@ def ds(d): return d.strftime('%Y%m%d')
 
 today = datetime.datetime.utcnow()
 dump = {'fetchedAt': today.isoformat(timespec='seconds') + 'Z', 'comps': {}, 'logos': {}}
+# Confrontations directes (5 dernières) pour les matchs des 10 prochains jours.
+# Clé = ids des 2 équipes triés « a_b ». Déjà connues = reprises du feed précédent (pas de nouvel appel).
+def fetch_h2h(key, sport, lg, events, today):
+    prev = {}
+    try: prev = json.load(open(os.path.join(os.path.dirname(LOGO_DIR) or 'data', 'feeds', key + '.json'))).get('h2h') or {}
+    except Exception: pass
+    out = {}; calls = 0
+    for e in events.values():
+        try:
+            comp = e['competitions'][0]; cs = comp['competitors']
+            if comp['status']['type']['state'] != 'pre': continue
+            d = datetime.datetime.fromisoformat(e['date'].replace('Z', '+00:00')).replace(tzinfo=None)
+            if d > today + datetime.timedelta(days=10): continue
+            ids = sorted(str(c['team']['id']) for c in cs); pk = '_'.join(ids)
+        except Exception: continue
+        if pk in out: continue
+        if pk in prev: out[pk] = prev[pk]; continue
+        if calls >= 40: continue
+        j = get(f'https://site.api.espn.com/apis/site/v2/sports/{sport}/{lg}/summary?event={e["id"]}'); calls += 1; time.sleep(PAUSE)
+        rows = []
+        for ss in (j or {}).get('seasonseries') or []:
+            if ss.get('type') != 'head-to-head': continue
+            for ev in ss.get('events') or []:
+                try:
+                    h = next(c for c in ev['competitors'] if c.get('homeAway') == 'home'); a = next(c for c in ev['competitors'] if c.get('homeAway') == 'away')
+                    if (ev.get('statusType') or {}).get('completed') is False: continue
+                    rows.append({'d': ev.get('date', '')[:10], 'h': str(h['team']['id']), 'a': str(a['team']['id']), 'hs': int(h.get('score') or 0), 'as': int(a.get('score') or 0)})
+                except Exception: continue
+        out[pk] = rows[:5]
+    return out
+
 for key, (sport, lg, back, fwd, use_cal) in COMPS.items():
     base = get(f'https://site.api.espn.com/apis/site/v2/sports/{sport}/{lg}/scoreboard'); time.sleep(PAUSE)
     events = {e['id']: e for e in (base or {}).get('events', [])}
@@ -57,7 +88,8 @@ for key, (sport, lg, back, fwd, use_cal) in COMPS.items():
         for e in (j or {}).get('events', []): events[e['id']] = e
         time.sleep(PAUSE)
     st = get(f'https://site.api.espn.com/apis/v2/sports/{sport}/{lg}/standings'); time.sleep(PAUSE)
-    dump['comps'][key] = {'scoreboard': {'events': list(events.values())}, 'standings': st}
+    h2h = fetch_h2h(key, sport, lg, events, today)
+    dump['comps'][key] = {'scoreboard': {'events': list(events.values())}, 'standings': st, 'h2h': h2h}
     print(key, len(events), 'matchs', 'classement OK' if st else 'pas de classement')
 
 # logos manquants uniquement
