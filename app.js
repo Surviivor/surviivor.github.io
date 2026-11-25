@@ -260,6 +260,7 @@ const IC=(()=>{ const sv=(d,extra='')=>`<svg class="ic" viewBox="0 0 24 24" fill
   alert:sv('<path d="M12 3l10 18H2L12 3z"/><path d="M12 10v4M12 17.5v.5"/>'),
   chat:sv('<path d="M21 11.5a8.4 8.4 0 0 1-12.3 7.4L3 20.5l1.6-5.4A8.5 8.5 0 1 1 21 11.5z"/><path d="M8.5 11.5h.01M12.5 11.5h.01M16.5 11.5h.01" stroke-width="2.6"/>'),
   crop:sv('<path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/>'),
+  phone:sv('<rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M11 18h2"/>'),
   ticket:sv('<path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4V8z"/><path d="M14 6v12" stroke-dasharray="2 2.5"/>'),
   chart:sv('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'),
   money:sv('<rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 9.5v5M18 9.5v5"/>'),
@@ -758,6 +759,11 @@ const A = {
   uploadCover(lid){ pickFile(async f=>{ const a=await upload(f); if(a) writeLeague(lid,{cover:'asset:'+a.id,coverPos:null}).then(()=>toast('Photo importée !')); }); },
   cropCover(lid){ if(guard()) return; cropCover(lid); },
   uploadAvatar(){ if(guard()) return; pickFile(async f=>{ const u=URL.createObjectURL(f); const b=await cropAvatar(u); URL.revokeObjectURL(u); if(!b) return; const a=await upload(b); if(a) writeMe({avatar:a.id}).then(()=>toast('Photo de profil mise à jour !')); }); },
+  photoMenu(){ const me=S.players[S.me]||{}; if(!me.avatar) return A.uploadAvatar();
+    const d=document.createElement('div'); d.className='modal';
+    d.innerHTML=`<div class="sheet"><h3>TA PHOTO</h3><div class="pf-list" style="margin:6px 0 14px"><button class="pf-it" data-m="new"><span class="pf-ic" style="background:#FFF3C4;color:#16181D">${I.cam}</span><span class="pf-tx">Choisir une nouvelle photo</span><em>›</em></button><button class="pf-it" data-m="crop"><span class="pf-ic" style="background:#FFF3C4;color:#16181D">${IC.crop}</span><span class="pf-tx">Recadrer la photo actuelle</span><em>›</em></button></div><div class="acts"><button class="btn ghost" data-x>ANNULER</button></div></div>`;
+    d.addEventListener('click',e=>{ const m=e.target.closest('[data-m]'); if(e.target===d||e.target.closest('[data-x]')||m) d.remove(); if(m) (m.dataset.m==='new'?A.uploadAvatar():A.recropAvatar()); });
+    document.body.appendChild(d); },
   recropAvatar(){ if(guard()) return; const me=S.players[S.me]||{}; if(!me.avatar) return A.uploadAvatar(); if(S.mode==='demo') return toast('Indisponible en mode démo.',true);
     cropAvatar(blobUrl(me.avatar)).then(async b=>{ if(!b) return; const a=await upload(b); if(a) writeMe({avatar:a.id}).then(()=>toast('Photo recadrée !')); }); },
   comp(v){ S.view.comp=v; loadFeed(v); render(); },
@@ -1856,20 +1862,17 @@ function viewManage(lid){
 
 function viewProfil(){
   const me=S.players[S.me]||{}; const name=nameOf(S.me);
-  const my=Object.keys(S.leagues).filter(lid=>isMember(lid)&&shownL(lid)).map(C).filter(Boolean);
-  const wins=my.filter(c=>c.winners.includes(S.me)).length, alive=my.filter(c=>c.status!=='finished'&&c.alive.includes(S.me)).length;
+  const row=(act,ic,bg,col,t,sub,cls='',extra='')=>`<button class="pf-it ${cls}" data-a="${act}" ${extra}><span class="pf-ic" style="background:${bg};color:${col}">${ic}</span><span class="pf-tx">${t}${sub?`<small>${sub}</small>`:''}</span><em>›</em></button>`;
   let h=`<div class="ptitle">${titleImg('title-profil.png','PROFIL')}</div>`;
-  h+=`<div style="text-align:center"><button class="avatar-big" data-a="uploadAvatar"><img src="${me.avatar?blobUrl(me.avatar):DEFAULT_AVATAR}" data-fb="${esc(initials(name))}" alt=""><span class="cam">${I.cam}</span></button><div class="pf-btns"><button class="nc-join" data-a="uploadAvatar">${I.cam} Changer la photo</button>${me.avatar?`<button class="nc-join" data-a="recropAvatar">${IC.crop} Recadrer</button>`:''}</div></div>`;
-  h+=`<div class="card pcard" style="position:relative"><button class="pedit" data-a="editName" aria-label="Modifier">${I.edit}</button><div style="min-width:0"><div class="lbl">Nom d'utilisateur</div><div class="pname" style="margin-top:10px">${esc(name)}</div>${S.email?`<div class="pmail">${esc(S.email)}</div>`:'<div style="height:10px"></div>'}${S.isOwner?`<span class="badge">${I.shield}ADMIN</span>`:''}</div></div>`;
-  h+=`<a class="nc-join nc-create pf-fb" href="https://wa.me/33650710675?text=${encodeURIComponent('Salut ! Une remarque / idée pour Survivor : ')}" target="_blank" rel="noopener">${IC.chat} Donner mon feedback</a>`;
-  if(S.mode==='demo') h+=`<div class="card" style="font-size:14px;line-height:1.5"><b>Site de test.</b> Nouveau design avec des données fictives : rien n'est enregistré.</div>`;
-  if(S.readOnly) h+=`<div class="card" style="background:var(--brand-soft);font-size:14px;line-height:1.5"><b>Lecture seule.</b> Pour jouer, l'organisateur doit t'inviter sur le site avec le rôle Éditeur.</div>`;
-  const jl=my.filter(c=>c.started && c.rounds.some(r=>t(r.deadline)<=now()));
-  if(jl.length){ h+=`<div class="sec">Mon parcours</div>`+jl.map(c=>journey(c,S.me,{title:true,share:true})).join(''); }
+  h+=`<div class="pf-hero"><button class="pf-av" data-a="photoMenu" aria-label="Changer la photo"><img src="${me.avatar?blobUrl(me.avatar):DEFAULT_AVATAR}" data-fb="${esc(initials(name))}" alt=""><i>${I.cam}</i></button><div class="pf-id"><b>${esc(name)}</b>${S.email?`<small>${esc(S.email)}</small>`:''}${S.isOwner?`<span class="pf-chip">${I.shield}ADMIN</span>`:''}</div><button class="pf-ed" data-a="editName" aria-label="Modifier le nom">${I.edit}</button></div>`;
+  if(S.mode==='demo') h+=`<div class="card" style="font-size:14px;line-height:1.5;margin-top:14px"><b>Site de test.</b> Nouveau design avec des données fictives : rien n'est enregistré.</div>`;
+  if(S.readOnly) h+=`<div class="card" style="background:var(--brand-soft);font-size:14px;line-height:1.5;margin-top:14px"><b>Lecture seule.</b> Pour jouer, l'organisateur doit t'inviter sur le site avec le rôle Éditeur.</div>`;
+  h+=`<div class="pf-sec">Une idée ?</div><a class="pf-fb" href="https://wa.me/33650710675?text=${encodeURIComponent('Salut ! Une remarque / idée pour Survivor : ')}" target="_blank" rel="noopener"><span class="pf-ic">${IC.chat}</span><span class="pf-tx">Donner mon feedback<small>Un bug, une idée : réponse sur WhatsApp</small></span><em>›</em></a>`;
+  const inst=installCard('profil');
+  h+=`<div class="pf-sec">Réglages</div><div class="pf-list">${row('photoMenu',I.cam,'#FFF3C4','#16181D','Changer la photo',me.avatar?'Nouvelle photo ou recadrage':'')}${inst?row('toggle',IC.phone||I.phone||IC.chat,'#E0EEFF','#2F6FD6',"Installer l’appli","Sur l’écran d’accueil de ton téléphone",'','data-v="pfInst"'):''}</div>`;
+  if(inst && S.open.pfInst) h+=`<div style="margin-top:10px">${inst}</div>`;
+  h+=`<div class="pf-list" style="margin-top:10px">${window.survivorLogout?row('logout',I.logout,'#EEF0F2','#16181D','Se déconnecter'):''}${row(window.survivorDeleteAccount?'deleteAccount':'wipe',I.trash,'#FDECEC','#C0392B',window.survivorDeleteAccount?'Supprimer mon compte':'Supprimer mes données','','red')}</div>`;
   if(CREDITS && Object.keys(CREDITS).length) h+=`<details class="card coll" style="margin-top:14px"><summary><span class="lbl">Crédits photos</span>${I.chev}</summary><div class="credits">${PHOTOS.filter(p=>CREDITS[p.k]).map(p=>`<p><b>${esc(p.label)}</b> — ${creditLine(p.k)}</p>`).join('')}</div></details>`;
-  h+=installCard('profil');
-  if(window.survivorLogout) h+=`<button class="nc-join pf-out" data-a="logout">${I.logout} Se déconnecter</button>`;
-  h+=`<button class="nc-join pf-del" data-a="${window.survivorDeleteAccount?'deleteAccount':'wipe'}">${I.trash} ${window.survivorDeleteAccount?'Supprimer mon compte':'Supprimer mes données'}</button>`;
   return h;
 }
 
