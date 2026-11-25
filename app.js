@@ -1270,14 +1270,14 @@ function rulesCard(lg){
   // Nouvelle présentation : 4 règles numérotées + options actives + règles perso
   const pts=isPoints(lg), draw=allowDraw(lg), pz=prizeOf(lg);
   const steps=!isPickMode(lg) ? null : pts ? [
-    ['Choisis une équipe','À chaque journée, un seul match et une seule équipe.'],
-    ['Marque des points','Victoire 3 pts · nul 1 pt · défaite 0.'],
-    ['Une seule fois par équipe','Impossible de rejouer une équipe déjà choisie.'],
+    ['Choisis une équipe','À chaque journée, choisis UN match parmi ceux proposés et parie sur l’une des deux équipes.'],
+    ['Marque des points','Ton équipe gagne : 3 pts. Match nul : 1 pt. Défaite : 0. Les points se cumulent de journée en journée.'],
+    ['Une seule fois par équipe','Chaque équipe ne peut être choisie qu’une fois dans toute la ligue. Les équipes déjà jouées sont grisées.'],
     [`Premier à ${nRoundsOf(lg)} points`, 'Il gagne la ligue. En cas d’égalité : meilleur goal-average.'+(pz?` À gagner : ${esc(pz)}.`:'')],
   ] : [
-    ['Choisis une équipe','À chaque journée, un seul match et une seule équipe.'],
-    ['Elle gagne, tu survis',draw?'Tu peux aussi parier sur le nul. Sinon : éliminé.':'Nul ou défaite : tu es éliminé.'],
-    ['Une seule fois par équipe','Impossible de rejouer une équipe déjà choisie.'],
+    ['Choisis une équipe',draw?'À chaque journée, choisis UN match parmi ceux proposés et parie sur une équipe ou sur le match nul.':'À chaque journée, choisis UN match parmi ceux proposés et parie sur l’une des deux équipes.'],
+    ['Elle gagne, tu survis',draw?'Si ton pari est bon, tu passes à la journée suivante. Sinon, tu es éliminé.':'Si ton équipe gagne, tu passes à la journée suivante. Match nul ou défaite : tu es éliminé.'],
+    ['Une seule fois par équipe','Chaque équipe ne peut être choisie qu’une fois dans toute la ligue. Les équipes déjà jouées sont grisées.'],
     ['Le dernier en vie gagne', pz?`Il remporte ${esc(pz)}.`:'Il remporte la ligue.'],
   ];
   const stepsH=steps?`<ol class="rsteps">${steps.map(([tt,d],i)=>`<li><span class="rn">${i+1}</span><div><b>${tt}</b><small>${d}</small></div></li>`).join('')}</ol>`:'';
