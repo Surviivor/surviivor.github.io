@@ -1020,8 +1020,8 @@ function tileHtml(c, r, m, side, opts){
   const lant = side!=='D' && lg.redLantern && isLantern(lg,r,{m:m.k,p:side});
   let cls='tile'; if(sel) cls+=' sel'; if(!can && !sel) cls+=' off'; if(used && !sel) cls+=' used'; if(ban && !sel) cls+=' ban';
   if(res){ if(res.r===side) cls+=' win'; else if(sel) cls+=' lose'; }
-  const bd = side==='D' ? 'N' : (logoOf(sd)?`<img src="${esc(logoOf(sd))}" data-fb="${esc(initials(sd.n).slice(0,1))}" alt="">`:esc(initials(sd.n).slice(0,1)));
-  const name = side==='D' ? 'Match nul' : esc(sd.n);
+  const bd = side==='D' ? '<b class="eq">=</b>' : (logoOf(sd)?`<img src="${esc(logoOf(sd))}" data-fb="${esc(initials(sd.n).slice(0,1))}" alt="">`:esc(initials(sd.n).slice(0,1)));
+  const name = side==='D' ? 'Nul' : esc(sd.n);
   let pct=''; if(opts.dist){ const tot=opts.dist.tot; const k=m.k+'|'+side; pct=`<span class="pct">${tot?Math.round((opts.dist.c[k]||0)*100/tot):0}%</span>`; }
   const act = can && !used ? `data-a="pick" data-v="${lg.id}|${r.k}|${m.k}|${side}"` : 'disabled';
   return `<button class="${cls}" ${act}>${sel?`<span class="ck">${I.check}</span>`:''}${ban?'<span class="bomb" title="Sabotée">💣</span>':''}<span class="bd">${bd}</span><span class="nm">${name}</span>${lant?`<span class="lnt">🔴 ${c.points?'+2 pts':'+1 vie'}</span>`:''}${pct}</button>`;
