@@ -7,9 +7,9 @@ OUT = sys.argv[1] if len(sys.argv) > 1 else 'dump.json'
 LOGO_DIR = sys.argv[2] if len(sys.argv) > 2 else 'data/logos'
 # clé: (sport, ligue ESPN, jours en arrière, jours en avant, utiliser le calendrier)
 COMPS = {
-    'fra.1': ('soccer', 'fra.1', 45, 70, True), 'fra.2': ('soccer', 'fra.2', 45, 70, True),
-    'eng.1': ('soccer', 'eng.1', 45, 70, True), 'esp.1': ('soccer', 'esp.1', 45, 70, True),
-    'ita.1': ('soccer', 'ita.1', 45, 70, True), 'ger.1': ('soccer', 'ger.1', 45, 70, True),
+    'fra.1': ('soccer', 'fra.1', 60, 70, True), 'fra.2': ('soccer', 'fra.2', 60, 70, True),
+    'eng.1': ('soccer', 'eng.1', 60, 70, True), 'esp.1': ('soccer', 'esp.1', 60, 70, True),
+    'ita.1': ('soccer', 'ita.1', 60, 70, True), 'ger.1': ('soccer', 'ger.1', 60, 70, True),
     'uefa.champions': ('soccer', 'uefa.champions', 45, 100, False),
     'nba': ('basketball', 'nba', 10, 21, True), 'top14': ('rugby', '270559', 45, 100, False),
 }

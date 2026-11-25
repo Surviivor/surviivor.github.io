@@ -1417,6 +1417,22 @@ function trendSection(c){
   return h+'</div>';
 }
 // Confrontations directes (5 dernières) pour les matchs de la prochaine journée
+// 5 derniers matchs de chaque club de la prochaine journée : adversaire (logo), score, domicile / extérieur
+function lastFiveSection(c, f){
+  if(!f||!f.events) return '';
+  const r=c.rounds.find(r=>t(r.deadline)>now()); if(!r) return '';
+  const past=Object.values(f.events).filter(e=>e.st==='post'&&e.hs!=null).sort((a,b)=>t(b.d)-t(a.d));
+  const team=id=>{ const tm=(f.teams||{})[id]||{}; return {id, n:tm.n||'', logo:tm.logo}; };
+  const line=(side)=>{
+    const id=String(side.id||''); if(!id) return '';
+    const L=past.filter(e=>e.h===id||e.a===id).slice(0,5); if(!L.length) return '';
+    const chips=L.map(e=>{ const home=e.h===id, me=home?+e.hs:+e.as, op=home?+e.as:+e.hs, res=me>op?'W':me<op?'L':'D', o=team(home?e.a:e.h);
+      return `<span class="l5 ${res}" title="${esc(o.n)} · ${esc(fmtDT(e.d))}">${logoTag(o,'l5lg')||`<b class="l5n">${esc((o.n||'?')[0])}</b>`}<b>${me}-${op}</b><small>${home?'DOM':'EXT'}</small></span>`; }).join('');
+    return `<div class="l5row"><div class="l5t">${logoTag(side)}<b>${esc(side.n)}</b></div><div class="l5l">${chips}</div></div>`;
+  };
+  const rows=matchesOf(r).map(m=>{ const x=line(m.h)+line(m.a); return x?`<div class="l5m">${x}</div>`:''; }).join('');
+  return rows?`<div class="ssec"><div class="stitle">${I.chart||IC.chart}5 derniers matchs</div><div class="muted" style="font-size:12px;margin:-4px 0 8px">Du plus récent au plus ancien · score du club en premier · DOM = à domicile, EXT = à l’extérieur.</div>${rows}</div>`:'';
+}
 // Cotes 1 / N / 2 des matchs de la prochaine journée (DraftKings via ESPN)
 function oddsSection(c, f){
   if(!f||!f.odds) return '';
@@ -1448,17 +1464,17 @@ function statsCard(c){
   const f=key?S.feeds[key]:null; if(key&&!f) loadFeed(key);
   const tbl=c.lg.category==='tuprefere'?'':standingsCard(lg,'body');
   const wrap=body=>`<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${body}</details>`;
-  if(!f||f.missing||c.lg.category==='tuprefere'){ { const hh=oddsSection(c,f)+h2hSection(c,f); if(!trend&&!tbl&&!hh) return ''; return wrap(trend+tbl+hh); } return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${trend}</details>`; }
+  if(!f||f.missing||c.lg.category==='tuprefere'){ { const hh=oddsSection(c,f)+lastFiveSection(c,f)+h2hSection(c,f); if(!trend&&!tbl&&!hh) return ''; return wrap(trend+tbl+hh); } return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${trend}</details>`; }
   const form=teamForm(f);
   const pts=Object.keys(form).map(id=>[id, form[id].slice(0,5).reduce((a,r)=>a+(r==='W'?3:r==='D'?1:0),0), Math.min(5,form[id].length)]).filter(x=>x[2]>=2);
-  if(pts.length<6){ { const hh=oddsSection(c,f)+h2hSection(c,f); if(!trend&&!tbl&&!hh) return ''; return wrap(trend+tbl+hh); } return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${trend}</details>`; }
+  if(pts.length<6){ { const hh=oddsSection(c,f)+lastFiveSection(c,f)+h2hSection(c,f); if(!trend&&!tbl&&!hh) return ''; return wrap(trend+tbl+hh); } return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${trend}</details>`; }
   const best=pts.slice().sort((a,b)=>b[1]-a[1]||a[2]-b[2]).slice(0,3), worst=pts.slice().sort((a,b)=>a[1]-b[1]||b[2]-a[2]).slice(0,3);
   const row=([id,p,n])=>statRow(f,id,`<b>${p}</b><span>pts</span>`,formDots(form[id]));
   const maxN=Math.max(...pts.map(x=>x[2]));
   let h=trend+`<div class="ssec"><div class="stitle">${I.flash}Les plus en forme</div><div class="slist">${best.map(row).join('')}</div></div>`;
   h+=`<div class="ssec"><div class="stitle">${I.down}À la peine</div><div class="slist">${worst.map(row).join('')}</div></div>`;
   h+=`<div class="muted" style="font-size:12px;margin-top:14px">Points pris sur les ${maxN} dernières journées${maxN<5?' (seules celles-ci sont disponibles pour l\'instant)':''}. Données du ${fmtDT(f.updatedAt)}.</div>`;
-  h+=tbl+oddsSection(c,f)+h2hSection(c,f);
+  h+=tbl+oddsSection(c,f)+lastFiveSection(c,f)+h2hSection(c,f);
   return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${h}</details>`;
 }
 // Final/ongoing ranking: survivors share the top; the eliminated are ranked by elimination day
@@ -1603,7 +1619,7 @@ function viewParis(){
   if(!next.length) h+=`<div class="card muted" style="text-align:center;font-size:15px">Rien à jouer pour le moment 👌</div>`;
   next.forEach(([c,r])=>{
     const my=pickOf(S.me,c.lg.id,r.k); const nm=c.pick?matchesOf(r).length:0;
-    const info=`<div class="dl open" style="font-size:15px">Modifiable jusqu'au ${fmtDT(r.deadline)}</div>`;
+    const info=`<div class="dl open mdl" style="font-size:15px">Modifiable jusqu'au ${fmtDT(r.deadline)}</div>`;
     let card=roundCard(c,r,{header:`<h3>${c.pick?'Mon choix':'Mon vote'}</h3>`+info, compact:true, mline:true, hint:false});
     card=card.replace(/<div class="dl open">[\s\S]*?<\/div>/,''); // header already shows deadline
     // Encart déroulant par ligue : ouvert par défaut tant que le choix n'est pas fait
@@ -1752,7 +1768,7 @@ function viewProfil(){
   let h=`<div class="ptitle">${titleImg('title-profil.png','PROFIL')}</div>`;
   h+=`<div style="text-align:center"><button class="avatar-big" data-a="uploadAvatar"><img src="${me.avatar?blobUrl(me.avatar):DEFAULT_AVATAR}" data-fb="${esc(initials(name))}" alt=""><span class="cam">${I.cam}</span></button><div style="margin:18px 0 22px;display:flex;gap:22px;justify-content:center"><button class="link" data-a="uploadAvatar">Changer la photo</button>${me.avatar?'<button class="link" data-a="recropAvatar">Recadrer</button>':''}</div></div>`;
   h+=`<div class="card pcard" style="position:relative"><button class="pedit" data-a="editName" aria-label="Modifier">${I.edit}</button><div style="min-width:0"><div class="lbl">Nom d'utilisateur</div><div class="pname" style="margin-top:10px">${esc(name)}</div>${S.email?`<div class="pmail">${esc(S.email)}</div>`:'<div style="height:10px"></div>'}${S.isOwner?`<span class="badge">${I.shield}ADMIN</span>`:''}</div></div>`;
-  h+=`<a class="fb-btn" href="https://wa.me/33650710675?text=${encodeURIComponent('Salut ! Une remarque / idée pour Survivor : ')}" target="_blank" rel="noopener"><span class="fb-ic">${IC.chat}</span><span class="fb-tx"><b>Une remarque, une idée ?</b><small>Fais-nous tes retours</small></span><span class="fb-go">${I.arrow}</span></a>`;
+  h+=`<a class="fb-btn" href="https://wa.me/33650710675?text=${encodeURIComponent('Salut ! Une remarque / idée pour Survivor : ')}" target="_blank" rel="noopener"><span class="fb-ic">${IC.chat}</span><span class="fb-tx"><b>Une remarque, une idée ?</b></span><span class="fb-go">${I.arrow}</span></a>`;
   if(S.mode==='demo') h+=`<div class="card" style="font-size:14px;line-height:1.5"><b>Site de test.</b> Nouveau design avec des données fictives : rien n'est enregistré.</div>`;
   if(S.readOnly) h+=`<div class="card" style="background:var(--brand-soft);font-size:14px;line-height:1.5"><b>Lecture seule.</b> Pour jouer, l'organisateur doit t'inviter sur le site avec le rôle Éditeur.</div>`;
   const jl=my.filter(c=>c.started && c.rounds.some(r=>t(r.deadline)<=now()));
