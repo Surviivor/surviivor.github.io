@@ -905,16 +905,14 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .odd-t b{overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
 .odd-t img.lg,.odd-t .vs{flex:none}
 .odd-t b{flex:1 1 0}
-/* Paris cachés : aperçu flouté */
-.nv-hid{position:relative;overflow:hidden}
-.nv-blur{filter:blur(7px);opacity:.75;pointer-events:none;user-select:none;max-height:330px;overflow:hidden}
-.nv-lock{position:absolute;left:0;right:0;top:56px;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:0 28px}
-.nv-lock span{width:52px;height:52px;border-radius:50%;background:var(--on);color:var(--yel);display:flex;align-items:center;justify-content:center}
-.nv-lock span .ic{width:26px;height:26px}
-.nv-lock b{font-family:var(--bold);font-weight:800;font-size:16px;line-height:1.35;background:rgba(255,255,255,.85);border-radius:14px;padding:8px 12px}
-.lhero{position:relative;padding:18px 16px 16px}
-.lhero .lh-gear{position:absolute;top:14px;right:14px}
-.lhero.adm .ltitle{padding-right:44px}
+/* Paris cachés : choix et podium floutés */
+.nv-bl{filter:blur(6px);user-select:none;pointer-events:none}
+.nv-p .nv-lg{width:20px;height:20px;object-fit:contain}
+.nv-fh{position:relative;overflow:hidden}
+.nv-lock{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:10px;padding:0 16px;text-align:left}
+.nv-lock .ic{width:34px;height:34px;flex:none;padding:7px;border-radius:50%;background:var(--on);color:var(--yel)}
+.nv-lock b{font-family:var(--bold);font-weight:800;font-size:14.5px;line-height:1.3;color:var(--on)}
+
 /* Jokers : pastilles et boutons violets */
 .ict-joker{background:#E9E4FF}
 .jitem .jt .jbtn,.jbtn{background:#5B3FD6;color:#fff}

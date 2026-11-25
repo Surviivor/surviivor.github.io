@@ -1401,7 +1401,7 @@ function trendSection(c){
   const r=closed[closed.length-1];
   if(!r && !next) return '';
   let h=`<div class="ssec"><div class="stitle">${I.users}Choix de la journée</div>`;
-  if(!r){ return h+`<div class="muted" style="margin-top:8px;font-size:14px">Les choix seront révélés le ${fmtDT(next.deadline)}.</div></div>`; }
+  if(!r) return '';
   const ri=c.info[r.k]||{}; const voters=ri.aliveBefore||c.mem;
   const cnt={}; let tot=0;
   voters.forEach(u=>{ const p=pickOf(u,lg.id,r.k); if(!p) return; const k=c.pick?p.m+'|'+p.p:p.p; (cnt[k]=cnt[k]||{p,n:0}).n++; tot++; });
@@ -1496,12 +1496,13 @@ function nextVotesCard(c){
   const who=(c.status==='upcoming'?c.mem:c.alive); if(!who.length) return '';
   const n=((c.info[r.k]||{}).n||(c.rounds.findIndex(x=>x.k===r.k)+1));
   if(!picksVisible(lg)){
-    // Paris cachés : aperçu flouté avec des données factices (les vrais choix ne sont pas mis dans la page)
-    const teams=[]; matchesOf(r).forEach(m=>{ teams.push(m.h.n, m.a.n); }); const T=i=>esc(teams[i%Math.max(1,teams.length)]||'Équipe');
-    const top=[0,3,6].map((k,i)=>`<div class="nv-top"><span>${i+1}.</span><b>${T(k)}</b><em>${[42,25,13][i]} %</em></div>`).join('');
-    const list=who.slice(0,6).map((u,i)=>`<div class="nv-r">${avatarOf(u)}<span class="nv-n">${esc(nameOf(u))}</span><span class="nv-p"><b>${T(i*5+1)}</b></span></div>`).join('');
-    return `<div class="card nv nv-hid"><div class="stitle">${IC.eye} Paris de la journée ${n}</div><div class="nv-blur" aria-hidden="true"><div class="nv-fun"><div class="nv-f"><span>${IC.flame}</span><div><small>Les plus choisies</small><div>${top}</div></div></div></div><div class="nv-list">${list}</div></div><div class="nv-lock"><span>${IC.eyeOff}</span><b>Les choix de la journée seront révélés le ${fmtDT(r.deadline)}</b></div></div>`;
+    // Paris cachés : même encadré, joueurs visibles, choix et podium floutés (données factices : les vrais choix ne sont pas mis dans la page)
+    const sides=[]; matchesOf(r).forEach(m=>{ sides.push(m.h, m.a); }); const F=i=>sides[i%Math.max(1,sides.length)]||{n:'Équipe'};
+    const top=[0,3,6].map((k,i)=>`<div class="nv-top"><span>${i+1}.</span><b>${esc(F(k).n)}</b><em>${[42,25,13][i]} %</em></div>`).join('');
+    const list=who.map((u,i)=>{ const sd=F(i*5+1); return `<div class="nv-r">${avatarOf(u)}<span class="nv-n">${esc(nameOf(u))}${u===S.me?' <em>(toi)</em>':''}</span><span class="nv-p nv-bl" aria-hidden="true">${logoTag(sd,'nv-lg')}<b>${esc(sd.n)}</b></span></div>`; }).join('');
+    return `<div class="card nv nv-hid"><div class="stitle">${IC.eye} Paris de la journée ${n}</div><div class="nv-fun"><div class="nv-f nv-fh"><div class="nv-bl" aria-hidden="true" style="display:flex;gap:8px"><span>${IC.flame}</span><div><small>Les plus choisies</small><div>${top}</div></div></div><div class="nv-lock">${IC.eyeOff}<b>Les choix de la journée seront révélés le ${fmtDT(r.deadline)}</b></div></div></div><div class="nv-list">${list}</div></div>`;
   }
+
   const rows=[], cnt={}, none=[]; let bold=null;
   who.forEach(u=>{ const p=pickOf(u,lg.id,r.k);
     if(!p){ none.push(u); return; }
