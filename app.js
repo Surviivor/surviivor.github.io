@@ -1318,7 +1318,7 @@ function h2hSection(c, f){
     const L=f.h2h[[hid,aid].sort().join('_')]; if(!L||!L.length) return '';
     let w=0,d=0,l=0; const dots=L.map(x=>{ const hg=x.h===hid?x.hs:x.as, ag=x.h===hid?x.as:x.hs; const res=hg>ag?'W':hg<ag?'L':'D'; if(res==='W') w++; else if(res==='L') l++; else d++;
       return `<span class="hs ${res}" title="${esc(x.d)}">${x.h===hid?`${x.hs}-${x.as}`:`${x.as}-${x.hs}`}</span>`; }).join('');
-    return `<div class="h2h"><div class="h2h-t">${logoTag(m.h)}<b>${esc(m.h.n)}</b><span class="vs">VS</span><b>${esc(m.a.n)}</b>${logoTag(m.a)}</div><div class="h2h-sum"><span class="w">${w} V</span><span class="d">${d} N</span><span class="l">${l} D</span><span class="muted">pour ${esc(m.h.n)}</span></div><div class="h2h-l">${dots}</div></div>`;
+    return `<div class="h2h"><div class="h2h-t">${logoTag(m.h)}<b>${esc(m.h.n)}</b><span class="vs">VS</span><b>${esc(m.a.n)}</b>${logoTag(m.a)}</div><div class="h2h-l">${dots}</div></div>`;
   }).join('');
   return rows?`<div class="ssec"><div class="stitle">${I.flash}Confrontations directes</div><div class="muted" style="font-size:12px;margin:-4px 0 8px">5 derniers matchs entre les 2 équipes (score vu de l'équipe à domicile de la journée).</div>${rows}</div>`:'';
 }
@@ -1328,17 +1328,17 @@ function statsCard(c){
   const f=key?S.feeds[key]:null; if(key&&!f) loadFeed(key);
   const tbl=c.lg.category==='tuprefere'?'':standingsCard(lg,'body');
   const wrap=body=>`<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${body}</details>`;
-  if(!f||f.missing||c.lg.category==='tuprefere'){ { const hh=h2hSection(c,f); if(!trend&&!tbl&&!hh) return ''; return wrap(trend+hh+tbl); } return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${trend}</details>`; }
+  if(!f||f.missing||c.lg.category==='tuprefere'){ { const hh=h2hSection(c,f); if(!trend&&!tbl&&!hh) return ''; return wrap(trend+tbl+hh); } return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${trend}</details>`; }
   const form=teamForm(f);
   const pts=Object.keys(form).map(id=>[id, form[id].slice(0,5).reduce((a,r)=>a+(r==='W'?3:r==='D'?1:0),0), Math.min(5,form[id].length)]).filter(x=>x[2]>=2);
-  if(pts.length<6){ { const hh=h2hSection(c,f); if(!trend&&!tbl&&!hh) return ''; return wrap(trend+hh+tbl); } return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${trend}</details>`; }
+  if(pts.length<6){ { const hh=h2hSection(c,f); if(!trend&&!tbl&&!hh) return ''; return wrap(trend+tbl+hh); } return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${trend}</details>`; }
   const best=pts.slice().sort((a,b)=>b[1]-a[1]||a[2]-b[2]).slice(0,3), worst=pts.slice().sort((a,b)=>a[1]-b[1]||b[2]-a[2]).slice(0,3);
   const row=([id,p,n])=>statRow(f,id,`<b>${p}</b><span>pts</span>`,formDots(form[id]));
   const maxN=Math.max(...pts.map(x=>x[2]));
   let h=trend+`<div class="ssec"><div class="stitle">${I.flash}Les plus en forme</div><div class="slist">${best.map(row).join('')}</div></div>`;
   h+=`<div class="ssec"><div class="stitle">${I.down}À la peine</div><div class="slist">${worst.map(row).join('')}</div></div>`;
   h+=`<div class="muted" style="font-size:12px;margin-top:14px">Points pris sur les ${maxN} dernières journées${maxN<5?' (seules celles-ci sont disponibles pour l\'instant)':''}. Données du ${fmtDT(f.updatedAt)}.</div>`;
-  h+=h2hSection(c,f)+tbl;
+  h+=tbl+h2hSection(c,f);
   return `<details class="card coll" ${S.open['sx'+lg.id]?'open':''}><summary data-a="toggle" data-v="sx${lg.id}"><span class="ctitle">${I.data}Data ${esc(COMP_NAMES[lg.comp]||stripPrefix(lg.name)||'')}</span>${I.chev}</summary>${h}</details>`;
 }
 // Final/ongoing ranking: survivors share the top; the eliminated are ranked by elimination day
