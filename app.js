@@ -313,14 +313,8 @@ function compute(lid){
       let correct=A.filter(u=>{ const p=effPick(u,lid,r); return p && pickSides(p).some(x=>res[x.m]===x.p); });
       const anyPick=A.some(u=>pickOf(u,lid,r.k));
       if(!anyPick){ ri.state='cancelled'; ri.out=[]; }
-      else if(!correct.length && !A.some(u=>lives[u]>0) && A.length>=2){
-        // everyone left falls on the same day: the boldest picker over the league wins
-        ri.state='tiebreak'; const sc={}; A.forEach(u=>sc[u]=audacity(lg,rounds,info,u,r.k)); ri.tb=sc;
-        const best=Math.max(...A.map(u=>sc[u]??-1));
-        const keep=best>0?A.filter(u=>(sc[u]??-1)===best):A;
-        const out=A.filter(u=>!keep.includes(u)); out.forEach(u=>elimAt[u]=r.k); alive=new Set(keep); ri.out=out; finished=true;
-      }
-      else if(!correct.length && !A.some(u=>lives[u]>0)){ ri.state='cancelled'; ri.out=[]; }
+      // tous les survivants perdent la même journée : tout le monde est repêché, la journée est annulée pour eux
+      else if(!correct.length && !A.some(u=>lives[u]>0)){ ri.state='cancelled'; ri.out=[]; ri.rescued=true; }
       else {
         // bonus extérieur : tous les 3 paris sur une équipe qui joue à l'extérieur (gagnés ou non, pas forcément de suite) = +1 vie
         if(lg.redLantern){ ri.lantern=[]; A.forEach(u=>{ const p=effPick(u,lid,r); if(p && !p.j && correct.includes(u) && isLantern(lg,r,p)){ lives[u]++; ri.lantern.push(u); } }); }
@@ -1142,7 +1136,7 @@ function roundFoot(c,r){
   if(!closed && isMember(lg.id) && c.alive.includes(S.me) && !my) f=`<div class="note bad">Pas de choix = éliminé. Décide-toi avant ${fmtDT(r.deadline).split(' à ')[1]} le ${fmtD(r.deadline)} !</div>`;
   else if(!closed && my) f=`<div class="note">Ton choix est enregistré. Tu peux le modifier jusqu'à l'heure limite.</div>`;
   if(ri.state==='waiting' && closed) f+=`<div class="note">⏳ En attente des résultats${my?' — ton choix : <b>'+esc(pickLabel(lg,r,my))+'</b>':''}.</div>`;
-  if(ri.state==='cancelled') f+=`<div class="note">🛟 Journée annulée : personne n'est éliminé.</div>`;
+  if(ri.state==='cancelled') f+=`<div class="note">🛟 ${ri.rescued?'Tous les survivants ont perdu : tout le monde est repêché, la journée est annulée.':'Journée annulée : personne n\'est éliminé.'}</div>`;
   if(ri.state==='tiebreak'){ const ws=Object.keys(ri.tb||{}).filter(u=>!ri.out.includes(u)); f+=`<div class="note">⚖️ Tous les survivants sont tombés : départagés à l'audace (rang moyen des équipes jouées). ${ws.map(u=>`<b>${esc(nameOf(u))}</b> ${ri.tb[u]?'('+ri.tb[u].toFixed(1).replace('.',',')+'e de moyenne)':''}`).join(' et ')} ${ws.length>1?'gagnent':'gagne'}.</div>`; }
   if(ri.bold){ const p=pickOf(ri.bold.u,lg.id,r.k); f+=`<div class="note bold">🦁 Choix le plus audacieux : <b>${esc(nameOf(ri.bold.u))}</b> avec ${esc(pickLabel(lg,r,p))} (${ri.bold.rk}e)</div>`; }
   if((ri.state==='done'||ri.state==='tiebreak') && alive){ f+= ri.out.includes(S.me)?`<div class="note bad">✗ Raté… tu es éliminé sur cette journée.</div>`:`<div class="note ok">✓ Bien joué, tu restes en vie !</div>`; }
@@ -1295,7 +1289,7 @@ function rulesCard(lg){
   ];
   const stepsH=steps?`<ol class="rsteps">${steps.map(([tt,d],i)=>`<li><span class="rn">${i+1}</span><div><b>${tt}</b><small>${d}</small></div></li>`).join('')}</ol>`:'';
   const warn=isPickMode(lg)?`<div class="rwarn">⏰ Pas de choix avant l’heure limite = ${pts?'0 point':'éliminé'}.</div>
-  <div class="rinfo"><div>🕒 L’heure limite, c’est le coup d’envoi du 1er match de la journée. Tu peux modifier ton choix jusque-là.</div>${pts?'':`<div>⚖️ Si tous les survivants tombent la même journée, celui qui a fait les choix les plus audacieux (équipes les moins bien classées) l’emporte.</div>`}</div>`:'';
+  <div class="rinfo"><div>🕒 L’heure limite, c’est le coup d’envoi du 1er match de la journée. Tu peux modifier ton choix jusque-là.</div>${pts?'':`<div>🛟 Si tous les survivants perdent la même journée, personne n’est éliminé : la journée est annulée pour eux et ils continuent à la suivante.</div>`}</div>`:'';
   const row=(i,tt,d)=>`<div class="rrow"><span class="ri">${i}</span><div><b>${tt}</b><small>${d}</small></div></div>`;
   // gagner des vies / points bonus
   const lv=[];
