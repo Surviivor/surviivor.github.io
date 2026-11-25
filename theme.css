@@ -1028,3 +1028,4 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .rk-card .rk-pk .rpk.hid{background:#E4E1DA!important}
 .rk-card .sv-h small{text-align:right}
 .l5,.l5.W,.l5.L{border-bottom:0}
+.rk-tr.first .rk-pos{width:26px;height:26px;border-radius:50%;background:var(--yel);display:flex;align-items:center;justify-content:center;font-size:13.5px;margin-left:-2px}
