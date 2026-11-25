@@ -796,3 +796,20 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .dtodo.zero .dring{color:var(--on)}
 .dtodo.zero .dtag{background:var(--on);color:var(--yel);font-weight:800}
 .dtodo.zero .dgo{background:var(--on);color:var(--yel)}
+/* tableau de bord : nom cliquable + ligues à venir */
+.drow .nm-l{display:inline-flex;align-items:center;gap:8px;max-width:100%}
+.drow .nm-go{width:22px;height:22px;border-radius:50%;background:#33363D;color:var(--yel);display:inline-flex;align-items:center;justify-content:center;flex:none;font-style:normal}
+.drow .nm-go svg{width:13px;height:13px}
+.drow:active .nm-go{background:var(--yel);color:var(--on)}
+.drow .st.soon{color:#D6D2C8}
+.drow .bar.soon i{background:#5A5E66}
+.drow .nm small{white-space:nowrap}
+/* profil : bouton remarques / idées */
+.fb-btn{display:flex;align-items:center;gap:14px;background:#fff;border-radius:20px;padding:14px 16px;margin:14px 0;color:var(--on);text-decoration:none}
+.fb-ic{width:44px;height:44px;border-radius:14px;background:#DDF6E6;color:#1E9E54;display:flex;align-items:center;justify-content:center;flex:none}
+.fb-ic .ic{width:24px;height:24px}
+.fb-tx{flex:1;min-width:0;display:flex;flex-direction:column}
+.fb-tx b{font-family:var(--bold);font-weight:800;font-size:15px}
+.fb-tx small{font-size:12.5px;color:var(--muted);margin-top:2px}
+.fb-go{width:34px;height:34px;border-radius:50%;background:var(--on);color:var(--yel);display:flex;align-items:center;justify-content:center;flex:none}
+.fb-go svg{width:18px;height:18px}

@@ -257,6 +257,7 @@ const IC=(()=>{ const sv=(d,extra='')=>`<svg class="ic" viewBox="0 0 24 24" fill
   shirt:sv('<path d="M8 3l-5 3 2 4 2-1v12h10V9l2 1 2-4-5-3c-.5 1.5-2 2.5-4 2.5S8.5 4.5 8 3z"/>'),
   beer:sv('<path d="M5 8h10v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8z"/><path d="M15 10h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/><path d="M5 8c0-2 1.5-3 3-3 .5-1 1.5-2 3-2s2.5 1 3 2c1.5 0 2 1 1 3"/>'),
   alert:sv('<path d="M12 3l10 18H2L12 3z"/><path d="M12 10v4M12 17.5v.5"/>'),
+  chat:sv('<path d="M21 11.5a8.4 8.4 0 0 1-12.3 7.4L3 20.5l1.6-5.4A8.5 8.5 0 1 1 21 11.5z"/><path d="M8.5 11.5h.01M12.5 11.5h.01M16.5 11.5h.01" stroke-width="2.6"/>'),
   ticket:sv('<path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4V8z"/><path d="M14 6v12" stroke-dasharray="2 2.5"/>'),
   chart:sv('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'),
   money:sv('<rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 9.5v5M18 9.5v5"/>'),
@@ -986,13 +987,13 @@ function dashCard(myL, todo){
   const L=myL.filter(c=>c.status!=='finished').sort((a,b)=>(a.status==='upcoming')-(b.status==='upcoming'));
   if(L.length){
     h+=`<div class="dh"><span>Tes ligues en cours</span><small>${L.length}</small></div><div class="dlg">`+L.map(c=>{
-      const nm="X "+esc(stripPrefix(c.lg.name)), kind=c.points?'Race':'Survivor'; let st, pct, cls='';
-      if(c.status==='upcoming'){ st=`Début dans ${untilJH(c.lg.startAt)}`; pct=0; cls='mut'; }
+      const nm="X "+esc(stripPrefix(c.lg.name)), kind=c.points?'Race':'Survivor'; let st, pct, cls='', sub='';
+      if(c.status==='upcoming'){ const n=c.mem.length; st=`<b>${n}</b> inscrit${n>1?'s':''}`; pct=100; cls='soon'; sub=` · début dans ${shortDur(t(c.lg.startAt))}`; }
       else if(c.points){ const me=c.rankOf[S.me]||{}; st=`<b>${me.pos||'–'}${me.pos===1?'er':'e'}</b> · ${me.pts||0} pts sur ${c.N}`; pct=Math.min(100,Math.round((me.pts||0)*100/c.N)); }
       else if(!c.alive.includes(S.me)){ st='Éliminé'; pct=Math.round(c.alive.length*100/c.mem.length); cls='mut'; }
       else if(c.alive.length===1){ st='Dernier survivant !'; pct=100; cls='ok'; }
       else { st=`<b>${c.alive.length}</b> survivants sur ${c.mem.length}`; pct=Math.max(2,Math.round(c.alive.length*100/c.mem.length)); }
-      return `<button class="drow" data-a="open" data-v="${c.lg.id}"><span class="nm"><small class="wm-txt">${kind}</small>${nm}</span><span class="st ${cls}">${st}</span><span class="bar ${cls}"><i style="width:${pct}%"></i></span></button>`; }).join('')+`</div>`;
+      return `<button class="drow" data-a="open" data-v="${c.lg.id}"><span class="nm"><small class="wm-txt">${kind}${sub}</small><span class="nm-l">${nm}<i class="nm-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></i></span></span><span class="st ${cls}">${st}</span><span class="bar ${cls}"><i style="width:${pct}%"></i></span></button>`; }).join('')+`</div>`;
   }
   return `<div class="nh-card2 dash">${h}</div>`;
 }
@@ -1066,6 +1067,7 @@ function dlLine(r){
   const closed=t(r.deadline)<=now();
   return closed ? `<div class="dl closed">${I.clock}Choix clos depuis le ${fmtDT(r.deadline)}</div>` : `<div class="dl open">${I.clock}<span>Choix ouvert jusqu'au ${fmtDT(r.deadline)} · <b class="cdl" data-t="${t(r.deadline)}">${cdText(t(r.deadline))}</b></span></div>`;
 }
+function shortDur(ms){ const d=ms-now(); if(d<=0) return 'quelques instants'; const m=Math.floor(d/60000), h=Math.floor(m/60), j=Math.floor(h/24); return j>=1?`${j}j ${h%24}h`:h>=1?`${h}h ${String(m%60).padStart(2,'0')}`:`${Math.max(1,m)} min`; }
 function cdText(ms){
   const d=ms-now(); if(d<=0) return 'terminé';
   const m=Math.floor(d/60000), h=Math.floor(m/60), j=Math.floor(h/24);
@@ -1738,7 +1740,7 @@ function viewProfil(){
   let h=`<div class="ptitle">${titleImg('title-profil.png','PROFIL')}</div>`;
   h+=`<div style="text-align:center"><button class="avatar-big" data-a="uploadAvatar"><img src="${me.avatar?blobUrl(me.avatar):DEFAULT_AVATAR}" data-fb="${esc(initials(name))}" alt=""><span class="cam">${I.cam}</span></button><div style="margin:18px 0 22px;display:flex;gap:22px;justify-content:center"><button class="link" data-a="uploadAvatar">Changer la photo</button>${me.avatar?'<button class="link" data-a="recropAvatar">Recadrer</button>':''}</div></div>`;
   h+=`<div class="card" style="display:flex;align-items:center;gap:14px"><div style="flex:1;min-width:0"><div class="lbl">Nom d'utilisateur</div><div class="pname" style="margin-top:10px">${esc(name)}</div>${S.email?`<div class="pmail">${esc(S.email)}</div>`:'<div style="height:10px"></div>'}${S.isOwner?`<span class="badge">${I.shield}ADMIN</span>`:''}</div><button class="circ" data-a="editName" aria-label="Modifier">${I.edit}</button></div>`;
-  h+=`<div class="statgrid pstats"><div class="stat"><b>${my.length}</b><span>Ligues</span></div><div class="stat"><b>${alive}</b><span>En vie</span></div><div class="stat"><b>${wins}</b><span>Victoires</span></div></div>`;
+  h+=`<a class="fb-btn" href="https://wa.me/33650710675?text=${encodeURIComponent('Salut ! Une remarque / idée pour Survivor : ')}" target="_blank" rel="noopener"><span class="fb-ic">${IC.chat}</span><span class="fb-tx"><b>Une remarque, une idée ?</b><small>Écris-moi directement sur WhatsApp</small></span><span class="fb-go">${I.arrow}</span></a>`;
   if(S.mode==='demo') h+=`<div class="card" style="font-size:14px;line-height:1.5"><b>Site de test.</b> Nouveau design avec des données fictives : rien n'est enregistré.</div>`;
   if(S.readOnly) h+=`<div class="card" style="background:var(--brand-soft);font-size:14px;line-height:1.5"><b>Lecture seule.</b> Pour jouer, l'organisateur doit t'inviter sur le site avec le rôle Éditeur.</div>`;
   const jl=my.filter(c=>c.started && c.rounds.some(r=>t(r.deadline)<=now()));
