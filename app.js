@@ -1315,7 +1315,7 @@ function h2hSection(c, f){
   const r=c.rounds.find(r=>t(r.deadline)>now()); if(!r) return '';
   const rows=matchesOf(r).map(m=>{
     const hid=String(m.h.id||''), aid=String(m.a.id||''); if(!hid||!aid) return '';
-    const L=f.h2h[[hid,aid].sort().join('_')]; if(!L||!L.length) return `<div class="h2h"><div class="h2h-t">${logoTag(m.h)}<b>${esc(m.h.n)}</b><span class="vs">VS</span><b>${esc(m.a.n)}</b>${logoTag(m.a)}</div><div class="muted" style="font-size:12px">Jamais affrontés récemment.</div></div>`;
+    const L=f.h2h[[hid,aid].sort().join('_')]; if(!L||!L.length) return '';
     let w=0,d=0,l=0; const dots=L.map(x=>{ const hg=x.h===hid?x.hs:x.as, ag=x.h===hid?x.as:x.hs; const res=hg>ag?'W':hg<ag?'L':'D'; if(res==='W') w++; else if(res==='L') l++; else d++;
       return `<span class="hs ${res}" title="${esc(x.d)}">${x.h===hid?`${x.hs}-${x.as}`:`${x.as}-${x.hs}`}</span>`; }).join('');
     return `<div class="h2h"><div class="h2h-t">${logoTag(m.h)}<b>${esc(m.h.n)}</b><span class="vs">VS</span><b>${esc(m.a.n)}</b>${logoTag(m.a)}</div><div class="h2h-sum"><span class="w">${w} V</span><span class="d">${d} N</span><span class="l">${l} D</span><span class="muted">pour ${esc(m.h.n)}</span></div><div class="h2h-l">${dots}</div></div>`;
