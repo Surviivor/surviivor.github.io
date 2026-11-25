@@ -1494,6 +1494,47 @@ function statsCard(c){
 function top3Bars(items, extra=''){
   return `<div class="t3"><div class="t3-t">${IC.flame}Les plus choisies</div>${items.map(([nm,pc,sides],i)=>`<div class="t3-r ${i?'':'first'}"><span class="t3-lg">${sides.map(sd=>logoTag(sd,'t3-im')).join('')||'<i></i>'}</span><div class="t3-l"><b>${esc(nm)}</b><div class="t3-bar"><i style="width:${Math.max(3,pc)}%"></i></div></div><em>${pc} %</em></div>`).join('')}${extra}</div>`;
 }
+// Onglet SURVIVANTS : survivants + leur choix de la prochaine journée, puis éliminés
+function pickPill(c, r, p, blur){
+  if(!p) return `<span class="spk none">Pas encore choisi</span>`;
+  const parts=pickSides(p).map(x=>{ const m=(r.matches||{})[x.m]; if(!m) return ''; if(x.p==='D') return `<span class="spk">${logoTag(m.h,'spk-im')}${logoTag(m.a,'spk-im')}<span>Nul</span></span>`; const sd=x.p==='H'?m.h:m.a; return `<span class="spk">${logoTag(sd,'spk-im')}<span>${esc(sd.n)}</span></span>`; }).join('');
+  return `<span class="spks">${parts}</span>`;
+}
+function survivorsView(c){
+  const lg=c.lg, lid=lg.id; let h='';
+  const r=c.rounds.find(r=>t(r.deadline)>now());
+  const n=r?((c.info[r.k]||{}).n||(c.rounds.indexOf(r)+1)):0;
+  const alive=c.status==='upcoming'?c.mem:c.alive, vis=picksVisible(lg);
+  const heart='<svg class="ic" viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9C.9 8.8 2.8 4.5 6.7 4.5c2.2 0 3.7 1.3 5.3 3.2 1.6-1.9 3.1-3.2 5.3-3.2 3.9 0 5.8 4.3 4.3 7.5C19.5 16.4 12 21 12 21z" fill="#1E9E54"/></svg>';
+  const sides=[]; if(r) matchesOf(r).forEach(m=>{ sides.push(m.h, m.a); }); const F=i=>sides[i%Math.max(1,sides.length)]||{n:'Équipe'};
+  // podium
+  let top='';
+  if(r && vis){ const cnt={}, lk={}; let tot=0;
+    alive.forEach(u=>{ const p=pickOf(u,lid,r.k); if(!p) return; tot++; pickSides(p).forEach(x=>{ const m=(r.matches||{})[x.m]; if(!m) return; const k=x.p==='D'?'Nul '+m.h.n+' – '+m.a.n:(x.p==='H'?m.h:m.a).n; cnt[k]=(cnt[k]||0)+1; if(!lk[k]) lk[k]=x.p==='D'?[m.h,m.a]:[x.p==='H'?m.h:m.a]; }); });
+    const t3=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,3); if(t3.length) top=top3Bars(t3.map(([k,v])=>[k,Math.round(v*100/tot),lk[k]]));
+  }
+  const title=c.status==='finished'?'Vainqueur'+(c.winners.length>1?'s':''):c.status==='upcoming'?'Inscrits':`En vie${n?' · J'+n:''}`;
+  h+=`<div class="card sv"><div class="sv-h"><span>${c.status==='finished'?IC.trophy:heart}${title}</span><small>${c.status==='finished'?'':`${alive.length} sur ${c.mem.length}`}</small></div>`;
+  if(r && !vis && c.status!=='finished') h+=`<div class="sv-lock">${IC.eyeOff}Choix révélés le ${fmtDT(r.deadline)}</div>`;
+  h+=top;
+  const list=c.status==='finished'?c.winners:alive;
+  h+=list.map((u,i)=>{ const lv=c.lives?c.lives[u]||0:0;
+    let right='';
+    if(r && c.status!=='finished'){ const p=pickOf(u,lid,r.k);
+      if(!p) right=`<span class="spk none">Pas encore choisi</span>`;
+      else if(vis||u===S.me) right=pickPill(c,r,p);
+      else { const sd=F(i*5+1); right=`<span class="spks bl" aria-hidden="true"><span class="spk">${logoTag(sd,'spk-im')}<span>${esc(sd.n)}</span></span></span>`; } }
+    return `<div class="sv-r">${avatarOf(u)}<div class="sv-n">${esc(nameOf(u))}${u===S.me?' <em>(toi)</em>':''}${lv?`<small>${CI.heart} ${lv} vie${lv>1?'s':''}</small>`:''}</div>${right}</div>`; }).join('');
+  h+=`</div>`;
+  // éliminés : du dernier tombé au premier
+  const dead=standingRows(c).filter(x=>!c.alive.includes(x.u)&&!c.winners.includes(x.u));
+  if(dead.length && c.status!=='upcoming'){
+    h+=`<div class="card sv"><div class="sv-h"><span>${IC.skull}Éliminés</span><small>${dead.length}</small></div>`+dead.map(x=>{ const u=x.u, rr=c.lg.rounds[c.elimAt[u]], pk=rr?pickOf(u,lid,c.elimAt[u]):null;
+      const jn=(c.info[c.elimAt[u]]||{}).n||'?'; const what=pk?esc(pickLabel(lg,{...rr,k:c.elimAt[u]},pk)):'pas de choix';
+      return `<div class="sv-r dead">${avatarOf(u,'dead')}<div class="sv-n">${esc(nameOf(u))}${u===S.me?' <em>(toi)</em>':''}<small>Éliminé J${jn} · ${what}</small></div><span class="sv-rk">${x.pos}e${x.tie?' ex æquo':''}</span></div>`; }).join('')+`</div>`;
+  }
+  return h;
+}
 function nextVotesCard(c){
   const lg=c.lg; if(!c.pick) return '';
   const r=c.rounds.find(r=>t(r.deadline)>now()); if(!r) return '';
@@ -1598,8 +1639,8 @@ function viewLeague(lid){
   else if(c.status==='finished') h+= c.winners.includes(S.me)?`<div class="banner win"><span class="ico">🏆</span>${c.winners.length>1?'Tu fais partie des 2 derniers survivants !':'Tu es le grand gagnant !'}</div>`:`<div class="banner dead"><span class="ico">🏁</span>Ligue terminée · ${c.winners.map(w=>esc(nameOf(w))).join(' & ')} ${c.winners.length>1?'gagnent':'gagne'}</div>`;
   else if(!mine) h+= c.status==='upcoming'?`<div class="banner info"><span class="ico">🎟️</span><div style="flex:1">Inscriptions ouvertes jusqu'au ${fmtDT(lg.startAt)}</div><button class="btn sm green" data-a="join" data-v="${lid}">JE M'INSCRIS</button></div>`:`<div class="banner info"><span class="ico">🔒</span>Inscriptions closes. Tu suis la ligue en spectateur.</div>`;
   h+=lastBanner(c);
-  const tab=S.view.ltab;
-  h+=`<div class="seg"><button class="${tab==='paris'?'on':''}" data-a="ltab" data-v="paris">${c.pick?'Paris':'Vote'}</button><button class="${tab==='surv'?'on':''}" data-a="ltab" data-v="surv">${c.points?'Classement':'Survivants'}</button><button class="${tab==='hist'?'on':''}" data-a="ltab" data-v="hist">Stats</button></div>`;
+  const tab=S.view.ltab==='hist'?'surv':S.view.ltab;
+  h+=`<div class="seg"><button class="${tab==='paris'?'on':''}" data-a="ltab" data-v="paris">${c.pick?'Paris':'Vote'}</button><button class="${tab==='surv'?'on':''}" data-a="ltab" data-v="surv">${c.points?'Classement':'Survivants'}</button></div>`;
   if(tab==='paris'){
     const open=c.rounds.filter(r=>t(r.deadline)>now()).slice(0,1);
     const waiting=c.rounds.filter(r=>t(r.deadline)<=now() && ['waiting'].includes((c.info[r.k]||{}).state));
@@ -1612,6 +1653,7 @@ function viewLeague(lid){
     }
   } else if(tab==='surv' && c.points){
     h+=prizeBand(lg,'big');
+    h+=nextVotesCard(c);
     const lead=c.ranking[0];
     h+=`<div class="card"><span class="ctitle">${I.chart}En chiffres</span><div class="statgrid" style="margin-bottom:0"><div class="stat" style="background:#fff"><b>${c.mem.length}</b><span>Joueurs</span></div><div class="stat" style="background:#fff"><b>${c.N}</b><span>Pts à atteindre</span></div><div class="stat" style="background:#fff"><b>${lead?lead.pts:0}</b><span>Pts du 1er</span></div></div></div>`;
     h+=`<div class="plist"><div class="sec">Classement</div><div class="ga-leg">Points · <span class="ga">GA</span> goal-average (départage en cas d'égalité)</div>`+c.ranking.map(x=>{
@@ -1620,19 +1662,7 @@ function viewLeague(lid){
       return `<div class="prow"><div class="pos live">${x.pos}<sup>${x.pos===1?'er':'e'}</sup>${x.tie?'<i>ex æquo</i>':''}</div>${avatarOf(p)}<div class="nm">${esc(nameOf(p))}${p===S.me?'<span class="me-tag">TOI</span>':''}<small>${sub}</small></div><span class="ga ${x.ga>0?'p':x.ga<0?'n':''}" title="Goal-average">${x.ga>0?'+':''}${x.ga}</span><span class="pill ${win?'':los?'red':'green'}" ${win?'style="background:var(--brand)"':''}>${win?'🏆 ':los?'💸 ':''}${x.pts} pt${x.pts>1?'s':''}</span></div>`;
     }).join('')+'</div>';
   } else if(tab==='surv'){
-    h+=prizeBand(lg,'big');
-    const shown=c.status==='upcoming'?c.mem:c.alive;
-    if(c.status==='live') h+=`<div class="muted" style="text-align:center;font-family:var(--bold);font-weight:700;margin-bottom:4px">Vous n'êtes plus que ${c.alive.length} en vie !</div>`;
-    const done=c.rounds.filter(r=>['done','cancelled'].includes((c.info[r.k]||{}).state)).length;
-    h+=`<div class="card"><span class="ctitle">${I.chart}En chiffres</span><div class="statgrid" style="margin-bottom:0"><div class="stat" style="background:#fff"><b>${c.mem.length}</b><span>Inscrits</span></div><div class="stat" style="background:#fff"><b>${done}</b><span>Journées</span></div><div class="stat" style="background:#fff"><b>${c.mem.length-c.alive.length}</b><span>Éliminés</span></div></div></div>`;
-    h+=`<div class="plist"><div class="sec">Classement</div>`+standingRows(c).map(x=>{
-      const p=x.u, dead=!c.alive.includes(p); const r=dead?c.lg.rounds[c.elimAt[p]]:null; const pk=r?pickOf(p,lid,c.elimAt[p]):null;
-      const rk=r&&pk?pickRank(lg,{...r,k:c.elimAt[p]},pk):null;
-      const lv=(!dead&&c.lives)?c.lives[p]||0:0;
-      const sub=dead?`Éliminé J${(c.info[c.elimAt[p]]||{}).n||'?'} · ${pk?esc(pickLabel(lg,{...r,k:c.elimAt[p]},pk))+(rk?` (${rk}e)`:''):'pas de choix'}`:(c.status==='upcoming'?'Inscrit':c.winners.includes(p)?'Vainqueur':'Toujours en vie')+(lv?` · ${IC.heart.repeat(Math.min(lv,3))} ${lv} vie${lv>1?'s':''} en réserve`:'')+(dead?'':liveChoice(c,p));
-      const pill=c.winners.includes(p)?'<span class="pill" style="background:var(--brand)">🏆</span>':dead?'<span class="pill red">Éliminé</span>':'<span class="pill green">En vie</span>';
-      return `<div class="prow"><div class="pos ${dead?'':'live'}">${x.pos}<sup>${x.pos===1?'er':'e'}</sup>${x.tie?'<i>ex æquo</i>':''}</div>${avatarOf(p,dead?'dead':'')}<div class="nm">${esc(nameOf(p))}${p===S.me?'<span class="me-tag">TOI</span>':''}<small>${sub}</small></div>${pill}</div>`;
-    }).join('')+'</div>';
+    h+=prizeBand(lg,'big')+survivorsView(c);
   } else {
     h+=nextVotesCard(c);
     const tr=trendSection(c); if(tr) h+=`<div class="card">${tr}</div>`;

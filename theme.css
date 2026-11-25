@@ -951,3 +951,28 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .nv .stitle{margin-bottom:14px}
 .nv .t3,.nv .nv-fh{margin:0 0 20px}
 .nv .nv-list{padding-top:6px}
+/* Onglet Survivants fusionné */
+.sv{padding:16px}
+.sv-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sv-h span{display:flex;align-items:center;gap:8px;font-family:var(--title);font-weight:700;font-size:14px;letter-spacing:.7px;text-transform:uppercase}
+.sv-h span .ic{width:18px;height:18px}
+.sv-h small{font-size:12.5px;color:var(--muted);font-weight:600}
+.sv .t3{margin:0 0 12px}
+.sv-lock{display:flex;align-items:center;gap:8px;background:var(--on);color:#fff;border-radius:14px;padding:10px 12px;font-size:12.5px;font-weight:600;margin-bottom:12px}
+.sv-lock .ic{width:18px;height:18px;color:var(--yel);flex:none}
+.sv-r{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid rgba(22,24,29,.07)}
+.sv .t3+.sv-r,.sv-h+.sv-r,.sv-lock+.sv-r{border-top:0}
+.sv-r .av,.sv-r img.av{width:40px;height:40px}
+.sv-n{font-family:var(--bold);font-weight:700;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sv-n em{font-style:normal;color:var(--muted);font-weight:500}
+.sv-n small{display:flex;align-items:center;gap:4px;font-family:var(--text);font-weight:500;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sv-n small .ic,.sv-n small svg{width:13px;height:13px}
+.spks{display:flex;flex-direction:column;gap:4px;align-items:flex-end;min-width:0}
+.spk{display:flex;align-items:center;gap:6px;background:#F5F2EA;border-radius:999px;padding:4px 10px 4px 4px;font-family:var(--bold);font-weight:700;font-size:12.5px;max-width:150px}
+.spk .spk-im{width:24px;height:24px;object-fit:contain;background:#fff;border-radius:50%;padding:2px;flex:none}
+.spk span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spk.none{background:none;color:var(--muted);font-weight:600;padding:0;font-size:12.5px}
+.spks.bl{filter:blur(5px);user-select:none}
+.sv-r.dead .sv-n{color:#6B6F77}
+.sv-rk{font-size:11.5px;font-weight:800;border-radius:999px;padding:3px 9px;background:#FDECEC;color:#C0392B;font-family:var(--bold);white-space:nowrap}
+.seg button{flex:1}
