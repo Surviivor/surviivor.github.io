@@ -1267,9 +1267,44 @@ function livesBlock(lg, act, lid, locked){
   </div>${extraBlock(lg,act,lid,locked,false,true)}${locked?'<div class="help" style="margin:-4px 0 10px">Options figées une fois la ligue commencée.</div>':''}`;
 }
 function rulesCard(lg){
-  const txt=(lg.rules||'').trim()||defaultRules(lg);
-  const extra=livesRulesHtml(lg)+(isPoints(lg)&&LAST_RULES[lg.lastRule]?`<p class="lrule">${LAST_RULES[lg.lastRule].ico} <b>Option de la ligue :</b> ${LAST_RULES[lg.lastRule].t.toLowerCase()}${' (le dernier au classement à la fin)'}.</p>`:'');
-  return `<details class="card coll" ${S.open['rules'+lg.id]?'open':''}><summary data-a="toggle" data-v="rules${lg.id}"><span class="ctitle">${I.book}Règles du jeu</span>${I.chev}</summary><div class="rules-body">${rulesPics(lg)}${extra}${txt.split(/\n+/).map(p=>`<p>${esc(p)}</p>`).join('')}</div></details>`;
+  // Nouvelle présentation : 4 règles numérotées + options actives + règles perso
+  const pts=isPoints(lg), draw=allowDraw(lg), pz=prizeOf(lg);
+  const steps=!isPickMode(lg) ? null : pts ? [
+    ['Choisis une équipe','À chaque journée, un seul match et une seule équipe.'],
+    ['Marque des points','Victoire 3 pts · nul 1 pt · défaite 0.'],
+    ['Une seule fois par équipe','Impossible de rejouer une équipe déjà choisie.'],
+    [`Premier à ${nRoundsOf(lg)} points`, 'Il gagne la ligue. En cas d’égalité : meilleur goal-average.'+(pz?` À gagner : ${esc(pz)}.`:'')],
+  ] : [
+    ['Choisis une équipe','À chaque journée, un seul match et une seule équipe.'],
+    ['Elle gagne, tu survis',draw?'Tu peux aussi parier sur le nul. Sinon : éliminé.':'Nul ou défaite : tu es éliminé.'],
+    ['Une seule fois par équipe','Impossible de rejouer une équipe déjà choisie.'],
+    ['Le dernier en vie gagne', pz?`Il remporte ${esc(pz)}.`:'Il remporte la ligue.'],
+  ];
+  const stepsH=steps?`<ol class="rsteps">${steps.map(([tt,d],i)=>`<li><span class="rn">${i+1}</span><div><b>${tt}</b><small>${d}</small></div></li>`).join('')}</ol>`:'';
+  const warn=isPickMode(lg)?`<div class="rwarn">⏰ Pas de choix avant l’heure limite = ${pts?'0 point':'éliminé'}.</div>
+  <div class="rinfo"><div>🕒 L’heure limite, c’est le coup d’envoi du 1er match de la journée. Tu peux modifier ton choix jusque-là.</div>${pts?'':`<div>⚖️ Si tous les survivants tombent la même journée, celui qui a fait les choix les plus audacieux (équipes les moins bien classées) l’emporte.</div>`}</div>`:'';
+  const row=(i,tt,d)=>`<div class="rrow"><span class="ri">${i}</span><div><b>${tt}</b><small>${d}</small></div></div>`;
+  // gagner des vies / points bonus
+  const lv=[];
+  if(!pts && +lg.lives>0) lv.push(row('❤️','Une vie en réserve','Chaque joueur démarre avec une vie : à sa première erreur, il la perd mais reste en jeu.'));
+  if(!pts && lg.awayBonus) lv.push(row('✈️','Bonus extérieur','Si un joueur parie 3 fois sur des équipes à l’extérieur, il gagne 1 vie supplémentaire.'));
+  if(lg.redLantern) lv.push(row('🔴','Lanterne rouge',pts?'Si un joueur gagne avec la dernière équipe du classement, il marque 2 points bonus.':'Si un joueur gagne avec la dernière équipe du classement, il gagne 1 vie supplémentaire.'));
+  const lvH=lv.length?`<div class="rsec">${pts?'Points bonus':'Les vies'}</div>${lv.join('')}${!pts?'<div class="rnote">Une vie sauve d’une élimination : le joueur la perd et reste en jeu. Les vies se cumulent.</div>':''}`:'';
+  // jokers
+  const jk=[];
+  if(jokerOn(lg)) jk.push(row(JOKER_ICO,'Double chance','Un joueur choisit 2 équipes sur une journée : il survit si au moins une des 2 équipes gagne. Les 2 équipes comptent ensuite comme jouées.'));
+  if(saboOn(lg)) jk.push(row('💣','Sabotage','Un joueur interdit une équipe à un adversaire pour une journée. La victime découvre qui l’a saboté au moment de parier. Un joueur ne peut être saboté qu’une fois par journée.'));
+  const jkH=jk.length?`<div class="rsec">Les jokers</div>${jk.join('')}<div class="rnote">Chaque joker s’utilise une seule fois par ligue, depuis l’encart « Jokers » au-dessus de « Mon choix ». Il ne se récupère pas.</div>`:'';
+  // options
+  const o=[];
+  if(pts && lg.lastRule==='wins') o.push(['🏆','Le dernier gagne aussi','Le dernier du classement remporte lui aussi la ligue.']);
+  if(pts && lg.lastRule==='drink') o.push(['🍺','Le dernier paie un verre','Le dernier doit un verre au premier.']);
+  if(isPickMode(lg)) o.push([picksVisible(lg)?'👀':'🙈', picksVisible(lg)?'Paris visibles':'Paris cachés', picksVisible(lg)?'On voit les choix des autres avant l’heure limite.':'Les choix sont dévoilés à l’heure limite.']);
+  if(pz) o.push(['🎁','À gagner',esc(pz)]);
+  const optH=(o.length?`<div class="rsec">Options de la ligue</div>${o.map(([i,tt,d])=>row(i,tt,d)).join('')}`:'')+lvH+jkH;
+  const custom=(lg.rules||'').trim();
+  const cH=custom?`<div class="rsec">Le mot de l’organisateur</div>${custom.split(/\n+/).map(p=>`<p class="rtxt">${esc(p)}</p>`).join('')}`:(!steps?defaultRules(lg).split(/\n+/).map(p=>`<p class="rtxt">${esc(p)}</p>`).join(''):'');
+  return `<details class="card coll" ${S.open['rules'+lg.id]?'open':''}><summary data-a="toggle" data-v="rules${lg.id}"><span class="ctitle">${I.book}Règles du jeu</span>${I.chev}</summary><div class="rules-body r2">${stepsH}${warn}${optH}${cH}</div></details>`;
 }
 function standingsCard(lg, openDefault){
   const key=lg.comp; if(!key) return '';
