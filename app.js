@@ -978,7 +978,7 @@ ${fmt==='oneshot'?`    <div class="sl slide "><div class="sl-ph"><div class="il 
   const fl=[['all','Toutes'],...(S.guest?[]:[['mine','Mes ligues']]),...cats.map(k=>[k,cat(k).label])];
   h+=`<div class="ftabs" role="tablist">`+fl.map(([k,l])=>`<button role="tab" class="${f===k?'on':''}" data-a="filter" data-v="${k}">${esc(l)}</button>`).join('')+`</div>`;
   if(!list.length){
-    h+=`<div class="empty"><div class="ico">${f==='mine'?'🎟️':'🏟️'}</div><h3>${f==='mine'?'AUCUNE LIGUE':'PAS ENCORE DE LIGUE'}</h3>${f==='mine'?'<p>Inscris-toi à une ligue ou entre un code privé.</p></div>':'</div><button class="nc-join" style="margin-bottom:10px" data-a="tab" data-v="admin">'+I.plus+' Créer la première ligue</button>'}`;
+    h+=`<div class="empty"><div class="ico">${f==='mine'?'🎟️':'🏟️'}</div><h3>${f==='mine'?'AUCUNE LIGUE':'PAS ENCORE DE LIGUE'}</h3>${f==='mine'?'<p>Inscris-toi à une ligue ou entre un code privé.</p></div>':'<p>Crée-la et invite tes amis avec le bouton ci-dessous.</p></div>'}`;
   }
   const grp={survivor:list.filter(c=>!c.points), oneshot:list.filter(c=>c.points)};
   const order2=[lfmt];
