@@ -644,7 +644,9 @@ const A = {
     const live=c.started && c.status!=='finished';
     modal(`<h3>QUITTER LA LIGUE ?</h3><div class="muted" style="font-size:15px">Tu vas quitter <b>${esc(c.lg.name)}</b>.${live?' La ligue a commencé : tu ne pourras plus revenir et tu disparais du classement.':' Tu pourras te réinscrire tant que la ligue n’a pas commencé.'}</div>`,'QUITTER',()=>{
       const me=clone(S.players[S.me]||{}); if(me.leagues) delete me.leagues[lid]; if(me.sabo) delete me.sabo[lid];
-      writeMe(me,true).then(()=>toast('Tu as quitté la ligue.'));
+      const cur=S.players[S.me]; if(cur){ delete cur.leagues[lid]; if(cur.sabo) delete cur.sabo[lid]; }
+      const {picks, ...rest}=me;
+      (S.mode==='demo'?Promise.resolve():db.doc('players/'+S.me).set(rest)).then(()=>toast('Tu as quitté la ligue.'),e=>handleErr(e));
       S.view.league=null; render(); scrollTo(0,0);
     });
   },
