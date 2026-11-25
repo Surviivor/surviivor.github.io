@@ -19,6 +19,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main   # toujours la dernière version (pas celle du moment où la mise à jour a été programmée)
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -36,7 +38,8 @@ jobs:
             echo "Rien de nouveau."
           else
             git commit -m "Mise à jour des matchs et classements"
-            git pull --rebase origin main
+            # en cas de conflit sur les données, on garde celles qu'on vient de calculer (les plus récentes)
+            git pull --rebase -X theirs origin main
             git push
           fi
       - name: Ajouter les nouvelles journées dans les ligues
