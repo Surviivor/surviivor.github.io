@@ -694,3 +694,5 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .nv-top span{color:var(--muted);font-weight:700;width:16px}
 .nv-top b{flex:1}
 .nv-top em{font-style:normal;font-weight:800;background:#16181D;color:#fff;border-radius:999px;padding:1px 7px;font-size:11px}
+.nv-top{margin-top:5px;font-size:14px}
+.nv-top em{background:none;color:var(--on);font-size:15px;font-weight:800;padding:0;min-width:46px;text-align:right}
