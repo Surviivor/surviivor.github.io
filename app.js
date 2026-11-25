@@ -262,6 +262,14 @@ const IC=(()=>{ const sv=(d,extra='')=>`<svg class="ic" viewBox="0 0 24 24" fill
   money:sv('<rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 9.5v5M18 9.5v5"/>'),
   joker:'<img class="jki" src="img/jester.png" alt="">',
 }; })();
+// Pictos en couleur (options, règles, jokers) + pastille pastel
+const CI={
+  heart:'<svg class="ic" viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9C.9 8.8 2.8 4.5 6.7 4.5c2.2 0 3.7 1.3 5.3 3.2 1.6-1.9 3.1-3.2 5.3-3.2 3.9 0 5.8 4.3 4.3 7.5C19.5 16.4 12 21 12 21z" fill="#E5493A"/><path d="M6.5 8.2c.6-1 1.6-1.4 2.6-1.2" stroke="#fff" stroke-opacity=".55" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>',
+  trophy:'<svg class="ic" viewBox="0 0 24 24"><path d="M7 3h10v6a5 5 0 0 1-10 0V3z" fill="#F6B40E"/><path d="M17 5h3a3.5 3.5 0 0 1-3.6 4.6M7 5H4a3.5 3.5 0 0 0 3.6 4.6" fill="none" stroke="#F6B40E" stroke-width="2" stroke-linecap="round"/><rect x="10.8" y="13" width="2.4" height="4" fill="#B9810A"/><rect x="7.5" y="17" width="9" height="4" rx="1.2" fill="#B9810A"/><path d="M10 6.5v3" stroke="#fff" stroke-opacity=".6" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  lantern:'<svg class="ic" viewBox="0 0 24 24"><path d="M9 2.5h6M12 2.5v2" stroke="#16181D" stroke-width="2" stroke-linecap="round"/><rect x="7.5" y="4.5" width="9" height="2.5" rx="1" fill="#16181D"/><path d="M8 7h8l.8 10.5a1.5 1.5 0 0 1-1.5 1.5H8.7a1.5 1.5 0 0 1-1.5-1.5L8 7z" fill="#E5493A"/><ellipse cx="12" cy="13" rx="2" ry="3" fill="#FFD36B"/><rect x="7.5" y="19" width="9" height="2.5" rx="1" fill="#16181D"/></svg>',
+  bomb:'<svg class="ic" viewBox="0 0 24 24"><circle cx="10.5" cy="14" r="7" fill="#5B3FD6"/><rect x="13.3" y="6.3" width="4" height="3.4" rx="1" transform="rotate(45 15.3 8)" fill="#5B3FD6"/><path d="M17 6.5c.8-1.8 2.2-2.6 3.6-2.4" stroke="#16181D" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M21 2.2l.4 1.3 1.3.4-1.3.4-.4 1.3-.4-1.3-1.3-.4 1.3-.4z" fill="#F6A623"/><circle cx="8" cy="11.5" r="1.6" fill="#fff" fill-opacity=".45"/></svg>',
+};
+const TI=k=>`<span class="ict ict-${k}">${k==='joker'?'<img src="img/jester.png" alt="">':(CI[k]||IC[k])}</span>`;
 const JOKER_ICO='<img class="jki" src="img/jester.png" alt="">';
 // Joker « double chance » (Survivor, 1 fois par ligue) : le pari contient une 2e équipe (m2/p2, j:true)
 const jokerOn = lg => !!lg && !!lg.joker && isPickMode(lg) && !isPoints(lg);
@@ -1098,7 +1106,7 @@ function tileHtml(c, r, m, side, opts){
   const name = side==='D' ? 'Nul' : esc(sd.n);
   let pct=''; if(opts.dist){ const tot=opts.dist.tot; const k=m.k+'|'+side; const v=tot?Math.round((opts.dist.c[k]||0)*100/tot):0; if(v) pct=`<span class="vbar"><i style="width:${v}%"></i></span><span class="vlab">${v} %</span>`; }
   const act = can && !used ? `data-a="pick" data-v="${lg.id}|${r.k}|${m.k}|${side}"` : 'disabled';
-  return `<button class="${cls}" ${act}>${sel?`<span class="ck">${I.check}</span>`:''}${ban?'<span class="bomb" title="Sabotée">'+IC.bomb+'</span>':''}<span class="bd">${bd}</span><span class="nm">${name}</span>${lant?`<span class="lnt">${IC.lantern} ${c.points?'+2 pts':'+1 vie'}</span>`:''}${pct}</button>`;
+  return `<button class="${cls}" ${act}>${sel?`<span class="ck">${I.check}</span>`:''}${ban?'<span class="bomb" title="Sabotée">'+IC.bomb+'</span>':''}<span class="bd">${bd}</span><span class="nm">${name}</span>${lant?`<span class="lnt">${CI.lantern} ${c.points?'+2 pts':'+1 vie'}</span>`:''}${pct}</button>`;
 }
 function roundDist(c, r){
   const voters=(c.info[r.k]&&c.info[r.k].aliveBefore)||c.mem; const cnt={}; let tot=0;
@@ -1119,7 +1127,7 @@ function jokerItems(c, r){
   const jn=k=>{ const n=(c.info[k]||{}).n; return n?'journée '+n:''; };
   if(jokerOn(lg)){
     const used=jokerRound(lg.id,S.me), here=used===r.k, act=S.view.jk===lg.id+'|'+r.k;
-    const it={k:'joker', ico:JOKER_ICO, t:'Double chance', d:'Choisis 2 équipes sur une journée : tu survis si au moins une des 2 équipes gagne.', avail:!used};
+    const it={k:'joker', ico:TI('joker'), t:'Double chance', d:'Choisis 2 équipes sur une journée : tu survis si au moins une des 2 équipes gagne.', avail:!used};
     if(here&&my&&my.j){ it.state='on'; it.note='Utilisé sur cette journée : tes 2 équipes sont choisies.'; if(can) it.btn=`<button class="jx" data-a="jokerCancel" data-v="${lg.id}|${r.k}" title="Annuler le joker" aria-label="Annuler le joker">${I.x||'✕'}</button>`; it.avail=true; }
     else if(used){ it.state='used'; it.note='Utilisé'+(jn(used)?' ('+jn(used)+')':'')+'.'; }
     else if(act){ it.state='on'; it.note=my?'Activé : choisis ta 2e équipe dans un autre match.':'Activé : choisis 2 équipes dans 2 matchs différents.'; it.btn=`<button class="jx" data-a="jokerCancel" data-v="${lg.id}|${r.k}" title="Annuler" aria-label="Annuler">${I.x||'✕'}</button>`; }
@@ -1127,7 +1135,7 @@ function jokerItems(c, r){
     out.push(it);
   }
   if(saboOn(lg)){
-    const sb=mySabo(lg.id), it={k:'sabo', ico:IC.bomb, t:'Sabotage', d:"Interdis une équipe à un adversaire pour la journée. Il découvre qui l'a saboté au moment de parier.", avail:!sb};
+    const sb=mySabo(lg.id), it={k:'sabo', ico:TI('bomb'), t:'Sabotage', d:"Interdis une équipe à un adversaire pour la journée. Il découvre qui l'a saboté au moment de parier.", avail:!sb};
     const foes=(c.status==='upcoming'?c.mem:c.alive).filter(u=>u!==S.me);
     if(sb){ it.state='used'; it.note=`Utilisé${jn(sb.rk)?' ('+jn(sb.rk)+')':''} : ${esc(sb.tn)} interdit à ${esc(nameOf(sb.to))}.`; }
     else if(can && foes.length){
@@ -1155,10 +1163,10 @@ function jokersCard(c, r){
   const regain=n===0?'<div class="help" style="margin:10px 0 0">Chaque joker ne s\'utilise qu\'une fois par ligue : aucun moyen d\'en récupérer.</div>':'';
   // comment gagner des vies / points bonus
   const how=[];
-  if(!c.points && +lg.lives>0) how.push([IC.heart,'Une vie en réserve','Chaque joueur démarre avec une vie : à sa première erreur, il la perd mais reste en jeu.']);
-  if(lg.redLantern) how.push([IC.lantern,'Lanterne rouge',c.points?'Une victoire avec la dernière équipe du classement : +2 points bonus.':'Une victoire avec la dernière équipe du classement : +1 vie.']);
+  if(!c.points && +lg.lives>0) how.push([TI('heart'),'Une vie en réserve','Chaque joueur démarre avec une vie : à sa première erreur, il la perd mais reste en jeu.']);
+  if(lg.redLantern) how.push([TI('lantern'),'Lanterne rouge',c.points?'Une victoire avec la dernière équipe du classement : +2 points bonus.':'Une victoire avec la dernière équipe du classement : +1 vie.']);
   const myL=!c.points&&c.lives?c.lives[S.me]||0:0, st=0;
-  const howH=how.length?`<div class="jhow"><div class="jhow-t">${c.points?'Comment gagner des points bonus':'Les vies'}</div>${!c.points?`<div class="jhow-me">Tes vies : <b>${myL?(IC.heart.repeat(Math.min(myL,5))+' '+myL):'aucune pour l’instant'}</b>${c.points?'':'<div class="jhow-why">Une vie te sauve d’une élimination : si ton pari est perdu, tu perds une vie au lieu d’être éliminé, et tu restes en jeu. Les vies se cumulent.</div><div class="jhow-t2">Comment en gagner</div>'}</div>`:''}${how.map(([i,tt,d])=>`<div class="jhow-r"><span>${i}</span><div><b>${tt}</b><small>${d}</small></div></div>`).join('')}</div>`:'';
+  const howH=how.length?`<div class="jhow"><div class="jhow-t">${c.points?'Comment gagner des points bonus':'Les vies'}</div>${!c.points?`<div class="jhow-me">Tes vies : <b>${myL?(CI.heart.repeat(Math.min(myL,5))+' '+myL):'aucune pour l’instant'}</b>${c.points?'':'<div class="jhow-why">Une vie te sauve d’une élimination : si ton pari est perdu, tu perds une vie au lieu d’être éliminé, et tu restes en jeu. Les vies se cumulent.</div><div class="jhow-t2">Comment en gagner</div>'}</div>`:''}${how.map(([i,tt,d])=>`<div class="jhow-r"><span>${i}</span><div><b>${tt}</b><small>${d}</small></div></div>`).join('')}</div>`:'';
   return `<details class="card coll jkc" ${op?'open':''}><summary data-a="toggle" data-v="${k}"><span class="ctitle">${JOKER_ICO}Jokers (${n})</span>${I.chev}</summary><div class="jlist">${body}</div>${regain}${howH}</details>`;
 }
 // sabotage reçu : reste toujours visible dans « Mon choix »
@@ -1197,7 +1205,7 @@ function roundFoot(c,r){
     else if(!closed && my) f=`<div class="note">Ton choix est enregistré. Tu peux le modifier jusqu'à l'heure limite.</div>`;
     if(ri.state==='waiting' && closed) f+=`<div class="note">⏳ En attente des résultats${my?' — ton choix : <b>'+esc(pickLabel(lg,r,my))+'</b>':''}.</div>`;
     if(ri.bold){ const p=pickOf(ri.bold.u,lg.id,r.k); f+=`<div class="note bold">${IC.bolt} Choix le plus audacieux : <b>${esc(nameOf(ri.bold.u))}</b> avec ${esc(pickLabel(lg,r,p))} (${ri.bold.rk}e)</div>`; }
-    if(closed && isMember(lg.id) && ri.pts && ri.pts[S.me]!==undefined){ const sc=ri.pts[S.me]; f+=sc===5?`<div class="note ok">${IC.lantern} Victoire sur la lanterne rouge : +5 points !</div>`:sc===3?`<div class="note ok">✓ Victoire : +3 points !</div>`:sc===1?`<div class="note">➖ Match nul : +1 point.</div>`:`<div class="note bad">✗ ${my?'Défaite':'Pas de choix'} : 0 point.</div>`; }
+    if(closed && isMember(lg.id) && ri.pts && ri.pts[S.me]!==undefined){ const sc=ri.pts[S.me]; f+=sc===5?`<div class="note ok">${CI.lantern} Victoire sur la lanterne rouge : +5 points !</div>`:sc===3?`<div class="note ok">✓ Victoire : +3 points !</div>`:sc===1?`<div class="note">➖ Match nul : +1 point.</div>`:`<div class="note bad">✗ ${my?'Défaite':'Pas de choix'} : 0 point.</div>`; }
     return f;
   }
   if(!closed && isMember(lg.id) && c.alive.includes(S.me) && !my) f=`<div class="note bad">Pas de choix = éliminé. Décide-toi avant ${fmtDT(r.deadline).split(' à ')[1]} le ${fmtD(r.deadline)} !</div>`;
@@ -1289,11 +1297,11 @@ function rulesPics(lg){
 function livesRulesHtml(lg){
   if(!isPickMode(lg)) return '';
   let h='';
-  if(lg.sabotage) h+=`<p class="lrule">${IC.bomb} <b>Sabotage :</b> une fois par ligue, un joueur peut interdire une équipe à un adversaire pour une journée. La victime découvre qui l'a saboté au moment de parier.</p>`;
-  if(lg.redLantern) h+=`<p class="lrule">${IC.lantern} <b>Lanterne rouge :</b> si un joueur gagne avec la dernière équipe du classement, il ${isPoints(lg)?'marque <b>2 points bonus</b>':'gagne <b>1 vie supplémentaire</b>'}.</p>`;
+  if(lg.sabotage) h+=`<p class="lrule">${CI.bomb} <b>Sabotage :</b> une fois par ligue, un joueur peut interdire une équipe à un adversaire pour une journée. La victime découvre qui l'a saboté au moment de parier.</p>`;
+  if(lg.redLantern) h+=`<p class="lrule">${CI.lantern} <b>Lanterne rouge :</b> si un joueur gagne avec la dernière équipe du classement, il ${isPoints(lg)?'marque <b>2 points bonus</b>':'gagne <b>1 vie supplémentaire</b>'}.</p>`;
   h+=`<p class="lrule">${picksVisible(lg)?IC.eye+' <b>Paris visibles :</b> tu peux voir les choix des autres avant l\'heure limite.':IC.eyeOff+' <b>Paris cachés :</b> les choix des autres sont dévoilés à l\'heure limite.'}</p>`;
   if(isPoints(lg)) return h;
-  if(+lg.lives>0) h+=`<p class="lrule">${IC.heart} <b>Option de la ligue :</b> chaque joueur a droit à <b>une erreur</b> : si son pari est raté, il perd sa vie mais reste en jeu.</p>`;
+  if(+lg.lives>0) h+=`<p class="lrule">${CI.heart} <b>Option de la ligue :</b> chaque joueur a droit à <b>une erreur</b> : si son pari est raté, il perd sa vie mais reste en jeu.</p>`;
   if(lg.joker) h+=`<p class="lrule">${JOKER_ICO}<b>Joker « double chance » :</b> une fois par ligue, un joueur peut choisir <b>2 équipes</b> sur une journée : il survit si <b>au moins une des 2 équipes</b> gagne.</p>`;
   return h;
 }
@@ -1304,13 +1312,13 @@ function optionsBlock(lg, pts, act, lid, locked){
   const opt=(k,on,title,desc,extra)=>`<button class="lopt-b ${on?'on':''}" ${locked?'disabled':`data-a="${act}" data-v="${v}${k}"`}><i></i><span><b>${title}</b><small>${desc}</small>${extra?`<em class="lopt-x">${extra}</em>`:''}</span></button>`;
   let o='', j='';
   if(pts){
-    o+=opt('lastwins', lg.lastRule==='wins', `${IC.trophy}Le dernier gagne aussi`, 'Le dernier du classement à la fin remporte lui aussi la ligue.', 'Deux courses en une : les joueurs décrochés ne lâchent rien et misent sur les équipes qui vont perdre. Tout le monde reste à fond jusqu’au bout.');
+    o+=opt('lastwins', lg.lastRule==='wins', `${TI('trophy')}Le dernier gagne aussi`, 'Le dernier du classement à la fin remporte lui aussi la ligue.', 'Deux courses en une : les joueurs décrochés ne lâchent rien et misent sur les équipes qui vont perdre. Tout le monde reste à fond jusqu’au bout.');
   } else {
-    o+=opt('lives', +lg.lives>0, `${IC.heart}Une vie en réserve`, 'Chaque joueur a droit à une erreur : si son pari est raté, il perd sa vie mais reste en jeu.');
+    o+=opt('lives', +lg.lives>0, `${TI('heart')}Une vie en réserve`, 'Chaque joueur a droit à une erreur : si son pari est raté, il perd sa vie mais reste en jeu.');
   }
-  o+=opt('lantern', !!lg.redLantern, `${IC.lantern}Lanterne rouge`, pts?'Si un joueur gagne avec la dernière équipe du classement, il marque 2 points bonus.':'Si un joueur gagne avec la dernière équipe du classement, il gagne 1 vie supplémentaire.');
-  if(!pts) j+=opt('joker', !!lg.joker, `${JOKER_ICO}Double chance`, 'Une fois par ligue, un joueur peut choisir 2 équipes sur une journée : il survit si au moins une des 2 équipes gagne.');
-  j+=opt('sabotage', !!lg.sabotage, `${IC.bomb}Sabotage`, 'Une fois par ligue, un joueur peut interdire une équipe à un adversaire pour une journée. La victime découvre qui l’a saboté au moment de parier.');
+  o+=opt('lantern', !!lg.redLantern, `${TI('lantern')}Lanterne rouge`, pts?'Si un joueur gagne avec la dernière équipe du classement, il marque 2 points bonus.':'Si un joueur gagne avec la dernière équipe du classement, il gagne 1 vie supplémentaire.');
+  if(!pts) j+=opt('joker', !!lg.joker, `${TI('joker')}Double chance`, 'Une fois par ligue, un joueur peut choisir 2 équipes sur une journée : il survit si au moins une des 2 équipes gagne.');
+  j+=opt('sabotage', !!lg.sabotage, `${TI('bomb')}Sabotage`, 'Une fois par ligue, un joueur peut interdire une équipe à un adversaire pour une journée. La victime découvre qui l’a saboté au moment de parier.');
   const VIS=lg.picksVis==='visible';
   return `<label class="f fbig">Options</label><div class="lopt">${o}</div>
   <label class="f fbig">Jokers</label><div class="lopt">${j}</div>
@@ -1339,20 +1347,20 @@ function rulesCard(lg){
   const row=(i,tt,d)=>`<div class="rrow"><span class="ri">${i}</span><div><b>${tt}</b><small>${d}</small></div></div>`;
   // gagner des vies / points bonus
   const lv=[];
-  if(!pts && +lg.lives>0) lv.push(row(IC.heart,'Une vie en réserve','Chaque joueur démarre avec une vie : à sa première erreur, il la perd mais reste en jeu.'));
-  if(lg.redLantern) lv.push(row(IC.lantern,'Lanterne rouge',pts?'Si un joueur gagne avec la dernière équipe du classement, il marque 2 points bonus.':'Si un joueur gagne avec la dernière équipe du classement, il gagne 1 vie supplémentaire.'));
+  if(!pts && +lg.lives>0) lv.push(row(TI('heart'),'Une vie en réserve','Chaque joueur démarre avec une vie : à sa première erreur, il la perd mais reste en jeu.'));
+  if(lg.redLantern) lv.push(row(TI('lantern'),'Lanterne rouge',pts?'Si un joueur gagne avec la dernière équipe du classement, il marque 2 points bonus.':'Si un joueur gagne avec la dernière équipe du classement, il gagne 1 vie supplémentaire.'));
   const lvH=lv.length?`<div class="rsec">${pts?'Points bonus':'Les vies'}</div>${lv.join('')}${!pts?'<div class="rnote">Une vie sauve d’une élimination : le joueur la perd et reste en jeu. Les vies se cumulent.</div>':''}`:'';
   // jokers
   const jk=[];
-  if(jokerOn(lg)) jk.push(row(JOKER_ICO,'Double chance','Un joueur choisit 2 équipes sur une journée : il survit si au moins une des 2 équipes gagne. Les 2 équipes comptent ensuite comme jouées.'));
-  if(saboOn(lg)) jk.push(row(IC.bomb,'Sabotage','Un joueur interdit une équipe à un adversaire pour une journée. La victime découvre qui l’a saboté au moment de parier. Un joueur ne peut être saboté qu’une fois par journée.'));
+  if(jokerOn(lg)) jk.push(row(TI('joker'),'Double chance','Un joueur choisit 2 équipes sur une journée : il survit si au moins une des 2 équipes gagne. Les 2 équipes comptent ensuite comme jouées.'));
+  if(saboOn(lg)) jk.push(row(TI('bomb'),'Sabotage','Un joueur interdit une équipe à un adversaire pour une journée. La victime découvre qui l’a saboté au moment de parier. Un joueur ne peut être saboté qu’une fois par journée.'));
   const jkH=jk.length?`<div class="rsec">Les jokers</div>${jk.join('')}<div class="rnote">Chaque joker s’utilise une seule fois par ligue, depuis l’encart « Jokers » au-dessus de « Mon choix ». Il ne se récupère pas.</div>`:'';
   // options
   const o=[];
-  if(pts && lg.lastRule==='wins') o.push([IC.trophy,'Le dernier gagne aussi','Le dernier du classement remporte lui aussi la ligue.']);
-  if(pts && lg.lastRule==='drink') o.push([IC.beer,'Le dernier paie un verre','Le dernier doit un verre au premier.']);
-  if(isPickMode(lg)) o.push([picksVisible(lg)?IC.eye:IC.eyeOff, picksVisible(lg)?'Paris visibles':'Paris cachés', picksVisible(lg)?'On voit les choix des autres avant l’heure limite.':'Les choix sont dévoilés à l’heure limite.']);
-  if(pz) o.push([IC.gift,'À gagner',esc(pz)]);
+  if(pts && lg.lastRule==='wins') o.push([TI('trophy'),'Le dernier gagne aussi','Le dernier du classement remporte lui aussi la ligue.']);
+  if(pts && lg.lastRule==='drink') o.push([TI('beer'),'Le dernier paie un verre','Le dernier doit un verre au premier.']);
+  if(isPickMode(lg)) o.push([TI(picksVisible(lg)?'eye':'eyeOff'), picksVisible(lg)?'Paris visibles':'Paris cachés', picksVisible(lg)?'On voit les choix des autres avant l’heure limite.':'Les choix sont dévoilés à l’heure limite.']);
+  if(pz) o.push([TI('gift'),'À gagner',esc(pz)]);
   const optH=(o.length?`<div class="rsec">Options de la ligue</div>${o.map(([i,tt,d])=>row(i,tt,d)).join('')}`:'')+lvH+jkH;
   const custom=(lg.rules||'').trim();
   const cH=(!steps?defaultRules(lg).split(/\n+/).map(p=>`<p class="rtxt">${esc(p)}</p>`).join(''):'');

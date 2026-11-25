@@ -781,3 +781,18 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .dtag{white-space:nowrap}
 .dtodo.zero .dring{color:var(--yel)}
 .dring b .ic{stroke-width:2.2}
+/* Pictos couleur en pastille pastel */
+.ict{width:36px;height:36px;border-radius:11px;display:inline-flex;align-items:center;justify-content:center;flex:none;vertical-align:middle}
+.ict .ic{width:22px;height:22px}.ict img{width:24px;height:24px;object-fit:contain}
+.ict-heart{background:#FFE3E0}.ict-trophy{background:#FFF1C2}.ict-lantern{background:#FFE6D6}.ict-bomb{background:#E9E4FF}.ict-joker{background:#E2F4E8}
+.ict-eye,.ict-eyeOff{background:#E0EEFF;color:#2F6FD6}.ict-gift{background:#E2F4E8;color:#1E8A4C}.ict-beer{background:#FFF1C2;color:#B9810A}
+.lopt-b b{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.rrow{align-items:center}.rrow .ri{width:auto}
+.jhow-r{align-items:center}.jhow-r>span .ict .ic{width:22px;height:22px}
+.jitem .jt .ict{width:32px;height:32px}.jitem .jt .ict .ic{width:20px;height:20px}.jitem .jt .ict img{width:22px;height:22px}
+.lrule .ic,.lnt .ic,.jhow-me .ic,.note .ic{width:1.15em;height:1.15em}
+/* état « 0 pari à valider » : fond jaune aussi */
+.dtodo.zero{background:var(--yel);color:var(--on)}
+.dtodo.zero .dring{color:var(--on)}
+.dtodo.zero .dtag{background:var(--on);color:var(--yel);font-weight:800}
+.dtodo.zero .dgo{background:var(--on);color:var(--yel)}
