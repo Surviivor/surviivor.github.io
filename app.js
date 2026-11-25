@@ -1007,7 +1007,7 @@ function dashCard(myL, todo){
     return `<button class="dl-card" data-a="open" data-v="${c.lg.id}"><div class="dl-top">${nm}<div class="dl-st">${st}</div></div><div class="dl-bar"><i style="width:${Math.max(2,Math.min(100,pct))}%"></i></div><div class="dl-lg"><span>${l}</span><span>${r}</span></div></button>`; };
   const all=S.open.dashAll, shown=all?L:L.slice(0,3);
   h+=`<div class="dh2"><span>Tes ligues en cours</span>${pill}</div>`+shown.map(card).join('');
-  if(L.length>3) h+=`<button class="dl-more" data-a="toggle" data-v="dashAll">${all?'Voir moins':`Voir plus (${L.length-3})`}</button>`;
+  if(L.length>3) h+=`<button class="dl-more" data-a="toggle" data-v="dashAll"><span class="dl-mi ${all?'up':''}">${I.chev}</span>${all?'Voir moins':`Voir plus (${L.length-3})`}</button>`;
   return `<div class="dash2">${h}</div>`;
 }
 function viewHome(){
