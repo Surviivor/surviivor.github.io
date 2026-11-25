@@ -560,3 +560,24 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .mp-st.jk{gap:5px}
 .mp-st.jk .jki{width:11px;height:15px;margin:0;vertical-align:-2px}
 .jbox .jki{width:19px;height:25px;vertical-align:-6px;margin-right:7px}
+/* Sabotage 💣 */
+.sbox{display:flex;align-items:center;gap:10px;background:#FFF1EC;border:1.5px solid #FFD2C2;border-radius:16px;padding:12px 12px 12px 14px;margin:4px 0 12px}
+.sbox>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.sbox b{font-family:var(--bold);font-weight:800;font-size:14px}
+.sbox small{font-size:12.5px;color:var(--muted);line-height:1.35}
+.sbox small b{font-size:12.5px;color:var(--on)}
+.sbox.hit{background:#E5493A;border-color:#E5493A;color:#fff}
+.sbox.hit small,.sbox.hit small b{color:#fff}
+.sbox.done{opacity:.75}
+.sbtn{flex:none;height:34px;padding:0 14px;border-radius:999px;border:0;background:#E5493A;color:#fff;font-family:var(--bold);font-weight:700;font-size:13px;cursor:pointer}
+.jbtn.ghost2{height:34px;padding:0 14px;border-radius:999px;border:1.5px solid rgba(22,24,29,.15);background:#fff;color:var(--on);font-family:var(--bold);font-weight:700;font-size:13px;cursor:pointer}
+.schips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.schips .chip{background:#fff}
+.srow{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+/* tuiles : équipe sabotée / lanterne rouge */
+.tile{position:relative}
+.tile .bomb{position:absolute;top:6px;left:8px;font-size:15px}
+.tile .lnt{display:block;font-size:10.5px;font-weight:700;color:#C0392B;margin-top:2px}
+.tile.used.ban .nm:after{content:"sabotée";color:#E5493A}
+.schips .chip:not(.on){background:#fff}
+.schips .chip.on{background:var(--on);color:#fff}
