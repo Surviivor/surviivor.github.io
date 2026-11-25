@@ -1411,10 +1411,10 @@ function nextVotesCard(c){
   const me=pickOf(S.me,lg.id,r.k), same=me?rows.filter(([u,p])=>u!==S.me&&p.m===me.m&&p.p===me.p).length:0;
   const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];
   const fun=[];
-  if(top) fun.push(['🔥','Le plus joué',`<b>${esc(top[0])}</b> · ${top[1]} joueur${top[1]>1?'s':''}`]);
+  const tot=rows.length; const top3=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  if(top3.length) fun.push(['🔥','Les plus choisies',top3.map(([k,v],i)=>`<div class="nv-top"><span>${i+1}.</span><b>${esc(k)}</b><em>${Math.round(v*100/tot)} %</em></div>`).join('')]);
   if(bold) fun.push(['🦁','Le plus audacieux',`<b>${esc(nameOf(bold.u))}</b> avec ${esc(bold.n)} (${bold.rk}<sup>e</sup>)`]);
   if(me) fun.push(['🤝','Même choix que toi',same?`<b>${same}</b> joueur${same>1?'s':''}`:'Personne : tu es seul sur ce coup !']);
-  if(none.length) fun.push(['⏳','Pas encore choisi',`<b>${none.length}</b> joueur${none.length>1?'s':''}`]);
   const list=rows.map(([u,p])=>`<div class="nv-r">${avatarOf(u)}<span class="nv-n">${esc(nameOf(u))}${u===S.me?' <em>(toi)</em>':''}</span><span class="nv-p">${pickSides(p).map(x=>{ const m=(r.matches||{})[x.m]; if(!m) return ''; const sd=x.p==='H'?m.h:x.p==='A'?m.a:null; return sd?`${logoTag(sd)}<b>${esc(sd.n)}</b>`:'<b>Nul</b>'; }).join('<i>+</i>')}</span></div>`).join('')
     + none.map(u=>`<div class="nv-r off">${avatarOf(u)}<span class="nv-n">${esc(nameOf(u))}</span><span class="nv-p"><small>pas encore choisi</small></span></div>`).join('');
   return `<div class="card nv"><div class="stitle">👀 Paris de la journée ${n}</div><div class="nv-fun">${fun.map(([i,tt,v])=>`<div class="nv-f"><span>${i}</span><div><small>${tt}</small><div>${v}</div></div></div>`).join('')}</div><div class="nv-list">${list}</div><div class="muted" style="font-size:12px;margin-top:8px">Les choix peuvent encore changer jusqu’à l’heure limite (${fmtDT(r.deadline)}).</div></div>`;

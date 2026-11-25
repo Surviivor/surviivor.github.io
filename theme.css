@@ -689,3 +689,8 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .nv-p i{font-style:normal;color:var(--muted);margin:0 2px}
 .nv-r.off{opacity:.55}
 .nv .stitle{font-family:var(--bold);font-weight:800;font-size:17px;text-transform:uppercase;margin-bottom:6px;display:flex;gap:8px;align-items:center}
+.nv-fun{grid-template-columns:1fr}
+.nv-top{display:flex;align-items:center;gap:6px;margin-top:3px}
+.nv-top span{color:var(--muted);font-weight:700;width:16px}
+.nv-top b{flex:1}
+.nv-top em{font-style:normal;font-weight:800;background:#16181D;color:#fff;border-radius:999px;padding:1px 7px;font-size:11px}
