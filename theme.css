@@ -1011,3 +1011,19 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .demo ~ .page .lh-backw{padding-top:16px}
 .lh-back,.demo ~ .page .lh-back{margin:0!important}
 .lhero{margin-top:16px!important}
+/* Classement Race v2 : GA, logo seul, cadenas */
+.rk-th,.rk-tr{grid-template-columns:22px 36px minmax(0,1fr) 34px 30px 48px}
+.rk-card.nopk .rk-th,.rk-card.nopk .rk-tr{grid-template-columns:22px 36px minmax(0,1fr) 34px 30px}
+.rk-th span:nth-child(4),.rk-ga{text-align:center}.rk-th span:nth-child(5){text-align:right}.rk-th span:nth-child(6){text-align:center}
+.rk-ga{font-family:var(--bold);font-weight:700;font-size:12.5px;color:var(--muted)}
+.rk-ga.p{color:#1E7A3C}.rk-ga.n{color:#C0392B}
+.rk-pk{display:flex;justify-content:center}
+.rk-pk .rpk{background:none;padding:0;height:auto;width:auto;justify-content:center;gap:2px}
+.rk-pk .rpk .rpk-im{width:34px;height:34px}
+.rk-pk .rpk.dr .rpk-im{width:20px;height:20px}.rk-pk .rpk.dr b{font-size:12px;color:var(--muted)}
+.rk-pk .rpk.hid{border:0;width:34px;height:34px;border-radius:50%;background:#E4E1DA;color:#6B6F77;padding:0}
+.rk-pk .rpk.hid svg{width:16px;height:16px}
+.rk-pk .rpk-t{font-size:11px}
+.rk-card .rk-pk .rpk{background:none!important}
+.rk-card .rk-pk .rpk.hid{background:#E4E1DA!important}
+.rk-card .sv-h small{text-align:right}
