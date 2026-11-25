@@ -1053,3 +1053,17 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .pf-fb{display:flex;align-items:center;gap:12px;background:var(--on);color:#fff;border-radius:22px;padding:14px 16px;font-family:var(--bold);font-weight:700;font-size:15px;text-decoration:none}
 .pf-fb .pf-ic{background:#25D366;color:#fff}.pf-fb .pf-tx small{color:#9A9DA4}.pf-fb em{color:var(--yel)}
 .sheet .pf-list{background:#F5F2EA}
+/* Accueil : tes ligues en cours, petites cartes blanches */
+.dash2{margin:6px 0 16px}
+.dh2{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 2px 10px}
+.dh2>span:first-child{font-family:var(--title);font-weight:700;font-size:13px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.dl-card{display:block;width:100%;text-align:left;background:#fff;border:0;border-radius:18px;padding:12px 14px;margin-bottom:8px;color:var(--on);cursor:pointer}
+.dl-top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.dl-nm{min-width:0}.dl-nm .dk .wm{height:12px;width:auto;display:block;opacity:.45;margin-bottom:2px}
+.dl-nm b{display:flex;align-items:center;gap:6px;font-family:var(--bold);font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden}
+.dl-go{width:20px;height:20px;border-radius:50%;background:#F2EFE8;display:inline-flex;align-items:center;justify-content:center;flex:none}.dl-go svg{width:10px;height:10px}
+.dl-st{font-size:12.5px;color:var(--muted);font-weight:600;white-space:nowrap}.dl-st b{font-family:var(--bold);font-size:19px;color:var(--on);font-weight:800}.dl-st b.ko{color:#C0392B}
+.dl-bar{height:8px;border-radius:8px;background:#EEEAE0;overflow:hidden;margin-top:8px}.dl-bar i{display:block;height:100%;background:var(--yel);border-radius:8px}
+.dl-lg{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);font-weight:600;margin-top:5px}.dl-lg .ko{color:#C0392B}
+.dl-lg span:empty{display:none}
+.dl-more{display:block;width:100%;height:44px;border-radius:14px;border:2px dashed #CFC6B3;background:none;font-family:var(--bold);font-weight:700;font-size:14px;color:var(--on);cursor:pointer}

@@ -993,18 +993,22 @@ function dashCard(myL, todo){
   const pill=todo?`<button class="zp" data-a="tab" data-v="paris"><span class="n">${todo}</span>pari${todo>1?'s':''} à valider${CHV}</button>`:`<button class="zp" data-a="tab" data-v="paris">${IC.thumb}0 pari à valider</button>`;
   let h='';
   const L=myL.filter(c=>c.status!=='finished').sort((a,b)=>(a.status==='upcoming')-(b.status==='upcoming'));
-  if(L.length){
-    h+=`<div class="dh"><span>Tes ligues en cours</span>${pill}</div><div class="dlg">`+L.map(c=>{
-      const nm="X "+esc(stripPrefix(c.lg.name)), kind=c.points?'Race':'Survivor'; let st, pct, cls='', sub='';
-      if(c.status==='upcoming'){ const n=c.mem.length; st=`<b>${n}</b> inscrit${n>1?'s':''}`; pct=100; cls='soon'; sub=` · début dans ${shortDur(t(c.lg.startAt))}`; }
-      else if(c.points){ const me=c.rankOf[S.me]||{}; st=`<b>${me.pos||'–'}${me.pos===1?'er':'e'}</b> · ${me.pts||0} pts sur ${c.N}`; pct=Math.min(100,Math.round((me.pts||0)*100/c.N)); }
-      else if(!c.alive.includes(S.me)){ st='Éliminé'; pct=Math.round(c.alive.length*100/c.mem.length); cls='mut'; }
-      else if(c.alive.length===1){ st='Dernier survivant !'; pct=100; cls='ok'; }
-      else { st=`<b>${c.alive.length}</b> survivants sur ${c.mem.length}`; pct=Math.max(2,Math.round(c.alive.length*100/c.mem.length)); }
-      return `<button class="drow" data-a="open" data-v="${c.lg.id}"><span class="nm"><small class="dk">${WM(c.points?'oneshot':'survivor',true)}${sub?`<span>${sub}</span>`:''}</small><span class="nm-l">${nm}<i class="nm-go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></i></span></span><span class="st ${cls}">${st}</span><span class="bar ${cls}"><i style="width:${pct}%"></i></span></button>`; }).join('')+`</div>`;
-  }
-  if(!h) return '';
-  return `<div class="nh-card2 dash">${h}</div>`;
+  if(!L.length) return '';
+  const CHV2='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+  const card=c=>{
+    const nm=`<div class="dl-nm"><small class="dk">${WM(c.points?'oneshot':'survivor')}</small><b>X ${esc(stripPrefix(c.lg.name))}<span class="dl-go">${CHV2}</span></b></div>`;
+    let st, pct, l='', r='';
+    if(c.points){ const me=c.rankOf[S.me]||{}, p=me.pts||0; st=`<b>${p}</b> / ${c.N} pts`; pct=p*100/c.N;
+      l=c.status==='upcoming'?`Début dans ${shortDur(t(c.lg.startAt))}`:`Classement : ${me.pos||'–'}${me.pos===1?'er':'e'}`; }
+    else { const a=c.status==='upcoming'?c.mem.length:c.alive.length, n=c.mem.length, out=n-a, dead=c.status!=='upcoming'&&!c.alive.includes(S.me);
+      st=`<b class="${dead?'ko':''}">${a}</b> / ${n} en vie`; pct=a*100/Math.max(1,n);
+      if(c.status==='upcoming') l=`Début dans ${shortDur(t(c.lg.startAt))}`;
+      else { const cur=c.rounds.find(r=>t(r.deadline)>now()); const jn=cur?((c.info[cur.k]||{}).n||(c.rounds.indexOf(cur)+1)):''; l=`${out} éliminé${out>1?'s':''}`; r=dead?'<b class="ko">Tu es éliminé</b>':`Tu es en vie${jn?' · J'+jn:''}`; } }
+    return `<button class="dl-card" data-a="open" data-v="${c.lg.id}"><div class="dl-top">${nm}<div class="dl-st">${st}</div></div><div class="dl-bar"><i style="width:${Math.max(2,Math.min(100,pct))}%"></i></div><div class="dl-lg"><span>${l}</span><span>${r}</span></div></button>`; };
+  const all=S.open.dashAll, shown=all?L:L.slice(0,3);
+  h+=`<div class="dh2"><span>Tes ligues en cours</span>${pill}</div>`+shown.map(card).join('');
+  if(L.length>3) h+=`<button class="dl-more" data-a="toggle" data-v="dashAll">${all?'Voir moins':`Voir plus (${L.length-3})`}</button>`;
+  return `<div class="dash2">${h}</div>`;
 }
 function viewHome(){
   const all=Object.values(S.leagues).filter(visible).map(l=>C(l.id)).filter(Boolean);
