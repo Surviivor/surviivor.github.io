@@ -915,3 +915,6 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .lhero{position:relative;padding:18px 16px 16px}
 .lhero .lh-gear{position:absolute;top:14px;right:14px}
 .lhero.adm .ltitle{padding-right:44px}
+/* Jokers : pastilles et boutons violets */
+.ict-joker{background:#E9E4FF}
+.jitem .jt .jbtn,.jbtn{background:#5B3FD6;color:#fff}
