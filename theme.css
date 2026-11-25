@@ -918,3 +918,11 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 /* Jokers : pastilles et boutons violets */
 .ict-joker{background:#E9E4FF}
 .jitem .jt .jbtn,.jbtn{background:#5B3FD6;color:#fff}
+/* Profil : boutons au style de l'accueil */
+.pf-btns{display:flex;gap:8px;margin:18px 0 20px}
+.pf-btns .nc-join{flex:1;width:auto}
+.nc-join{background:none;cursor:pointer;font-family:var(--bold);text-decoration:none}
+.pf-fb{margin:14px 0}
+.pf-out{margin-top:22px}
+.pf-del{margin-top:10px;color:#C0392B}
+.nc-join .ic{width:18px;height:18px}

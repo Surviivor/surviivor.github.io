@@ -259,6 +259,7 @@ const IC=(()=>{ const sv=(d,extra='')=>`<svg class="ic" viewBox="0 0 24 24" fill
   beer:sv('<path d="M5 8h10v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8z"/><path d="M15 10h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/><path d="M5 8c0-2 1.5-3 3-3 .5-1 1.5-2 3-2s2.5 1 3 2c1.5 0 2 1 1 3"/>'),
   alert:sv('<path d="M12 3l10 18H2L12 3z"/><path d="M12 10v4M12 17.5v.5"/>'),
   chat:sv('<path d="M21 11.5a8.4 8.4 0 0 1-12.3 7.4L3 20.5l1.6-5.4A8.5 8.5 0 1 1 21 11.5z"/><path d="M8.5 11.5h.01M12.5 11.5h.01M16.5 11.5h.01" stroke-width="2.6"/>'),
+  crop:sv('<path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/>'),
   ticket:sv('<path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4V8z"/><path d="M14 6v12" stroke-dasharray="2 2.5"/>'),
   chart:sv('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'),
   money:sv('<rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 9.5v5M18 9.5v5"/>'),
@@ -1806,17 +1807,17 @@ function viewProfil(){
   const my=Object.keys(S.leagues).filter(lid=>isMember(lid)&&shownL(lid)).map(C).filter(Boolean);
   const wins=my.filter(c=>c.winners.includes(S.me)).length, alive=my.filter(c=>c.status!=='finished'&&c.alive.includes(S.me)).length;
   let h=`<div class="ptitle">${titleImg('title-profil.png','PROFIL')}</div>`;
-  h+=`<div style="text-align:center"><button class="avatar-big" data-a="uploadAvatar"><img src="${me.avatar?blobUrl(me.avatar):DEFAULT_AVATAR}" data-fb="${esc(initials(name))}" alt=""><span class="cam">${I.cam}</span></button><div style="margin:18px 0 22px;display:flex;gap:22px;justify-content:center"><button class="link" data-a="uploadAvatar">Changer la photo</button>${me.avatar?'<button class="link" data-a="recropAvatar">Recadrer</button>':''}</div></div>`;
+  h+=`<div style="text-align:center"><button class="avatar-big" data-a="uploadAvatar"><img src="${me.avatar?blobUrl(me.avatar):DEFAULT_AVATAR}" data-fb="${esc(initials(name))}" alt=""><span class="cam">${I.cam}</span></button><div class="pf-btns"><button class="nc-join" data-a="uploadAvatar">${I.cam} Changer la photo</button>${me.avatar?`<button class="nc-join" data-a="recropAvatar">${IC.crop} Recadrer</button>`:''}</div></div>`;
   h+=`<div class="card pcard" style="position:relative"><button class="pedit" data-a="editName" aria-label="Modifier">${I.edit}</button><div style="min-width:0"><div class="lbl">Nom d'utilisateur</div><div class="pname" style="margin-top:10px">${esc(name)}</div>${S.email?`<div class="pmail">${esc(S.email)}</div>`:'<div style="height:10px"></div>'}${S.isOwner?`<span class="badge">${I.shield}ADMIN</span>`:''}</div></div>`;
-  h+=`<a class="fb-btn" href="https://wa.me/33650710675?text=${encodeURIComponent('Salut ! Une remarque / idée pour Survivor : ')}" target="_blank" rel="noopener"><span class="fb-ic">${IC.chat}</span><span class="fb-tx"><b>Une remarque, une idée ?</b></span><span class="fb-go">${I.arrow}</span></a>`;
+  h+=`<a class="nc-join nc-create pf-fb" href="https://wa.me/33650710675?text=${encodeURIComponent('Salut ! Une remarque / idée pour Survivor : ')}" target="_blank" rel="noopener">${IC.chat} Donner mon feedback</a>`;
   if(S.mode==='demo') h+=`<div class="card" style="font-size:14px;line-height:1.5"><b>Site de test.</b> Nouveau design avec des données fictives : rien n'est enregistré.</div>`;
   if(S.readOnly) h+=`<div class="card" style="background:var(--brand-soft);font-size:14px;line-height:1.5"><b>Lecture seule.</b> Pour jouer, l'organisateur doit t'inviter sur le site avec le rôle Éditeur.</div>`;
   const jl=my.filter(c=>c.started && c.rounds.some(r=>t(r.deadline)<=now()));
   if(jl.length){ h+=`<div class="sec">Mon parcours</div>`+jl.map(c=>journey(c,S.me,{title:true,share:true})).join(''); }
   if(CREDITS && Object.keys(CREDITS).length) h+=`<details class="card coll" style="margin-top:14px"><summary><span class="lbl">Crédits photos</span>${I.chev}</summary><div class="credits">${PHOTOS.filter(p=>CREDITS[p.k]).map(p=>`<p><b>${esc(p.label)}</b> — ${creditLine(p.k)}</p>`).join('')}</div></details>`;
   h+=installCard('profil');
-  if(window.survivorLogout) h+=`<div style="text-align:center;margin-top:26px"><button class="link" data-a="logout">${I.logout.replace('<svg','<svg width="22" height="22"')} Se déconnecter</button></div>`;
-  h+=`<div style="text-align:center;margin-top:26px"><button class="link red" style="color:var(--err)" data-a="${window.survivorDeleteAccount?'deleteAccount':'wipe'}">${I.trash.replace('<svg','<svg width="22" height="22"')} ${window.survivorDeleteAccount?'Supprimer mon compte':'Supprimer mes données'}</button></div>`;
+  if(window.survivorLogout) h+=`<button class="nc-join pf-out" data-a="logout">${I.logout} Se déconnecter</button>`;
+  h+=`<button class="nc-join pf-del" data-a="${window.survivorDeleteAccount?'deleteAccount':'wipe'}">${I.trash} ${window.survivorDeleteAccount?'Supprimer mon compte':'Supprimer mes données'}</button>`;
   return h;
 }
 
