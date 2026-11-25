@@ -1799,7 +1799,7 @@ function viewProfil(){
   if(jl.length){ h+=`<div class="sec">Mon parcours</div>`+jl.map(c=>journey(c,S.me,{title:true,share:true})).join(''); }
   if(CREDITS && Object.keys(CREDITS).length) h+=`<details class="card coll" style="margin-top:14px"><summary><span class="lbl">Crédits photos</span>${I.chev}</summary><div class="credits">${PHOTOS.filter(p=>CREDITS[p.k]).map(p=>`<p><b>${esc(p.label)}</b> — ${creditLine(p.k)}</p>`).join('')}</div></details>`;
   h+=installCard('profil');
-  if(window.survivorLogout) h+=`<button class="logout-btn" data-a="logout"><span>${I.logout}</span>Se déconnecter</button>`;
+  if(window.survivorLogout) h+=`<div style="text-align:center;margin-top:26px"><button class="link" data-a="logout">${I.logout.replace('<svg','<svg width="22" height="22"')} Se déconnecter</button></div>`;
   h+=`<div style="text-align:center;margin-top:26px"><button class="link red" style="color:var(--err)" data-a="${window.survivorDeleteAccount?'deleteAccount':'wipe'}">${I.trash.replace('<svg','<svg width="22" height="22"')} ${window.survivorDeleteAccount?'Supprimer mon compte':'Supprimer mes données'}</button></div>`;
   return h;
 }
