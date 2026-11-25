@@ -670,3 +670,22 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .card.exp>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
 .card.exp b{font-family:var(--bold);font-weight:800;font-size:15px}
 .card.exp small{color:var(--muted);font-size:12.5px;line-height:1.35}
+/* votes des autres : pastille % */
+.tile .vpill,.vleg .vpill{background:#16181D;color:#fff;font-size:10.5px;font-weight:800;border-radius:999px;padding:2px 7px;line-height:1.3}
+.tile .vpill{position:absolute;top:7px;left:7px}
+.tile.sel .vpill{background:#F6C343;color:#16181D}
+.vleg{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-top:12px}
+/* STATS : paris de la prochaine journée */
+.nv-fun{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 12px}
+.nv-f{display:flex;gap:8px;background:var(--bg);border-radius:12px;padding:9px 10px;font-size:13px;line-height:1.3}
+.nv-f>span{font-size:18px}
+.nv-f small{display:block;color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.nv-r{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid rgba(22,24,29,.06)}
+.nv-r .av,.nv-r img.av{width:30px;height:30px}
+.nv-n{flex:1;min-width:0;font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nv-n em{font-style:normal;color:var(--muted);font-weight:500}
+.nv-p{display:flex;align-items:center;gap:5px;font-size:13px}
+.nv-p img.lg{width:20px;height:20px;object-fit:contain}
+.nv-p i{font-style:normal;color:var(--muted);margin:0 2px}
+.nv-r.off{opacity:.55}
+.nv .stitle{font-family:var(--bold);font-weight:800;font-size:17px;text-transform:uppercase;margin-bottom:6px;display:flex;gap:8px;align-items:center}
