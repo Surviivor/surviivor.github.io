@@ -1070,3 +1070,6 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .dl-more{border:0;display:flex;align-items:center;justify-content:center;gap:8px;height:40px}
 .dl-mi{display:inline-flex}.dl-mi svg{width:16px;height:16px;transition:transform .2s}.dl-mi.up svg{transform:rotate(180deg)}
 .dash2{margin-bottom:28px}
+/* Accueil : cartes de ligue en noir */
+.dl-card{background:var(--on);color:#fff}.dl-nm .dk .wm{filter:invert(1);opacity:.55}.dl-go{background:#2A2D34;color:var(--yel)}
+.dl-st{color:#9A9DA4}.dl-st b{color:#fff}.dl-st b.ko,.dl-lg .ko{color:#FF7A6B}.dl-bar{background:#33363D}.dl-lg{color:#9A9DA4}
