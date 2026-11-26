@@ -88,6 +88,8 @@ for key in NAMES:
         href=t.get('logo') or ((t.get('logos') or [{}])[0].get('href'))
         cur=teams.get(tid,{})
         teams[tid]={'n':t.get('displayName') or t.get('name') or cur.get('n','?'),'logo':cur.get('logo') or logo_for(href)}
+        sn=t.get('shortDisplayName') or cur.get('sn')
+        if sn and sn!=teams[tid]['n']: teams[tid]['sn']=sn
     for e in (sb or {}).get('events',[]):
         comp=e['competitions'][0]; cs=comp.get('competitors',[])
         h=next((c for c in cs if c.get('homeAway')=='home'),None); a=next((c for c in cs if c.get('homeAway')=='away'),None)

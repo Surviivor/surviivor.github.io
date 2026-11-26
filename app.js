@@ -328,6 +328,14 @@ function rankMap(comp){
   return map;
 }
 // rank of a team before the round: snapshot saved at import, else current standings
+function shortName(lg, m, side){ const f=S.feeds[(m&&m.comp)||(lg&&lg.comp)]; const tm=f&&f.teams&&side&&side.id?f.teams[String(side.id)]:null; return (tm&&tm.sn)||side.n||''; }
+// nom + pastille de classement, sans jamais couper le nom : la pastille reste collée au dernier (ou premier) mot
+function teamLabel(lg, m, side, right){
+  const nm=esc(shortName(lg,m,side)), rk=rankTag(lg,m,side); if(!rk) return `<span class="tn">${nm}</span>`;
+  const i=right?nm.indexOf(' '):nm.lastIndexOf(' ');
+  if(right){ const a=i<0?nm:nm.slice(0,i), b=i<0?'':nm.slice(i); return `<span class="tn"><span class="nw">${rk}${a}</span>${b}</span>`; }
+  const a=i<0?'':nm.slice(0,i+1), b=i<0?nm:nm.slice(i+1); return `<span class="tn">${a}<span class="nw">${b}${rk}</span></span>`;
+}
 function sideRank(lg, m, side){ if(!side) return null; if(side.rk) return side.rk; const map=rankMap(m.comp||lg.comp); return map&&side.id?map[String(side.id)]||null:null; }
 function pickRank(lg, r, p){ if(!p||p.p==='D'||!r.matches) return null; const m=r.matches[p.m]; if(!m) return null; return sideRank(lg, m, p.p==='H'?m.h:m.a); }
 function audacity(lg, rounds, info, uid, upto){
@@ -1121,13 +1129,13 @@ function tileHtml(c, r, m, side, opts){
   const ban = side!=='D' && opts.ban && opts.ban.has(teamKey(sd));
   const used = side!=='D' && ((opts.used && opts.used.has(teamKey(sd))) || ban);
   const lant = side!=='D' && lg.redLantern && isLantern(lg,r,{m:m.k,p:side});
-  let cls='tile'; if(sel) cls+=' sel'; if(!can && !sel) cls+=' off'; if(used && !sel) cls+=' used'; if(ban && !sel) cls+=' ban';
+  let cls='tile v2'; if(sel) cls+=' sel'; if(!can && !sel) cls+=' off'; if(used && !sel) cls+=' used'; if(ban && !sel) cls+=' ban';
   if(res){ if(res.r===side) cls+=' win'; else if(sel) cls+=' lose'; }
   const bd = side==='D' ? '<b class="eq">=</b>' : (logoOf(sd)?`<img src="${esc(logoOf(sd))}" data-fb="${esc(initials(sd.n).slice(0,1))}" alt="">`:esc(initials(sd.n).slice(0,1)));
-  const name = side==='D' ? 'Nul' : esc(sd.n);
-  let pct=''; if(opts.dist){ const tot=opts.dist.tot; const k=m.k+'|'+side; const v=tot?Math.round((opts.dist.c[k]||0)*100/tot):0; if(v) pct=`<span class="vbar"><i style="width:${v}%"></i></span><span class="vlab">${v} %</span>`; }
+  const name = side==='D' ? 'Nul' : 'Victoire';
+  let pct=''; if(opts.dist){ const tot=opts.dist.tot; const k=m.k+'|'+side; const v=tot?Math.round((opts.dist.c[k]||0)*100/tot):0; pct=`<span class="vlab">${v} %</span>`; }
   const act = can && !used ? `data-a="pick" data-v="${lg.id}|${r.k}|${m.k}|${side}"` : 'disabled';
-  return `<button class="${cls}" ${act}>${sel?`<span class="ck">${I.check}</span>`:''}${ban?'<span class="bomb" title="Sabotée">'+IC.bomb+'</span>':''}<span class="bd">${bd}</span><span class="nm">${name}</span>${lant?`<span class="lnt">${CI.lantern} ${c.points?'+2 pts':'+1 vie'}</span>`:''}${pct}</button>`;
+  return `<button class="${cls}" ${act} aria-label="${side==='D'?'Match nul':'Victoire '+esc(sd.n)}">${sel?`<span class="ck">${I.check}</span>`:''}${ban?'<span class="bomb" title="Sabotée">'+IC.bomb+'</span>':''}<span class="nm">${name}</span>${lant?`<span class="lnt">${CI.lantern} ${c.points?'+2 pts':'+1 vie'}</span>`:''}${pct}</button>`;
 }
 function roundDist(c, r){
   const voters=(c.info[r.k]&&c.info[r.k].aliveBefore)||c.mem; const cnt={}; let tot=0;
@@ -1214,7 +1222,7 @@ function roundCard(c, r, o={}){
     const res=matchResult(lg,m); const sc=matchScore(lg,m);
     const chosen=o.compact && pickSides(my).some(x=>x.m===m.k);
     h+=`<div class="match ${chosen?'chosen':''}">`;
-    if(!o.compact || o.mline) h+=`<div class="mline"><span class="tm">${logoTag(m.h)}<span>${esc(m.h.n)}</span>${rankTag(lg,m,m.h)}</span><span class="vs">${sc?`<span class="res">${esc(sc)}</span>`:'VS'}</span><span class="tm r">${logoTag(m.a)}<span>${esc(m.a.n)}</span>${rankTag(lg,m,m.a)}</span></div>`;
+    if(!o.compact || o.mline) h+=`<div class="mline v2 ${sc?'sc':''}"><span class="tm">${logoTag(m.h)}${teamLabel(lg,m,m.h)}</span>${sc?`<span class="vs"><span class="res">${esc(sc)}</span></span>`:''}<span class="tm r">${teamLabel(lg,m,m.a,true)}${logoTag(m.a)}</span></div>`;
     h+=`<div class="tiles ${allowDraw(lg)?'':'two'}">${tileHtml(c,r,m,'H',{can,used,dist,ban})}${allowDraw(lg)?tileHtml(c,r,m,'D',{can,used,dist,ban}):''}${tileHtml(c,r,m,'A',{can,used,dist,ban})}</div></div>`;
   });
   return h+roundFoot(c,r)+'</div>';
