@@ -331,7 +331,7 @@ function rankMap(comp){
 function shortName(lg, m, side){ const f=S.feeds[(m&&m.comp)||(lg&&lg.comp)]; const tm=f&&f.teams&&side&&side.id?f.teams[String(side.id)]:null; return (tm&&tm.sn)||side.n||''; }
 // nom sur une seule ligne (coupé avec … si trop long) + pastille de classement toujours visible
 function teamLabel(lg, m, side, right){
-  const nm=`<span class="tn">${esc(shortName(lg,m,side))}</span>`, rk=rankTag(lg,m,side);
+  const nm=`<span class="tn">${esc(shortName(lg,m,side))}</span>`, n=sideRank(lg,m,side), rk=n?`<span class="rk2">${n}${n===1?'er':'e'}</span>`:'';
   return right?rk+nm:nm+rk;
 }
 function sideRank(lg, m, side){ if(!side) return null; if(side.rk) return side.rk; const map=rankMap(m.comp||lg.comp); return map&&side.id?map[String(side.id)]||null:null; }
