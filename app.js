@@ -1993,7 +1993,7 @@ function render(){
   const todo=countTodo();
   const tabs=[['ligues','Ligues',I.trophy],['paris','Mes paris',I.paris],['sondage','Feedback',IC.qmark],['admin',S.isOwner?'Admin':'Ma ligue',S.isOwner?I.gear:I.plus],['profil','Profil',I.user]];
   const ptodo=pollTodo();
-  app.innerHTML=deEmoji((S.mode==='demo'?`<div class="demo"><span><b>SITE DE TEST</b> · nouveau design, données fictives</span></div>`:'')+
+  app.innerHTML=deEmoji((S.mode==='demo'?`<div class="demo"><span><b>MODE DÉMO</b> · données fictives, rien n'est enregistré.</span></div>`:'')+
     (S.stale?`<div class="demo">⚠️ <span>Connexion lente : les données peuvent ne pas être à jour.</span><button class="demo-btn" data-a="reload">Réessayer</button></div>`:'')+
     (()=>{ if(S.verdict===undefined){ S.verdict=findVerdict(); } return S.verdict?verdictHtml(S.verdict):''; })()+`<div class="page">${body}</div><nav class="bottom">${tabs.map(([k,l,ic])=>`<button class="${v.tab===k?'on':''}" data-a="tab" data-v="${k}">${ic}${l}${k==='paris'&&todo?`<span class="nbadge">${todo}</span>`:''}${k==='sondage'&&ptodo?`<span class="nbadge">${ptodo}</span>`:''}</button>`).join('')}</nav>`);
   Object.entries(keep).forEach(([id,val])=>{ const el=document.getElementById(id); if(el&&el.type!=='file') el.value=val; });
