@@ -498,6 +498,7 @@ async function boot(){
     if(S.guest && err && err.code==='permission-denied'){ window.survivorLogin('Le dernier en vie remporte la ligue.',true); return; }
     toast('Données indisponibles pour le moment.',true); render(); });
   sub('leagues',S.leagues); sub('players',S.players);
+  try{ db.collection('votes').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.votes=o; render(); }, e=>console.warn('votes',e)); }catch(e){}
   render(); setInterval(render,30000);
 }
 
@@ -697,6 +698,9 @@ const A = {
     writeMe({picks:{[lid]:{[rk]:{m:mk||null,p,m2:null,p2:null,j:false,at}}}}).then(()=>toast(cur?'Choix modifié !':'Choix enregistré !'));
   },
   toggle(v){ S.open[v]=!S.open[v]; render(); },
+  vote(v){ if(S.guest) return window.survivorLogin&&window.survivorLogin('Connecte-toi pour voter.'); const [pid,a]=v.split('|'); const rec={poll:pid,uid:S.me,a:+a,at:Date.now()};
+    S.votes[pid+'__'+S.me]=rec; render();
+    if(S.mode!=='demo') db.doc('votes/'+pid+'__'+S.me).set(rec).catch(e=>handleErr(e)); },
   verdictClose(){ const v=S.verdict; if(v){ try{ localStorage.setItem(vKey(v.lid,v.r.k),'1'); }catch(e){} } S.verdict=null; render(); },
   verdictOpen(){ const v=S.verdict; if(v){ try{ localStorage.setItem(vKey(v.lid,v.r.k),'1'); }catch(e){} } S.verdict=null; A.open(v.lid); },
   async exportEmails(){
@@ -1892,6 +1896,33 @@ function viewManage(lid){
   return h;
 }
 
+// ---------- Sondages (questions de l'organisateur ; ajouter les nouvelles en haut de la liste)
+const POLLS=[
+  {id:'looser', q:'Une ligue LOOSER : tu dois parier sur une équipe qui va perdre pour survivre.', k:'Nouvelle idée', a:[['J’aime l’idée !','thumb'],['Non merci','x']]},
+  {id:'vis', q:'Les paris des autres joueurs…', k:'Tu préfères ?', a:[['Pouvoir les voir tout de suite','eye'],['Les garder secrets jusqu’au début de la journée','eyeOff']]},
+];
+S.votes=S.votes||{};
+const myVote=pid=>{ const v=S.votes[pid+'__'+S.me]; return v?v.a:null; };
+const pollTodo=()=>S.guest||!S.me?0:POLLS.filter(p=>myVote(p.id)===null).length;
+function pollCard(p){
+  const mine=myVote(p.id), done=mine!==null;
+  const votes=Object.values(S.votes).filter(v=>v.poll===p.id), n=votes.length;
+  const cnt=p.a.map((_,i)=>votes.filter(v=>v.a===i).length), max=Math.max(...cnt);
+  const ic=k=>IC[k]||'';
+  let body;
+  if(!done) body=p.a.map(([l,k],i)=>`<button class="po-op" data-a="vote" data-v="${p.id}|${i}"><i>${ic(k)}</i><span>${esc(l)}</span></button>`).join('')+`<div class="po-ft">Vote pour voir les résultats${n?` · ${n} vote${n>1?'s':''}`:''}</div>`;
+  else body=p.a.map(([l,k],i)=>{ const pc=n?Math.round(cnt[i]*100/n):0; return `<button class="po-rr" data-a="vote" data-v="${p.id}|${i}"><div class="po-rl"><i>${ic(k)}</i><span>${esc(l)}${mine===i?'<span class="po-me">TON VOTE</span>':''}</span><b>${pc} %</b></div><div class="po-rb"><span class="${cnt[i]===max&&cnt[i]>0?'w':''}" style="width:${pc}%"></span></div></button>`; }).join('')+`<div class="po-ft">${n} vote${n>1?'s':''} · touche une autre réponse pour changer d'avis</div>`;
+  return `<div class="po ${done?'done':''}"><div class="po-k">${IC.chart}${esc(p.k||'Sondage')}</div><div class="po-q">${esc(p.q)}</div>${body}</div>`;
+}
+function viewSondage(){
+  if(S.mode==='demo' && !S.votesSeeded){ S.votesSeeded=true; Object.keys(S.players).filter(u=>u!==S.me).forEach((u,i)=>{ POLLS.forEach((p,j)=>{ S.votes[p.id+'__'+u]={poll:p.id,uid:u,a:(i*7+j*3)%5<3?0:1,at:0}; }); }); }
+  let h=`<div class="ptitle"><h1 class="po-title">SONDAGES</h1></div>`;
+  if(S.guest) h+=`<div class="card" style="font-size:14px">Connecte-toi pour voter et voir les résultats.</div>`;
+  const todo=POLLS.filter(p=>myVote(p.id)===null), done=POLLS.filter(p=>myVote(p.id)!==null);
+  if(todo.length) h+=`<div class="pf-sec">À toi de voter (${todo.length})</div>`+todo.map(pollCard).join('');
+  if(done.length) h+=`<div class="pf-sec">Déjà votés</div>`+done.map(pollCard).join('');
+  return h;
+}
 function viewProfil(){
   const me=S.players[S.me]||{}; const name=nameOf(S.me);
   const row=(act,ic,bg,col,t,sub,cls='',extra='')=>`<button class="pf-it ${cls}" data-a="${act}" ${extra}><span class="pf-ic" style="background:${bg};color:${col}">${ic}</span><span class="pf-tx">${t}${sub?`<small>${sub}</small>`:''}</span><em>›</em></button>`;
@@ -1956,12 +1987,14 @@ function render(){
   else if(v.tab==='ligues') body=viewHome();
   else if(v.tab==='paris') body=viewParis();
   else if(v.tab==='admin') body=viewAdmin();
+  else if(v.tab==='sondage') body=viewSondage();
   else body=viewProfil();
   const todo=countTodo();
-  const tabs=[['ligues','Ligues',I.trophy],['paris','Mes paris',I.paris],['admin',S.isOwner?'Admin':'Ma ligue',S.isOwner?I.gear:I.plus],['profil','Profil',I.user]];
+  const tabs=[['ligues','Ligues',I.trophy],['paris','Mes paris',I.paris],['sondage','Sondages',IC.chart],['admin',S.isOwner?'Admin':'Ma ligue',S.isOwner?I.gear:I.plus],['profil','Profil',I.user]];
+  const ptodo=pollTodo();
   app.innerHTML=deEmoji((S.mode==='demo'?`<div class="demo"><span><b>MODE DÉMO</b> · données fictives, rien n'est enregistré.</span></div>`:'')+
     (S.stale?`<div class="demo">⚠️ <span>Connexion lente : les données peuvent ne pas être à jour.</span><button class="demo-btn" data-a="reload">Réessayer</button></div>`:'')+
-    (()=>{ if(S.verdict===undefined){ S.verdict=findVerdict(); } return S.verdict?verdictHtml(S.verdict):''; })()+`<div class="page">${body}</div><nav class="bottom">${tabs.map(([k,l,ic])=>`<button class="${v.tab===k?'on':''}" data-a="tab" data-v="${k}">${ic}${l}${k==='paris'&&todo?`<span class="nbadge">${todo}</span>`:''}</button>`).join('')}</nav>`);
+    (()=>{ if(S.verdict===undefined){ S.verdict=findVerdict(); } return S.verdict?verdictHtml(S.verdict):''; })()+`<div class="page">${body}</div><nav class="bottom">${tabs.map(([k,l,ic])=>`<button class="${v.tab===k?'on':''}" data-a="tab" data-v="${k}">${ic}${l}${k==='paris'&&todo?`<span class="nbadge">${todo}</span>`:''}${k==='sondage'&&ptodo?`<span class="nbadge">${ptodo}</span>`:''}</button>`).join('')}</nav>`);
   Object.entries(keep).forEach(([id,val])=>{ const el=document.getElementById(id); if(el&&el.type!=='file') el.value=val; });
   if(focusId){ const el=document.getElementById(focusId); if(el) el.focus(); }
   wmify(app);
