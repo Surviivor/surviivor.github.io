@@ -220,7 +220,7 @@ function loadFeedIndex(){
 }
 const teamOf = (feed,id) => (feed && feed.teams && feed.teams[id]) || {n:'?'};
 // Logos corrigés (ESPN renvoie un mauvais logo ou aucun pour ces clubs de rugby)
-const LOGO_FIX={'Bayonne':'data/logos/rugby_fix_bayonne.png','Aviron Bayonnais':'data/logos/rugby_fix_bayonne.png','Perpignan':'data/logos/rugby_fix_perpignan.png','USA Perpignan':'data/logos/rugby_fix_perpignan.png','Vannes':'data/logos/rugby_fix_vannes.png','RC Vannes':'data/logos/rugby_fix_vannes.png','Section Paloise':'data/logos/rugby_teams_270567.png'};
+const LOGO_FIX={'Bayonne':'data/logos/rugby_fix_bayonne.png','Aviron Bayonnais':'data/logos/rugby_fix_bayonne.png','Perpignan':'data/logos/rugby_fix_perpignan.png','USA Perpignan':'data/logos/rugby_fix_perpignan.png','Vannes':'data/logos/rugby_fix_vannes.png','RC Vannes':'data/logos/rugby_fix_vannes.png','Section Paloise':'data/logos/rugby_teams_270567.png','Bordeaux':'data/logos/rugby_teams_143737.png','Stade Toulousain':'data/logos/rugby_teams_25922.png','LOU Rugby':'data/logos/rugby_teams_143736.png'};
 const BAD_LOGOS=/countries_(usa|van)\.png$/;
 function logoOf(side){ if(!side) return ''; return LOGO_FIX[side.n] || side.logo || ''; }
 function logoTag(side, cls='lg'){ const u=logoOf(side); return u ? `<img class="${cls}" src="${esc(u)}" data-fb="" alt="">` : ''; }
@@ -1092,7 +1092,7 @@ function dlLine(r){
   const closed=t(r.deadline)<=now();
   return closed ? `<div class="dl closed">${I.clock}Choix clos depuis le ${fmtDT(r.deadline)}</div>` : `<div class="dl open">${I.clock}<span>Choix ouvert jusqu'au ${fmtDT(r.deadline)} · <b class="cdl" data-t="${t(r.deadline)}">${cdText(t(r.deadline))}</b></span></div>`;
 }
-function shortDur(ms){ const d=ms-now(); if(d<=0) return 'quelques instants'; const m=Math.floor(d/60000), h=Math.floor(m/60), j=Math.floor(h/24); return j>=1?`${j}j ${h%24}h`:h>=1?`${h}h ${String(m%60).padStart(2,'0')}`:`${Math.max(1,m)} min`; }
+function shortDur(ms){ const d=ms-now(); if(d<=0) return 'quelques instants'; const m=Math.floor(d/60000), h=Math.floor(m/60), j=Math.floor(h/24); return j>=1?`${j}j ${h%24}h`:h>=1?`${h}h${String(m%60).padStart(2,"0")}`:`${Math.max(1,m)} min`; }
 function cdText(ms){
   const d=ms-now(); if(d<=0) return 'terminé';
   const m=Math.floor(d/60000), h=Math.floor(m/60), j=Math.floor(h/24);

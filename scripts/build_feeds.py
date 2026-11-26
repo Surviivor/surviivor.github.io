@@ -57,7 +57,10 @@ def calc_rugby_standings(teams, events):
 LOGO_FIX={'top14':{'Bayonne':'data/logos/rugby_fix_bayonne.png','Aviron Bayonnais':'data/logos/rugby_fix_bayonne.png',
   'Perpignan':'data/logos/rugby_fix_perpignan.png','USA Perpignan':'data/logos/rugby_fix_perpignan.png',
   'Vannes':'data/logos/rugby_fix_vannes.png','RC Vannes':'data/logos/rugby_fix_vannes.png',
-  'Section Paloise':'data/logos/rugby_teams_270567.png'}}
+  'Section Paloise':'data/logos/rugby_teams_270567.png','Bordeaux':'data/logos/rugby_teams_143737.png',
+  'Stade Toulousain':'data/logos/rugby_teams_25922.png','LOU Rugby':'data/logos/rugby_teams_143736.png'}}
+# Noms courts corrigés à la main (None = garder le nom complet)
+SHORT_FIX={'Manchester United':'Manchester UTD','Tottenham Hotspur':'Tottenham','Crystal Palace':None,'Red Star FC 93':None}
 def fix_logos(key, o):
     fx=LOGO_FIX.get(key)
     if not fx: return
@@ -88,7 +91,8 @@ for key in NAMES:
         href=t.get('logo') or ((t.get('logos') or [{}])[0].get('href'))
         cur=teams.get(tid,{})
         teams[tid]={'n':t.get('displayName') or t.get('name') or cur.get('n','?'),'logo':cur.get('logo') or logo_for(href)}
-        sn=t.get('shortDisplayName') or cur.get('sn')
+        sn=(t.get('shortDisplayName') or cur.get('sn') or '').strip()
+        if teams[tid]['n'] in SHORT_FIX: sn=SHORT_FIX[teams[tid]['n']]
         if sn and sn!=teams[tid]['n']: teams[tid]['sn']=sn
     for e in (sb or {}).get('events',[]):
         comp=e['competitions'][0]; cs=comp.get('competitors',[])
