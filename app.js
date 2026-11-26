@@ -1899,8 +1899,8 @@ function viewManage(lid){
 
 // ---------- Sondages (questions de l'organisateur ; ajouter les nouvelles en haut de la liste)
 const POLLS=[
-  {id:'looser', q:'Une ligue LOOSER : tu dois parier sur une équipe qui va perdre pour survivre.', k:'Nouvelle idée', a:[['J’aime l’idée !','thumb'],['Non merci','x']]},
-  {id:'vis', q:'Les paris des autres joueurs…', k:'Tu préfères ?', a:[['Pouvoir les voir tout de suite','eye'],['Les garder secrets jusqu’au début de la journée','eyeOff']]},
+  {id:'looser', q:'Pouvoir créer des ligues LOOSER : tu dois parier sur une équipe qui va perdre pour survivre.', a:[['J’aime l’idée !','thumb'],['Non merci','x']]},
+  {id:'vis', q:'Les paris des autres joueurs…', a:[['Je veux pouvoir les voir tout de suite','eye'],['C’est mieux de les garder secrets jusqu’au début de la journée','eyeOff']]},
 ];
 S.votes=S.votes||{};
 const myVote=pid=>{ const v=S.votes[pid+'__'+S.me]; return v?v.a:null; };
@@ -1913,7 +1913,7 @@ function pollCard(p){
   let body;
   if(!done) body=p.a.map(([l,k],i)=>`<button class="po-op" data-a="vote" data-v="${p.id}|${i}"><i>${ic(k)}</i><span>${esc(l)}</span></button>`).join('')+`<div class="po-ft">Vote pour voir les résultats${n?` · ${n} vote${n>1?'s':''}`:''}</div>`;
   else body=p.a.map(([l,k],i)=>{ const pc=n?Math.round(cnt[i]*100/n):0; return `<button class="po-rr" data-a="vote" data-v="${p.id}|${i}"><div class="po-rl"><i>${ic(k)}</i><span>${esc(l)}${mine===i?'<span class="po-me">TON VOTE</span>':''}</span><b>${pc} %</b></div><div class="po-rb"><span class="${cnt[i]===max&&cnt[i]>0?'w':''}" style="width:${pc}%"></span></div></button>`; }).join('')+`<div class="po-ft">${n} vote${n>1?'s':''} · touche une autre réponse pour changer d'avis</div>`;
-  return `<div class="po ${done?'done':''}"><div class="po-k">${IC.chart}${esc(p.k||'Sondage')}</div><div class="po-q">${esc(p.q)}</div>${body}</div>`;
+  return `<div class="po ${done?'done':''}"><div class="po-q">${esc(p.q)}</div>${body}</div>`;
 }
 function viewSondage(){
   if(S.mode==='demo' && !S.votesSeeded){ S.votesSeeded=true; Object.keys(S.players).filter(u=>u!==S.me).forEach((u,i)=>{ POLLS.forEach((p,j)=>{ S.votes[p.id+'__'+u]={poll:p.id,uid:u,a:(i*7+j*3)%5<3?0:1,at:0}; }); }); }

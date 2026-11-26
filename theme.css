@@ -1127,3 +1127,13 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 nav.bottom button{min-width:0}
 .po-q{font-family:var(--bold);font-weight:600}
 nav.bottom .nbadge{border:0}
+.po-rl b{font-weight:600}
+/* Feedback : style E (carte blanche, réponses en pilules noires) */
+.po{background:#fff;color:var(--on)}
+.po-q{margin-top:0}
+.po-op{display:inline-flex;width:auto;max-width:100%;margin:0 6px 8px 0;border-radius:999px;background:var(--on);color:#fff;padding:10px 16px 10px 10px;text-align:left}
+.po-op i{width:26px;height:26px;background:var(--yel);color:var(--on)}.po-op i .ic{width:14px;height:14px}
+.po-rr{background:#F5F2EA;color:var(--on)}.po-rl i{background:#fff;color:var(--on)}
+.po-rb{background:#E8E3D8}.po-rb span{background:#B5B1A8}
+.po-ft{color:var(--muted);text-align:left}
+.po-me{background:var(--on);color:var(--yel)}
