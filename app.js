@@ -1552,20 +1552,23 @@ function survivorsView(c){
   if(r && !vis && c.status!=='finished') h+=`<div class="sv-lock">${IC.eyeOff}Choix révélés le ${fmtDT(r.deadline)}</div>`;
   h+=top;
   const list=c.status==='finished'?c.winners:alive;
-  h+=list.map((u,i)=>{ const lv=c.lives?c.lives[u]||0:0;
+  const showPk=r && c.status!=='finished';
+  const nPk=r?((c.info[r.k]||{}).n||(c.rounds.indexOf(r)+1)):'';
+  if(showPk) h+=`<div class="sv-th"><span></span><span>Pari J${nPk}</span></div>`;
+  h+=list.map(u=>{ const lv=c.lives?c.lives[u]||0:0;
     let right='';
-    if(r && c.status!=='finished'){ const p=pickOf(u,lid,r.k);
-      if(!p) right=`<span class="spk none">Pas encore choisi</span>`;
-      else if(vis||u===S.me) right=pickPill(c,r,p);
-      else right=`<span class="spks"><span class="spk hid">${LOCK}<span>Parié</span></span></span>`; }
-    return `<div class="sv-r">${avatarOf(u)}<div class="sv-n">${esc(nameOf(u))}${u===S.me?' <em>(toi)</em>':''}${lv?`<small>${CI.heart} ${lv} vie${lv>1?'s':''}</small>`:''}</div>${right}</div>`; }).join('');
+    if(showPk){ const p=pickOf(u,lid,r.k);
+      if(!p) right=`<span class="sv-none">–</span>`;
+      else if(!vis && u!==S.me) right=`<span class="rpk hid" title="Parié">${LOCK}</span>`;
+      else { const x=pickSides(p)[0], m=(r.matches||{})[x.m];
+        right=!m?'<span class="sv-none">–</span>':x.p==='D'?`<span class="sv-pk dr" title="Nul">${logoTag(m.h,'sv-im')}<b>=</b>${logoTag(m.a,'sv-im')}</span>`:(()=>{ const sd=x.p==='H'?m.h:m.a; return `<span class="sv-pk" title="${esc(sd.n)}">${logoTag(sd,'sv-im')||`<b>${esc((sd.n||'?').slice(0,3))}</b>`}</span>`; })(); } }
+    return `<div class="sv-r2">${avatarOf(u)}<div class="sv-n">${esc(nameOf(u))}${u===S.me?'<span class="toi">TOI</span>':''}${lv?`<small>${CI.heart} ${lv} vie${lv>1?'s':''}</small>`:''}</div><div class="sv-c">${right}</div></div>`; }).join('');
   h+=`</div>`;
-  // éliminés : du dernier tombé au premier
+  // éliminés : du dernier tombé au premier, avec la journée d'élimination
   const dead=standingRows(c).filter(x=>!c.alive.includes(x.u)&&!c.winners.includes(x.u));
   if(dead.length && c.status!=='upcoming'){
-    h+=`<div class="card sv"><div class="sv-h"><span>${IC.skull}Éliminés</span><small>${dead.length}</small></div>`+dead.map(x=>{ const u=x.u, rr=c.lg.rounds[c.elimAt[u]], pk=rr?pickOf(u,lid,c.elimAt[u]):null;
-      const jn=(c.info[c.elimAt[u]]||{}).n||'?'; const what=pk?esc(pickLabel(lg,{...rr,k:c.elimAt[u]},pk)):'pas de choix';
-      return `<div class="sv-r dead">${avatarOf(u,'dead')}<div class="sv-n">${esc(nameOf(u))}${u===S.me?' <em>(toi)</em>':''}<small>Éliminé J${jn} · ${what}</small></div><span class="sv-rk">${x.pos}e${x.tie?' ex æquo':''}</span></div>`; }).join('')+`</div>`;
+    h+=`<div class="card sv"><div class="sv-h"><span>${IC.skull}Éliminés</span><small>${dead.length}</small></div><div class="sv-th"><span></span><span>Journée</span></div>`+dead.map(x=>{ const u=x.u, jn=(c.info[c.elimAt[u]]||{}).n||'?';
+      return `<div class="sv-r2 dead">${avatarOf(u,'dead')}<div class="sv-n">${esc(nameOf(u))}${u===S.me?'<span class="toi">TOI</span>':''}</div><div class="sv-c"><span class="sv-j">J${jn}</span></div></div>`; }).join('')+`</div>`;
   }
   return h;
 }

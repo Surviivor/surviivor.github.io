@@ -1073,3 +1073,18 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 /* Accueil : cartes de ligue en noir */
 .dl-card{background:var(--on);color:#fff}.dl-nm .dk .wm{filter:invert(1);opacity:.55}.dl-go{background:#2A2D34;color:var(--yel)}
 .dl-st{color:#9A9DA4}.dl-st b{color:#fff}.dl-st b.ko,.dl-lg .ko{color:#FF7A6B}.dl-bar{background:#33363D}.dl-lg{color:#9A9DA4}
+/* Survivants : tableau simple (pari de la journée à venir / journée d'élimination) */
+.sv-th,.sv-r2{display:grid;grid-template-columns:36px minmax(0,1fr) 64px;gap:10px;align-items:center}
+.sv-th{font-size:10.5px;font-weight:800;letter-spacing:.7px;color:var(--muted);text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid rgba(22,24,29,.08)}
+.sv-th span:first-child{grid-column:1/3}.sv-th span:last-child{text-align:center}
+.sv-r2{padding:8px 0}.sv-r2+.sv-r2{border-top:1px solid rgba(22,24,29,.06)}
+.sv-r2 .av,.sv-r2 img.av{width:36px;height:36px}
+.sv-r2 .sv-n .toi{margin-left:5px}
+.sv-c{display:flex;justify-content:center;align-items:center}
+.sv-pk{display:flex;align-items:center;gap:2px}.sv-pk .sv-im{width:34px;height:34px;object-fit:contain}
+.sv-pk.dr .sv-im{width:20px;height:20px}.sv-pk.dr b{font-size:12px;color:var(--muted)}
+.sv-c .rpk.hid{border:0;width:34px;height:34px;border-radius:50%;background:#E4E1DA!important;color:#6B6F77;padding:0;display:flex;align-items:center;justify-content:center}
+.sv-c .rpk.hid svg{width:16px;height:16px}
+.sv-none{color:var(--muted);font-weight:700}
+.sv-j{font-family:var(--bold);font-weight:800;font-size:14px;color:#C0392B}
+.sv-r2.dead .sv-n{color:#6B6F77}
