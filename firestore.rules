@@ -28,6 +28,14 @@ service cloud.firestore {
 
     // Carnet d'adresses : l'e-mail de chaque joueur, lisible uniquement par l'admin.
     // Chacun n'écrit que le sien, avec l'e-mail de son propre compte.
+    match /contacts/{uid} {
+      allow read: if isAdmin();
+      allow write: if signedIn() && uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email;
+      allow delete: if signedIn() && (uid == request.auth.uid || isAdmin());
+    }
+
+    // Sondages : un vote par joueur et par question ; chacun ne modifie que le sien.
     match /votes/{vid} {
       allow read: if signedIn();
       allow create, update: if signedIn()
@@ -35,12 +43,6 @@ service cloud.firestore {
         && vid == request.resource.data.poll + '__' + request.auth.uid
         && request.resource.data.a is int;
       allow delete: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
-    }
-    match /contacts/{uid} {
-      allow read: if isAdmin();
-      allow write: if signedIn() && uid == request.auth.uid
-        && request.resource.data.email == request.auth.token.email;
-      allow delete: if signedIn() && (uid == request.auth.uid || isAdmin());
     }
 
     // Choix des joueurs : un document par joueur, ligue et journée.
