@@ -261,6 +261,7 @@ const IC=(()=>{ const sv=(d,extra='')=>`<svg class="ic" viewBox="0 0 24 24" fill
   chat:sv('<path d="M21 11.5a8.4 8.4 0 0 1-12.3 7.4L3 20.5l1.6-5.4A8.5 8.5 0 1 1 21 11.5z"/><path d="M8.5 11.5h.01M12.5 11.5h.01M16.5 11.5h.01" stroke-width="2.6"/>'),
   crop:sv('<path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/>'),
   phone:sv('<rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M11 18h2"/>'),
+  qmark:sv('<circle cx="12" cy="12" r="9.5"/><path d="M9.3 9.2a2.8 2.8 0 0 1 5.4 1c0 1.9-2.7 2.4-2.7 4"/><path d="M12 17.4v.2" stroke-width="2.8"/>'),
   ticket:sv('<path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4V8z"/><path d="M14 6v12" stroke-dasharray="2 2.5"/>'),
   chart:sv('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'),
   money:sv('<rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 9.5v5M18 9.5v5"/>'),
@@ -1916,7 +1917,7 @@ function pollCard(p){
 }
 function viewSondage(){
   if(S.mode==='demo' && !S.votesSeeded){ S.votesSeeded=true; Object.keys(S.players).filter(u=>u!==S.me).forEach((u,i)=>{ POLLS.forEach((p,j)=>{ S.votes[p.id+'__'+u]={poll:p.id,uid:u,a:(i*7+j*3)%5<3?0:1,at:0}; }); }); }
-  let h=`<div class="ptitle"><h1 class="po-title">SONDAGES</h1></div>`;
+  let h=`<div class="ptitle">${titleImg('title-feedback.png','FEEDBACK')}</div>`;
   if(S.guest) h+=`<div class="card" style="font-size:14px">Connecte-toi pour voter et voir les résultats.</div>`;
   const todo=POLLS.filter(p=>myVote(p.id)===null), done=POLLS.filter(p=>myVote(p.id)!==null);
   if(todo.length) h+=`<div class="pf-sec">À toi de voter (${todo.length})</div>`+todo.map(pollCard).join('');
@@ -1990,7 +1991,7 @@ function render(){
   else if(v.tab==='sondage') body=viewSondage();
   else body=viewProfil();
   const todo=countTodo();
-  const tabs=[['ligues','Ligues',I.trophy],['paris','Mes paris',I.paris],['sondage','Sondages',IC.chart],['admin',S.isOwner?'Admin':'Ma ligue',S.isOwner?I.gear:I.plus],['profil','Profil',I.user]];
+  const tabs=[['ligues','Ligues',I.trophy],['paris','Mes paris',I.paris],['sondage','Feedback',IC.qmark],['admin',S.isOwner?'Admin':'Ma ligue',S.isOwner?I.gear:I.plus],['profil','Profil',I.user]];
   const ptodo=pollTodo();
   app.innerHTML=deEmoji((S.mode==='demo'?`<div class="demo"><span><b>MODE DÉMO</b> · données fictives, rien n'est enregistré.</span></div>`:'')+
     (S.stale?`<div class="demo">⚠️ <span>Connexion lente : les données peuvent ne pas être à jour.</span><button class="demo-btn" data-a="reload">Réessayer</button></div>`:'')+
