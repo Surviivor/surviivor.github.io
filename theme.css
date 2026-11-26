@@ -1125,3 +1125,4 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .po-rb{height:8px;border-radius:8px;background:#3A3E46;margin-top:10px;overflow:hidden}.po-rb span{display:block;height:100%;border-radius:8px;background:#6B6F77;transition:width .5s}.po-rb span.w{background:var(--yel)}
 .po-ft{font-size:11.5px;color:#9A9DA4;margin-top:4px;text-align:center}
 nav.bottom button{min-width:0}
+.po-q{font-family:var(--bold);font-weight:600}
