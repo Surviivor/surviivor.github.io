@@ -1912,12 +1912,12 @@ function pollCard(p){
   const ic=k=>IC[k]||'';
   let body;
   if(!done) body=p.a.map(([l,k],i)=>`<button class="po-op" data-a="vote" data-v="${p.id}|${i}"><i>${ic(k)}</i><span>${esc(l)}</span></button>`).join('')+`<div class="po-ft">Vote pour voir les résultats${n?` · ${n} vote${n>1?'s':''}`:''}</div>`;
-  else body=p.a.map(([l,k],i)=>{ const pc=n?Math.round(cnt[i]*100/n):0; return `<button class="po-rr" data-a="vote" data-v="${p.id}|${i}"><div class="po-rl"><i>${ic(k)}</i><span>${esc(l)}${mine===i?'<span class="po-me">TON VOTE</span>':''}</span><b>${pc} %</b></div><div class="po-rb"><span class="${cnt[i]===max&&cnt[i]>0?'w':''}" style="width:${pc}%"></span></div></button>`; }).join('')+`<div class="po-ft">${n} vote${n>1?'s':''} · touche une autre réponse pour changer d'avis</div>`;
+  else body=p.a.map(([l,k],i)=>{ const pc=n?Math.round(cnt[i]*100/n):0; return `<button class="po-rr" data-a="vote" data-v="${p.id}|${i}"><div class="po-rl"><i>${ic(k)}</i><span>${esc(l)}${mine===i?`<span class="po-me" aria-label="Ton vote">${IC.heart}</span>`:''}</span><b>${pc} %</b></div><div class="po-rb"><span class="${cnt[i]===max&&cnt[i]>0?'w':''}" style="width:${pc}%"></span></div></button>`; }).join('')+`<div class="po-ft">${n} vote${n>1?'s':''} · touche une autre réponse pour changer d'avis</div>`;
   return `<div class="po ${done?'done':''}"><div class="po-q">${esc(p.q)}</div>${body}</div>`;
 }
 function viewSondage(){
   if(S.mode==='demo' && !S.votesSeeded){ S.votesSeeded=true; Object.keys(S.players).filter(u=>u!==S.me).forEach((u,i)=>{ POLLS.forEach((p,j)=>{ S.votes[p.id+'__'+u]={poll:p.id,uid:u,a:(i*7+j*3)%5<3?0:1,at:0}; }); }); }
-  let h=`<div class="ptitle">${titleImg('title-feedback.png','FEEDBACK')}</div>`;
+  let h=`<div class="ptitle">${titleImg('title-feedback.png','FEEDBACK')}</div><div class="po-sub">Ton avis pour améliorer le jeu.</div>`;
   if(S.guest) h+=`<div class="card" style="font-size:14px">Connecte-toi pour voter et voir les résultats.</div>`;
   const todo=POLLS.filter(p=>myVote(p.id)===null), done=POLLS.filter(p=>myVote(p.id)!==null);
   if(todo.length) h+=`<div class="pf-sec">À toi de voter (${todo.length})</div>`+todo.map(pollCard).join('');
@@ -1993,7 +1993,7 @@ function render(){
   const todo=countTodo();
   const tabs=[['ligues','Ligues',I.trophy],['paris','Mes paris',I.paris],['sondage','Feedback',IC.qmark],['admin',S.isOwner?'Admin':'Ma ligue',S.isOwner?I.gear:I.plus],['profil','Profil',I.user]];
   const ptodo=pollTodo();
-  app.innerHTML=deEmoji((S.mode==='demo'?`<div class="demo"><span><b>MODE DÉMO</b> · données fictives, rien n'est enregistré.</span></div>`:'')+
+  app.innerHTML=deEmoji((S.mode==='demo'?`<div class="demo"><span><b>SITE DE TEST</b> · nouveau design, données fictives</span></div>`:'')+
     (S.stale?`<div class="demo">⚠️ <span>Connexion lente : les données peuvent ne pas être à jour.</span><button class="demo-btn" data-a="reload">Réessayer</button></div>`:'')+
     (()=>{ if(S.verdict===undefined){ S.verdict=findVerdict(); } return S.verdict?verdictHtml(S.verdict):''; })()+`<div class="page">${body}</div><nav class="bottom">${tabs.map(([k,l,ic])=>`<button class="${v.tab===k?'on':''}" data-a="tab" data-v="${k}">${ic}${l}${k==='paris'&&todo?`<span class="nbadge">${todo}</span>`:''}${k==='sondage'&&ptodo?`<span class="nbadge">${ptodo}</span>`:''}</button>`).join('')}</nav>`);
   Object.entries(keep).forEach(([id,val])=>{ const el=document.getElementById(id); if(el&&el.type!=='file') el.value=val; });

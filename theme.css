@@ -406,7 +406,7 @@ nav.bottom .nbadge{font-size:11px;top:2px;left:auto;right:4px;border:2px solid v
 /* v3 : filtres en onglets soulignés */
 .ftabs{display:flex;gap:22px;overflow-x:auto;scrollbar-width:none;margin:4px 2px 14px;padding:0 4px;border-bottom:1.5px solid rgba(22,24,29,.1)}
 .ftabs::-webkit-scrollbar{display:none}
-.ftabs button{flex:none;background:none;border:0;padding:10px 0 11px;font:600 15px/1 var(--bold),sans-serif;color:var(--muted);position:relative;cursor:pointer;white-space:nowrap}
+.ftabs button{flex:none;background:none;border:0;padding:10px 0 11px;font:600 15px/1 Poppins,system-ui,sans-serif;color:var(--muted);position:relative;cursor:pointer;white-space:nowrap}
 .ftabs button.on{color:var(--ink,#16181D)}
 .ftabs button.on::after{content:"";position:absolute;left:0;right:0;bottom:-1.5px;height:3px;border-radius:3px;background:#F6C343}
 /* option « le dernier » */
@@ -426,7 +426,7 @@ nav.bottom .nbadge{font-size:11px;top:2px;left:auto;right:4px;border:2px solid v
 .nrange input{flex:1;accent-color:#16181D;height:28px}
 .nrange b{min-width:66px;text-align:center;background:#F6C343;border-radius:12px;padding:8px 10px;font-size:20px;font-weight:800}
 .nrange b small{font-size:12px;font-weight:600}
-.how-d{font-family:var(--bold),sans-serif;font-weight:500;font-size:15px;color:var(--muted);text-align:center;background:none;margin:2px 0 12px}
+.how-d{font-family:Poppins,system-ui,sans-serif;font-weight:500;font-size:15px;color:var(--muted);text-align:center;background:none;margin:2px 0 12px}
 .how-d{font-size:12px}
 .ftabs{border-bottom:0}
 .ftabs button.on::after{bottom:2px}
@@ -1137,3 +1137,7 @@ nav.bottom .nbadge{border:0}
 .po-rb{background:#E8E3D8}.po-rb span{background:#B5B1A8}
 .po-ft{color:var(--muted);text-align:left}
 .po-me{background:var(--on);color:var(--yel)}
+
+/* Feedback : coeur + sous-titre */
+.po-me{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;padding:0;border-radius:50%;background:var(--yel);color:var(--on);margin-left:6px;vertical-align:-4px}.po-me .ic{width:11px;height:11px}
+.po-sub{font-size:14px;color:var(--muted);margin:-4px 0 14px}
