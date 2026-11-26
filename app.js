@@ -1216,6 +1216,7 @@ function roundCard(c, r, o={}){
   if(!closed && o.hint!==false) h+=`<div class="hint">Choisis UN seul match et parie dessus.${allowDraw(lg)?'':' Pas de match nul.'} Les équipes déjà jouées sont grisées.</div>`;
   h+=saboAlert(c,r);
   const used=usedTeams(c,S.me,r.k), ban=saboOn(lg)?new Set(sabosOn(lg.id,S.me,r.k).map(x=>x.team)):null; const dist=(closed||picksVisible(lg))?roundDist(c,r):null;
+  if(dist&&dist.tot) h+=`<div class="pct-note">Les % indiquent la part des votes des joueurs pour chaque choix.</div>`;
   matchesOf(r).forEach(m=>{
     const res=matchResult(lg,m); const sc=matchScore(lg,m);
     const chosen=o.compact && pickSides(my).some(x=>x.m===m.k);
