@@ -329,12 +329,10 @@ function rankMap(comp){
 }
 // rank of a team before the round: snapshot saved at import, else current standings
 function shortName(lg, m, side){ const f=S.feeds[(m&&m.comp)||(lg&&lg.comp)]; const tm=f&&f.teams&&side&&side.id?f.teams[String(side.id)]:null; return (tm&&tm.sn)||side.n||''; }
-// nom + pastille de classement, sans jamais couper le nom : la pastille reste collée au dernier (ou premier) mot
+// nom sur une seule ligne (coupé avec … si trop long) + pastille de classement toujours visible
 function teamLabel(lg, m, side, right){
-  const nm=esc(shortName(lg,m,side)), rk=rankTag(lg,m,side); if(!rk) return `<span class="tn">${nm}</span>`;
-  const i=right?nm.indexOf(' '):nm.lastIndexOf(' ');
-  if(right){ const a=i<0?nm:nm.slice(0,i), b=i<0?'':nm.slice(i); return `<span class="tn"><span class="nw">${rk}${a}</span>${b}</span>`; }
-  const a=i<0?'':nm.slice(0,i+1), b=i<0?nm:nm.slice(i+1); return `<span class="tn">${a}<span class="nw">${b}${rk}</span></span>`;
+  const nm=`<span class="tn">${esc(shortName(lg,m,side))}</span>`, rk=rankTag(lg,m,side);
+  return right?rk+nm:nm+rk;
 }
 function sideRank(lg, m, side){ if(!side) return null; if(side.rk) return side.rk; const map=rankMap(m.comp||lg.comp); return map&&side.id?map[String(side.id)]||null:null; }
 function pickRank(lg, r, p){ if(!p||p.p==='D'||!r.matches) return null; const m=r.matches[p.m]; if(!m) return null; return sideRank(lg, m, p.p==='H'?m.h:m.a); }
@@ -1939,7 +1937,7 @@ function viewProfil(){
   h+=`<div class="pf-hero"><button class="pf-av" data-a="photoMenu" aria-label="Changer la photo"><img src="${me.avatar?blobUrl(me.avatar):DEFAULT_AVATAR}" data-fb="${esc(initials(name))}" alt=""><i>${I.cam}</i></button><div class="pf-id"><b>${esc(name)}</b>${S.email?`<small>${esc(S.email)}</small>`:''}${S.isOwner?`<span class="pf-chip">${I.shield}ADMIN</span>`:''}</div><button class="pf-ed" data-a="editName" aria-label="Modifier le nom">${I.edit}</button></div>`;
   if(S.mode==='demo') h+=`<div class="card" style="font-size:14px;line-height:1.5;margin-top:14px"><b>Site de test.</b> Nouveau design avec des données fictives : rien n'est enregistré.</div>`;
   if(S.readOnly) h+=`<div class="card" style="background:var(--brand-soft);font-size:14px;line-height:1.5;margin-top:14px"><b>Lecture seule.</b> Pour jouer, l'organisateur doit t'inviter sur le site avec le rôle Éditeur.</div>`;
-  h+=`<div class="pf-sec">Une idée ?</div><a class="pf-fb" href="https://wa.me/33650710675?text=${encodeURIComponent('Salut ! Une remarque / idée pour Survivor : ')}" target="_blank" rel="noopener"><span class="pf-ic">${IC.chat}</span><span class="pf-tx">Donner mon feedback<small>Un bug, une idée : réponse sur WhatsApp</small></span><em>›</em></a>`;
+  h+=`<div class="pf-sec">Une idée ?</div><a class="pf-fb" href="https://wa.me/33650710675?text=${encodeURIComponent('Salut ! Une remarque / idée pour Survivor : ')}" target="_blank" rel="noopener"><span class="pf-ic">${IC.chat}</span><span class="pf-tx">Donner mon feedback</span><em>›</em></a>`;
   const inst=installCard('profil');
   h+=`<div class="pf-sec">Réglages</div><div class="pf-list">${row('photoMenu',I.cam,'#FFF3C4','#16181D','Changer la photo',me.avatar?'Nouvelle photo ou recadrage':'')}${inst?row('toggle',IC.phone||I.phone||IC.chat,'#E0EEFF','#2F6FD6',"Installer l’appli","Sur l’écran d’accueil de ton téléphone",'','data-v="pfInst"'):''}</div>`;
   if(inst && S.open.pfInst) h+=`<div style="margin-top:10px">${inst}</div>`;

@@ -1147,10 +1147,8 @@ nav.bottom .nbadge{border:0}
 .mline.v2.sc{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}
 .mline.v2 .tm{display:flex;align-items:center;gap:7px;min-width:0;flex:none}
 .mline.v2 .tm.r{justify-content:flex-end;text-align:right}
-.mline.v2 .tm span.tn{white-space:normal;overflow:visible;line-height:1.2;min-width:0}
-.mline.v2 .tm span.nw{white-space:nowrap;overflow:visible}
-.mline.v2 .rk{display:inline-block;margin-left:6px;vertical-align:1px}
-.mline.v2 .tm.r .rk{margin-left:0;margin-right:6px}
+.mline.v2 .tm span.tn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
+.mline.v2 .rk{flex:none}
 .mline.v2 .lg{width:26px;height:26px}
 .tiles .tile.v2{min-height:0;height:auto;padding:9px 4px;gap:1px;border-radius:12px;background:#EFEDE6;font-size:13.5px;font-weight:600;justify-content:center}
 .tile.v2 .vlab{font-size:11.5px;font-weight:600;color:#8A8F98;margin:0}
@@ -1162,3 +1160,6 @@ nav.bottom .nbadge{border:0}
 .tile.v2 .bomb{top:4px;left:5px}
 .tile.v2.used .nm:after{font-size:9px;margin-top:1px}
 .tiles:has(.tile.v2){gap:8px}
+
+/* Bouton feedback : fond blanc comme les autres boutons du profil */
+.pf-fb{background:#fff;color:var(--on)}.pf-fb em{color:#B5B1A8}
