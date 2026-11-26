@@ -1088,3 +1088,26 @@ label.f.fbig{font-size:16px;letter-spacing:1.2px;color:var(--on);margin:24px 0 1
 .sv-none{color:var(--muted);font-weight:700}
 .sv-j{font-family:var(--bold);font-weight:800;font-size:14px;color:#C0392B}
 .sv-r2.dead .sv-n{color:#6B6F77}
+/* Survivants : encarts repliables */
+.svc>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px}
+.svc>summary::-webkit-details-marker{display:none}
+.svc>summary .sv-h{flex:1;margin-bottom:0}
+.svc[open]>summary{margin-bottom:12px}
+.svc-ch{display:flex;color:var(--muted)}.svc-ch svg{width:18px;height:18px;transition:transform .2s;transform:none!important}
+.svc[open] .svc-ch svg{transform:rotate(180deg)!important}
+/* Équipes déjà utilisées */
+.ub-note{font-size:12px;color:var(--muted);margin:-4px 0 8px}
+.ub-r{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 0}.ub-r+.ub-r{border-top:1px solid rgba(22,24,29,.06)}
+.ub-r .ub-lg{width:28px;height:28px;object-fit:contain}
+.ub-r b{font-family:var(--bold);font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ub-who{display:flex;align-items:center}
+.ub-av{margin-left:-6px;display:flex}.ub-av:first-child{margin-left:0}
+.ub-av .av,.ub-av img{width:24px;height:24px;border-radius:50%;box-shadow:0 0 0 2px #fff;filter:grayscale(1);opacity:.75}
+.ub-av.me .av,.ub-av.me img{filter:none;opacity:1;box-shadow:0 0 0 2px var(--yel)}
+.ub-who em{font-style:normal;font-size:11.5px;color:var(--muted);font-weight:700;margin-left:6px}
+/* Rappel dans Paris */
+.myused{display:flex;align-items:center;gap:10px;width:100%;background:#fff;border:0;border-radius:16px;padding:10px 14px;margin:0 0 12px;cursor:pointer;color:var(--on);text-align:left}
+.myused>span:first-child{font-family:var(--title);font-weight:700;font-size:12px;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.mu-lg{display:flex;gap:3px;flex:1;min-width:0;overflow:hidden}.mu-lg .mu-im{width:24px;height:24px;object-fit:contain;filter:grayscale(1);opacity:.6}.mu-lg b{font-size:11px;color:var(--muted)}
+.myused em{font-style:normal;color:#B5B1A8;font-size:20px}
+.sv-h span{white-space:nowrap}
