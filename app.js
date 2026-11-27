@@ -1616,15 +1616,17 @@ function raceRanking(c){
     const x=pickSides(p)[0]; const m=(r.matches||{})[x.m]; if(!m) return `<span class="rpk none">–</span>`;
     if(x.p==='D') return `<span class="rpk dr" title="Nul ${esc(m.h.n)} – ${esc(m.a.n)}">${logoTag(m.h,'rpk-im')}<b>=</b>${logoTag(m.a,'rpk-im')}</span>`;
     const sd=x.p==='H'?m.h:m.a; return `<span class="rpk" title="${esc(sd.n)}">${logoTag(sd,'rpk-im')||`<span>${esc(shortName(lg,m,sd))}</span>`}</span>`; };
-  let h=`<div class="card rk-card ${showPk?'':'nopk'}"><div class="sv-h"><span>${IC.trophy}Classement</span><small>Le premier à ${c.N} points gagne</small></div>`;
+  let top='';
+  if(showPk && vis){ const cnt={}, lk={}; let tot=0;
+    c.mem.forEach(u=>{ const p=pickOf(u,lid,r.k); if(!p) return; tot++; pickSides(p).forEach(x=>{ const m=(r.matches||{})[x.m]; if(!m) return; const k=x.p==='D'?'Nul '+m.h.n+' – '+m.a.n:(x.p==='H'?m.h:m.a).n; cnt[k]=(cnt[k]||0)+1; if(!lk[k]) lk[k]=x.p==='D'?[m.h,m.a]:[x.p==='H'?m.h:m.a]; }); });
+    const t3=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    if(t3.length) top=`<div class="card">${top3Bars(t3.map(([k,v])=>[k,Math.round(v*100/tot),lk[k]]),'',n)}</div>`; }
+  let h=top+`<div class="card rk-card ${showPk?'':'nopk'}"><div class="sv-h"><span>${IC.trophy}Classement</span><small>Le premier à ${c.N} points gagne</small></div>`;
   h+=`<div class="rk-th"><span>#</span><span></span><span>Joueur</span><span>GA</span><span>Pts</span>${showPk?`<span>Pari J${n}</span>`:''}</div>`;
   h+=c.ranking.map((x,i)=>`<div class="rk-tr ${x.pos===1?'first':''}"><div class="rk-pos">${x.pos}</div>${avatarOf(x.u)}<div class="rk-nm"><b>${esc(nameOf(x.u))}${x.u===S.me?'<span class="toi">TOI</span>':''}</b></div><div class="rk-ga ${x.ga>0?'p':x.ga<0?'n':''}">${x.ga>0?'+':''}${x.ga||0}</div><div class="rk-pts">${c.pts[x.u]||0}</div>${showPk?`<div class="rk-pk">${pill(x.u,i)}</div>`:''}</div>`).join('');
   if(showPk && !vis) h+=`<div class="rk-note">Les paris de la J${n} seront révélés le ${fmtDT(r.deadline)}. Tu vois seulement le tien.</div>`;
   h+=`</div>`;
-  if(showPk && vis){ const cnt={}, lk={}; let tot=0;
-    c.mem.forEach(u=>{ const p=pickOf(u,lid,r.k); if(!p) return; tot++; pickSides(p).forEach(x=>{ const m=(r.matches||{})[x.m]; if(!m) return; const k=x.p==='D'?'Nul '+m.h.n+' – '+m.a.n:(x.p==='H'?m.h:m.a).n; cnt[k]=(cnt[k]||0)+1; if(!lk[k]) lk[k]=x.p==='D'?[m.h,m.a]:[x.p==='H'?m.h:m.a]; }); });
-    const t3=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,3);
-    if(t3.length) h+=`<div class="card">${top3Bars(t3.map(([k,v])=>[k,Math.round(v*100/tot),lk[k]]),'',n)}</div>`; }
+
   return h;
 }
 // Équipes déjà utilisées par les survivants (avant la journée r)
