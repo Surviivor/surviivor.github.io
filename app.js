@@ -1697,7 +1697,7 @@ function inviteCard(c){
   if(c.status!=='upcoming') return ''; const lg=c.lg;
   const avs=c.mem.slice(0,2).map(u=>`<span class="ivc-av">${avatarOf(u)}</span>`).join('')+'<span class="ivc-av plus">+</span>';
   const ico='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>';
-  return `<div class="ivc"><div class="ivc-avs">${avs}</div><div class="ivc-tx"><b>Ramène tes potes</b><small>Ligue commence dans ${shortDur(t(lg.startAt))}</small></div><button class="ivc-go" data-a="invite" data-v="${lg.id}">Inviter</button></div>`;
+  return `<div class="ivc"><div class="ivc-avs">${avs}</div><div class="ivc-tx"><b>Ramène tes potes</b><small>avant que la ligue commence</small></div><button class="ivc-go" data-a="invite" data-v="${lg.id}">Inviter</button></div>`;
 }
 function nextVotesCard(c){
   const lg=c.lg; if(!c.pick) return '';
