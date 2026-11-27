@@ -285,8 +285,8 @@ const jokerOn = lg => !!lg && !!lg.joker && isPickMode(lg) && !isPoints(lg);
 const pickSides = p => !p ? [] : [{m:p.m,p:p.p}, ...(p.j && p.m2 && p.p2 ? [{m:p.m2,p:p.p2}] : [])];
 // Sabotage 💣 : un joueur interdit une équipe à un adversaire pour une journée (1 fois par ligue). Stocké chez le saboteur : players[u].sabo[lid]={to,team,tn,rk,at}
 const saboOn = lg => !!lg && !!lg.sabotage && isPickMode(lg);
-function sabosOn(lid, uid, rk){ const out=[]; Object.entries(S.players).forEach(([u,p])=>{ const x=p&&p.sabo&&p.sabo[lid]; if(x && x.to===uid && x.rk===rk) out.push({from:u, team:x.team, tn:x.tn}); }); return out; }
-const mySabo = lid => { const p=S.players[S.me]; return (p&&p.sabo&&p.sabo[lid])||null; };
+function sabosOn(lid, uid, rk){ const out=[]; Object.entries(S.players).forEach(([u,p])=>{ [p&&p.sabo&&p.sabo[lid], p&&p.sabo2&&p.sabo2[lid]].forEach(x=>{ if(x && x.to===uid && x.rk===rk) out.push({from:u, team:x.team, tn:x.tn}); }); }); return out; }
+const mySabo = lid => { const p=S.players[S.me]; if(xjOf(S.me,lid)==='sabo') return (p&&p.sabo2&&p.sabo2[lid])||null; return (p&&p.sabo&&p.sabo[lid])||null; };
 // pari « effectif » : on retire les équipes sabotées
 function effPick(u, lid, r){
   const p=pickOf(u,lid,r.k); if(!p) return null; const lg=S.leagues[lid];
@@ -309,7 +309,7 @@ function isLantern(lg, r, x){
 }
 // Paris des autres visibles avant l'heure limite ?
 const picksVisible = lg => lg && lg.picksVis==='visible';
-function jokerRound(lid, uid){ const p=S.players[uid]; const pk=(p&&p.picks&&p.picks[lid])||{}; return Object.keys(pk).find(k=>pk[k]&&pk[k].j&&pk[k].m2)||null; }
+function jokerRound(lid, uid){ const p=S.players[uid]; const pk=(p&&p.picks&&p.picks[lid])||{}; const ks=Object.keys(pk).filter(k=>pk[k]&&pk[k].j&&pk[k].m2); if(xjOf(uid,lid)==='joker'){ const lg=S.leagues[lid]||{}; ks.sort((a,b)=>t(((lg.rounds||{})[a]||{}).deadline)-t(((lg.rounds||{})[b]||{}).deadline)); return ks[1]||null; } return ks[0]||null; }
 const members = lid => Object.keys(S.players).filter(id=>S.players[id].leagues && S.players[id].leagues[lid]);
 const isMember = lid => !!(S.me && S.players[S.me] && S.players[S.me].leagues && S.players[S.me].leagues[lid]);
 const canManage = lg => !!lg && (S.isOwner || lg.id===S.me);
@@ -552,7 +552,7 @@ function startDemo(){
       rounds:Object.fromEntries([rd('t1',1,n+6*D,[['Bordeaux Begles','Montpellier Herault'],['Bayonne','Castres Olympique'],['La Rochelle','Perpignan'],['Stade Francais Paris','Vannes']])])},
     L3:{id:'L3',name:'Survivor X The Best',category:'tuprefere',mode:'majority',startAt:iso(n-5*D),createdAt:iso(n-6*D),code:'BEST23',private:false,cover:'auto',
       rounds:{q1:{n:1,deadline:iso(n-3*D),q:'Le meilleur de l\'histoire ?',a:{n:'Pelé'},b:{n:'Maradona'}},q2:{n:2,deadline:iso(n+D),q:'Tu préfères ?',a:{n:'Zidane'},b:{n:'Henry'}}}},
-    L4:{id:'L4',name:'Survivor X NBA',category:'basket',mode:'pick',comp:'nba',startAt:iso(n+D+6*H),createdAt:iso(n-D),code:'NBA777',private:false,cover:'auto',rounds:{}}
+    L4:{id:'L4',name:'Survivor X NBA',prize:'en bon d\'achat Decathlon',prizeVal:'50€',category:'basket',mode:'pick',comp:'nba',startAt:iso(n+D+6*H),createdAt:iso(n-D),code:'NBA777',private:false,cover:'auto',rounds:{}}
   };
   { const r12=S.leagues.L1.rounds.r12.matches; const sc=[[2,0],[1,1],[0,2]]; Object.keys(r12).sort().forEach((k,i)=>{ if(sc[i]){ r12[k].hs=sc[i][0]; r12[k].as=sc[i][1]; } }); }
   S.leagues.L5={...S.leagues.L1, id:'L5', name:'Race X Ligue 2', scoring:'points', target:20, private:true, lastRule:'drink', code:'RACE20', cover:'trophee', createdAt:iso(n-11*D)};
@@ -746,7 +746,7 @@ const A = {
   saboCancel(){ S.view.sab=null; render(); },
   saboGo(){ const sb=S.view.sab; if(!sb||!sb.to||!sb.team) return; const c=C(sb.lid), r=c&&c.lg.rounds[sb.rk]; if(!r||t(r.deadline)<=now()) return toast('Trop tard pour cette journée.',true); if(mySabo(sb.lid)) return toast('Tu as déjà utilisé ton sabotage.',true); if(sabosOn(sb.lid,sb.to,sb.rk).length) return toast(nameOf(sb.to)+' est déjà saboté pour cette journée.',true);
     const doc={to:sb.to, team:sb.team, tn:sb.tn, rk:sb.rk, at:new Date().toISOString()}; S.view.sab=null;
-    writeMe({sabo:{[sb.lid]:doc}}).then(()=>toast('Sabotage lancé contre '+nameOf(doc.to)+' !')); },
+    writeMe({[xjOf(S.me,sb.lid)==='sabo'?'sabo2':'sabo']:{[sb.lid]:doc}}).then(()=>toast('Sabotage lancé contre '+nameOf(doc.to)+' !')); },
   jokerUse(v){ if(guard()) return; S.view.jk=v; render(); toast('Joker activé : choisis 2 équipes de 2 matchs différents.'); },
   jokerCancel(v){ const [lid,rk]=v.split('|'); S.view.jk=null; const cur=pickOf(S.me,lid,rk); if(cur&&cur.j){ writeMe({picks:{[lid]:{[rk]:{m:cur.m,p:cur.p,m2:null,p2:null,j:false,at:new Date().toISOString()}}}}).then(()=>toast('Joker annulé : tu le gardes pour plus tard.')); } else render(); },
   mpTog(v){ const [lid,d]=v.split('|'), k='mp'+lid; const cur=(k in S.open)?S.open[k]:d==='1'; S.open[k]=!cur; render(); },
@@ -777,7 +777,7 @@ const A = {
     const g=id=>document.getElementById(id);
     const rest=stripPrefix(g('ei-name').value); if(rest.length<2) return toast('Complète le nom de la ligue.',true); const name=fullName(rest, isPoints(S.leagues[lid])?'points':isMerguez(S.leagues[lid])?'merguez':'survivor');
     const patch={name:name.slice(0,60)};
-    const pzI=g('ei-prize'); if(pzI) patch.prize=pzI.value.trim().slice(0,80);
+    const pzI=g('ei-prize'); if(pzI) patch.prize=pzI.value.trim().slice(0,80); const pvI=g('ei-prizev'); if(pvI) patch.prizeVal=pvI.value.trim().replace(/\s*€/,'€').slice(0,10);
     const cf=compFromName(name), lgx=S.leagues[lid]; if(cf && cat(lgx.category).comps.includes(cf) && cf!==lgx.comp){ patch.comp=cf; S.view.comp=cf; loadFeed(cf); }
     const nrI=g('ei-nr'); if(nrI && !nrI.disabled && isPoints(lgx)) patch.target=Math.min(40,Math.max(10,+nrI.value||POINTS_N));
     const d=g('ei-date'), h=g('ei-time'); if(d && d.value) patch.startAt=new Date(d.value+'T'+(h.value||'20:00')).toISOString();
@@ -814,8 +814,22 @@ const A = {
   startNow(lid){ modal('<h3>DÉMARRER MAINTENANT ?</h3><div class="muted">Les inscriptions seront closes immédiatement.</div>','DÉMARRER',()=>{ writeLeague(lid,{startAt:new Date().toISOString()}).then(()=>toast('La ligue a démarré !')); }); },
   invite(lid){ const c=C(lid); if(!c) return; const lg=c.lg;
     const nm=String(lg.name||'').replace(/^\s*(survivor|race|merguez|one\s*shot)\b/i,m=>m.toUpperCase());
-    const txt=`Rejoins ma Ligue ${nm} https://surviivor.github.io/?l=${encodeURIComponent(lid)}`+(lg.private&&lg.code?` (code : ${lg.code})`:'');
-    window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank'); },
+    const url=`https://surviivor.github.io/?l=${encodeURIComponent(lid)}${S.me&&!S.guest?'&r='+refCode(S.me):''}`;
+    const txt=`Rejoins ma Ligue ${nm}`+(lg.private&&lg.code?` (code : ${lg.code})`:'');
+    const mobile=window.matchMedia&&matchMedia('(pointer:coarse)').matches;
+    if(mobile && navigator.share){ navigator.share({text:txt+' '+url}).catch(()=>{}); return; }
+    window.open('https://wa.me/?text='+encodeURIComponent(txt+' '+url),'_blank'); },
+  refShare(){ const url=`https://surviivor.github.io/?r=${refCode(S.me)}`, txt=`Rejoins-moi sur SURVIVOR avec mon code parrainage ${refCode(S.me)}`;
+    const mobile=window.matchMedia&&matchMedia('(pointer:coarse)').matches;
+    if(mobile && navigator.share){ navigator.share({text:txt+' '+url}).catch(()=>{}); return; }
+    window.open('https://wa.me/?text='+encodeURIComponent(txt+' '+url),'_blank'); },
+  refApply(){ const el=document.getElementById('pf-ref'); const code=(el&&el.value||'').trim().toUpperCase(); if(!code) return toast('Entre un code.',true);
+    const me=S.players[S.me]||{}; if(me.refBy) return toast('Tu as déjà un parrain.',true); if(hasAnyPick(me)) return toast('Le code ne marche que pour un nouveau compte.',true);
+    const u=Object.keys(S.players).find(x=>x!==S.me&&refCode(x)===code); if(!u) return toast('Code inconnu.',true);
+    writeMe({refBy:u}).then(()=>toast('Code validé : '+nameOf(u)+' est ton parrain !')); },
+  xjUse(v){ const [lid,type]=v.split('|'); if(refStock()<=0) return toast('Aucun joker en stock.',true); if(xjOf(S.me,lid)) return toast('Tu as déjà réactivé un joker dans cette ligue.',true);
+    writeMe({xj:{[lid]:type}}).then(()=>toast('Joker réactivé !')); },
+  prizeRules(lid){ S.open['rules'+lid]=true; render(); setTimeout(()=>{ const e=document.querySelector('[data-v="rules'+lid+'"]'); if(e) e.scrollIntoView({behavior:'smooth',block:'start'}); },60); },
   shareCode(lid){
     const lg=S.leagues[lid]; const txt=`Rejoins ma ligue « ${lg.name} » sur Survivor ! Code : ${lg.code}`;
     try{ navigator.clipboard.writeText(txt).then(()=>toast('Code copié ! Colle-le à tes proches.'),()=>toast('Code : '+lg.code)); }catch(e){ toast('Code : '+lg.code); }
@@ -980,13 +994,34 @@ const visible = lg => !HIDDEN_CATS.includes(lg.category);
 
 /* Lot : maillot rétro du championnat (ligues de football) */
 // Lot de la ligue : champ « prize » réglé dans Gérer la ligue (valeur par défaut pour Race X Ligue 1)
-const prizeOf = lg => typeof lg.prize==='string' ? lg.prize.trim() : (isPoints(lg) && /race\s*x\s*ligue\s*1\b/i.test(lg.name||'') ? 'un maillot de Kaká' : '');
+const prizeOf = lg => typeof lg.prize==='string' ? lg.prize.trim().replace(/^.*kak[aá].*$/i,'') : '';
+const prizeValOf = lg => String(lg.prizeVal||'').trim();
+const capFirst = x => x ? x.charAt(0).toUpperCase()+x.slice(1) : x;
 function prizeBand(lg, cls){
   const pz=prizeOf(lg);
-  if(pz) return `<div class="prize ${cls||''}"><span class="pz-i">👕</span><span>${isPoints(lg)?'Le gagnant':'Le dernier survivant'} de cette ligue gagne <b>${esc(pz)}</b></span></div>`;
+  if(pz) return '';
+  if(false) return `<div class="prize ${cls||''}"><span class="pz-i">👕</span><span>${isPoints(lg)?'Le gagnant':'Le dernier survivant'} de cette ligue gagne <b>${esc(pz)}</b></span></div>`;
   if(isPoints(lg)) return '';
   if((lg.category||'football')!=='football' || !lg.comp || !COMP_NAMES[lg.comp]) return '';
   return `<div class="prize ${cls||''}"><span class="pz-i">👕</span><span>Le dernier survivant de cette ligue gagne <b>un maillot rétro de ${esc(COMP_NAMES[lg.comp])}</b></span></div>`;
+}
+// Ticket du lot (page de la ligue) et petit ticket (vignette)
+function prizeTicket(lg){
+  const pz=prizeOf(lg); if(!pz) return ''; const v=prizeValOf(lg);
+  return `<div class="ptk">${v?`<div class="ptk-l"><small>À GAGNER</small><b>${esc(v)}</b></div>`:`<div class="ptk-l"><small>À GAGNER</small><b>🏆</b></div>`}<div class="ptk-r"><b>${esc(capFirst(pz))}</b><small>pour le vainqueur de la ligue</small><button class="ptk-more" data-a="prizeRules" data-v="${lg.id}">En savoir plus</button></div></div>`;
+}
+function prizeMini(lg){
+  const pz=prizeOf(lg); if(!pz) return ''; const v=prizeValOf(lg);
+  return `<span class="ptm"><small>À GAGNER</small><b>${esc(v||'🏆')}</b><em>${esc(pz.length>40?pz.slice(0,39)+'…':pz)}</em></span>`;
+}
+function prizeRulesHtml(lg){
+  const pz=prizeOf(lg); if(!pz) return ''; const v=prizeValOf(lg), pts=isPoints(lg);
+  const what=(v?v+' ':'')+pz;
+  return `<div class="rlot"><b class="rlot-t">Règlement du lot<small>${esc(capFirst(what))}</small></b>
+    <p><b>Le vainqueur</b> ${pts?`est le premier joueur à atteindre ${nRoundsOf(lg)} points (en cas d'égalité : meilleur goal-average).`:'est le dernier joueur encore en vie dans la ligue.'}</p>
+    ${pts?'':`<p><b>Tous perdent la même journée ?</b> Personne n'est éliminé : les survivants sont repêchés et rejouent la journée suivante, jusqu'à ce qu'il n'en reste qu'un.</p>`}
+    <p><b>Remise :</b> le lot est envoyé par e-mail au gagnant à la fin de la ligue.</p>
+    <p class="rlot-f">Participation gratuite et sans obligation d'achat. Un seul compte par personne.</p></div>`;
 }
 // Compteur « X survivants sur Y » avec jauge qui se vide
 function survMeter(c, small){
@@ -1005,7 +1040,7 @@ function leagueCardNew(c){ let h='';
     const faces=c.mem.slice(0,3).map(u=>`<span class="nc-face">${(S.players[u]||{}).avatar?`<img src="${blobUrl(S.players[u].avatar)}" alt="">`:`<img src="${DEFAULT_AVATAR}" alt="">`}</span>`).join('');
     const info=c.points?`Objectif ${c.N} pts · leader à ${c.ranking[0]?c.ranking[0].pts:0}`:c.status==='upcoming'?`Début dans ${cd||'quelques instants'}`:`${c.alive.length} en vie sur ${c.mem.length}`;
     h+=`<div class="ncard"><button class="nc-cover" data-a="open" data-v="${lg.id}" aria-label="Ouvrir la ligue">${coverHtml(lg)}${pill}<span class="nc-cat">${catTag(lg.category)}</span></button>
-      <div class="nc-body"><button class="nc-main" data-a="open" data-v="${lg.id}">${leagueTitle(lg.name)}
+      <div class="nc-body"><button class="nc-main ${prizeOf(lg)?'haspz':''}" data-a="open" data-v="${lg.id}">${prizeMini(lg)}${leagueTitle(lg.name)}
         ${c.winners.length?`<div class="nc-win">🏆 ${[...c.winners,...(c.lastRule==='wins'?c.lasts:[])].map(w=>esc(nameOf(w))).join(' & ')}</div>`:''}
         ${c.lastRule==='drink'&&c.lasts.length?`<div class="nc-win">🍺 ${c.lasts.map(w=>esc(nameOf(w))).join(' & ')} ${c.lasts.length>1?'doivent':'doit'} un verre</div>`:''}
         ${c.lastRule&&c.status!=='finished'?`<div class="nc-opt">${LAST_RULES[c.lastRule].ico} ${LAST_RULES[c.lastRule].t}</div>`:''}
@@ -1171,6 +1206,7 @@ function liveChoice(c, u){
   const p=pickOf(u,c.lg.id,r.k); return ` · ${IC.eye} ${p?esc(pickLabel(c.lg,r,p)):'pas encore choisi'}`;
 }
 // ---------- Jokers : encart repliable « JOKERS (X) » au-dessus de « Mon choix »
+const canXj = lg => !S.guest && refStock()>0 && !xjOf(S.me,lg.id) && !prizeOf(lg);
 function jokerItems(c, r){
   const lg=c.lg, out=[], closed=t(r.deadline)<=now(), can=!closed&&canPick(c,r), my=pickOf(S.me,lg.id,r.k);
   const jn=k=>{ const n=(c.info[k]||{}).n; return n?'journée '+n:''; };
@@ -1178,7 +1214,7 @@ function jokerItems(c, r){
     const used=jokerRound(lg.id,S.me), here=used===r.k, act=S.view.jk===lg.id+'|'+r.k;
     const it={k:'joker', ico:TI('joker'), t:'Double chance', d:'Choisis 2 équipes sur une journée : tu survis si au moins une des 2 équipes gagne.', avail:!used};
     if(here&&my&&my.j){ it.state='on'; it.note='Utilisé sur cette journée : tes 2 équipes sont choisies.'; if(can) it.btn=`<button class="jx" data-a="jokerCancel" data-v="${lg.id}|${r.k}" title="Annuler le joker" aria-label="Annuler le joker">${I.x||'✕'}</button>`; it.avail=true; }
-    else if(used){ it.state='used'; it.note='Utilisé'+(jn(used)?' ('+jn(used)+')':'')+'.'; }
+    else if(used){ it.state='used'; it.note='Utilisé'+(jn(used)?' ('+jn(used)+')':'')+'.'; if(canXj(lg)) it.react=`<button class="jre" data-a="xjUse" data-v="${lg.id}|joker">${CARD_ICO}Réactiver ce joker</button>`; }
     else if(act){ it.state='on'; it.note=my?'Activé : choisis ta 2e équipe dans un autre match.':'Activé : choisis 2 équipes dans 2 matchs différents.'; it.btn=`<button class="jx" data-a="jokerCancel" data-v="${lg.id}|${r.k}" title="Annuler" aria-label="Annuler">${I.x||'✕'}</button>`; }
     else if(can) it.btn=`<button class="jbtn" data-a="jokerUse" data-v="${lg.id}|${r.k}">Utiliser</button>`;
     out.push(it);
@@ -1186,7 +1222,7 @@ function jokerItems(c, r){
   if(saboOn(lg)){
     const sb=mySabo(lg.id), it={k:'sabo', ico:TI('bomb'), t:'Sabotage', d:"Interdis une équipe à un adversaire pour la journée. Il découvre qui l'a saboté au moment de parier.", avail:!sb};
     const foes=(c.status==='upcoming'?c.mem:c.alive).filter(u=>u!==S.me);
-    if(sb){ it.state='used'; it.note=`Utilisé${jn(sb.rk)?' ('+jn(sb.rk)+')':''} : ${esc(sb.tn)} interdit à ${esc(nameOf(sb.to))}.`; }
+    if(sb){ it.state='used'; it.note=`Utilisé${jn(sb.rk)?' ('+jn(sb.rk)+')':''} : ${esc(sb.tn)} interdit à ${esc(nameOf(sb.to))}.`; if(canXj(lg)) it.react=`<button class="jre" data-a="xjUse" data-v="${lg.id}|sabo">${CARD_ICO}Réactiver ce joker</button>`; }
     else if(can && foes.length){
       const st=S.view.sab&&S.view.sab.lid===lg.id&&S.view.sab.rk===r.k?S.view.sab:null;
       if(!st) it.btn=`<button class="jbtn red" data-a="saboStart" data-v="${lg.id}|${r.k}">Utiliser</button>`;
@@ -1208,8 +1244,8 @@ function jokersCard(c, r){
   const items=jokerItems(c,r); if(!items.length) return '';
   const n=items.filter(x=>x.avail && x.state!=='used').length, k='jkc'+lg.id;
   const op=S.open[k] || (S.view.jk&&S.view.jk.startsWith(lg.id+'|')) || (S.view.sab&&S.view.sab.lid===lg.id);
-  const body=items.map(x=>`<div class="jitem ${x.state||''}"><div class="jt">${x.ico}<b>${x.t}</b>${x.state==='used'?'<span class="jtag">Utilisé</span>':x.state==='on'&&!x.btn?'<span class="jtag on">En cours</span>':''}${x.btn||''}</div><small>${x.d}</small>${x.note?`<div class="jnote">${x.note}</div>`:''}${x.panel||''}</div>`).join('');
-  const regain=n===0?'<div class="help" style="margin:10px 0 0">Chaque joker ne s\'utilise qu\'une fois par ligue : aucun moyen d\'en récupérer.</div>':'';
+  const body=items.map(x=>`<div class="jitem ${x.state||''}"><div class="jt">${x.ico}<b>${x.t}</b>${x.state==='used'?'<span class="jtag">Utilisé</span>':x.state==='on'&&!x.btn?'<span class="jtag on">En cours</span>':''}${x.btn||''}</div><small>${x.d}</small>${x.note?`<div class="jnote">${x.note}</div>`:''}${x.react||''}${x.panel||''}</div>`).join('');
+  const st0=refStock(); const regain=n===0?(st0>0&&!prizeOf(lg)?`<div class="help" style="margin:10px 0 0">${CARD_ICO.replace('jcard','jcard sm')} Tu as ${st0} joker${st0>1?'s':''} en stock : 1 réactivation possible par ligue.</div>`:'<div class="help" style="margin:10px 0 0">Chaque joker ne s\'utilise qu\'une fois par ligue. Parraine des potes pour gagner des jokers.</div>'):'';
   // comment gagner des vies / points bonus
   const how=[];
   if(!c.points && +lg.lives>0) how.push([TI('heart'),'Une vie en réserve','Chaque joueur démarre avec une vie : à sa première erreur, il la perd mais reste en jeu.']);
@@ -1420,7 +1456,7 @@ function rulesCard(lg){
   const optH=(o.length?`<div class="rsec">Options de la ligue</div>${o.map(([i,tt,d])=>row(i,tt,d)).join('')}`:'')+lvH+jkH;
   const custom=(lg.rules||'').trim();
   const cH=(!steps?defaultRules(lg).split(/\n+/).map(p=>`<p class="rtxt">${esc(p)}</p>`).join(''):'');
-  return `<details class="card coll" ${S.open['rules'+lg.id]?'open':''}><summary data-a="toggle" data-v="rules${lg.id}"><span class="ctitle">${I.book}Règles du jeu</span>${I.chev}</summary><div class="rules-body r2">${stepsH}${warn}${optH}${cH}</div></details>`;
+  return `<details class="card coll" ${S.open['rules'+lg.id]?'open':''}><summary data-a="toggle" data-v="rules${lg.id}"><span class="ctitle">${I.book}Règles du jeu</span>${I.chev}</summary><div class="rules-body r2">${stepsH}${warn}${optH}${cH}${prizeRulesHtml(lg)}</div></details>`;
 }
 function standingsCard(lg, openDefault){
   const key=lg.comp; if(!key) return '';
@@ -1704,11 +1740,18 @@ function chambrageCard(c){
   return svCard('svR'+lid,true,`<div class="sv-h"><span>${IC.chat||''}Paris de la J${n}</span><small>Réagis aux paris</small></div>`,rows);
 }
 
+const refCode = u => String(u||'').replace(/[^a-z0-9]/gi,'').slice(0,6).toUpperCase();
+const hasAnyPick = p => !!(p&&p.picks&&Object.values(p.picks).some(o=>o&&Object.keys(o).length));
+const refsOf = u => Object.entries(S.players).filter(([x,p])=>p&&p.refBy===u&&x!==u);
+function refStock(u=S.me){ const earned=refsOf(u).filter(([,p])=>hasAnyPick(p)).length, used=Object.keys(((S.players[u]||{}).xj)||{}).length; return Math.max(0,Math.min(3,earned-used)); }
+const xjOf = (u,lid) => (((S.players[u]||{}).xj)||{})[lid]||null;
+const CARD_ICO='<svg class="jcard" viewBox="0 0 32 32" aria-hidden="true"><rect x="7" y="3" width="18" height="26" rx="4" fill="#fff" stroke="#5B4BC4" stroke-width="2.2"/><path d="M16 9.5l1.9 3.9 4.3.6-3.1 3 .7 4.3-3.8-2-3.8 2 .7-4.3-3.1-3 4.3-.6z" fill="#F2C94C" stroke="#5B4BC4" stroke-width="1.4" stroke-linejoin="round"/></svg>';
+const CHEV_RND=up=>`<span class="cvr ${up?'up':''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>`;
+const REF_RULES=`<div class="rfr"><p><span>1</span><span><b>Invite un pote</b> avec le bouton « Inviter » : ton code parrainage est inclus dans le message.</span></p><p><span>2</span><span><b>Il s'inscrit à une ligue</b> avec ton code <b>et place son premier pari</b> : tu gagnes <b>1 joker</b>.</span></p><p><span>3</span><span><b>Ton joker, au choix :</b> 💣 Sabotage ou Double chance, dans une ligue qui propose ces jokers.</span></p><p><span>4</span><span><b>1 joker par ligue</b> au maximum, et <b>3 jokers</b> maximum en stock. Pas utilisable dans les ligues avec un lot à gagner.</span></p><small>Un code ne peut être utilisé qu'une fois par nouveau compte, et pas pour soi-même.</small></div>`;
 function inviteCard(c){
-  if(c.status!=='upcoming') return ''; const lg=c.lg;
-  const avs=c.mem.slice(0,1).map(u=>`<span class="ivc-av">${avatarOf(u)}</span>`).join('')+'<span class="ivc-av plus">+</span>';
+  if(c.status!=='upcoming') return ''; const lg=c.lg, k='ivh'+lg.id, op=!!S.open[k];
   const ico='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>';
-  return `<div class="ivc"><div class="ivc-avs">${avs}</div><div class="ivc-tx"><b>Ramène tes potes</b><small>La ligue commence dans ${shortDur(t(lg.startAt))}</small></div><button class="ivc-go" data-a="invite" data-v="${lg.id}">${ico}Inviter</button></div>`;
+  return `<div class="ivx"><div class="ivc"><span class="ivc-jk">${CARD_ICO}</span><div class="ivc-tx tt"><b>Ramène tes potes</b><b class="j">et gagne des jokers</b></div><button class="ivc-go" data-a="invite" data-v="${lg.id}">${ico}Inviter</button></div><button class="ivx-m" data-a="toggle" data-v="${k}">Comment ça marche ?${CHEV_RND(op)}</button>${op?`<div class="ivx-b">${REF_RULES}</div>`:''}</div>`;
 }
 function nextVotesCard(c){
   const lg=c.lg; if(!c.pick) return '';
@@ -1814,7 +1857,7 @@ function viewLeague(lid){
   else if(c.status==='finished') h+= c.winners.includes(S.me)?`<div class="banner win"><span class="ico">🏆</span>${c.winners.length>1?'Tu fais partie des 2 derniers survivants !':'Tu es le grand gagnant !'}</div>`:`<div class="banner dead"><span class="ico">🏁</span>Ligue terminée · ${c.winners.map(w=>esc(nameOf(w))).join(' & ')} ${c.winners.length>1?'gagnent':'gagne'}</div>`;
   else if(!mine) h+= c.status==='upcoming'?`<div class="banner info"><span class="ico">🎟️</span><div style="flex:1">Inscriptions ouvertes jusqu'au ${fmtDT(lg.startAt)}</div><button class="btn sm green" data-a="join" data-v="${lid}">JE M'INSCRIS</button></div>`:`<div class="banner info"><span class="ico">🔒</span>Inscriptions closes. Tu suis la ligue en spectateur.</div>`;
   h+=lastBanner(c);
-  h+=inviteCard(c)+elimCard(c)+recapTeaser(c);
+  h+=prizeTicket(lg)+inviteCard(c)+elimCard(c)+recapTeaser(c);
   const tab=S.view.ltab==='hist'?'surv':S.view.ltab;
   h+=`<div class="seg"><button class="${tab==='paris'?'on':''}" data-a="ltab" data-v="paris">${c.pick?'Paris':'Vote'}</button><button class="${tab==='surv'?'on':''}" data-a="ltab" data-v="surv">${c.points?'Classement':'Survivants'}</button></div>`;
   if(tab==='paris'){
@@ -1921,7 +1964,7 @@ function viewManage(lid){
   const sd=new Date(lg.startAt);
   h+=`<div class="card"><div class="h-disp">NOM &amp; RÉGLAGES</div>
     <label class="f">Nom de la ligue</label>${pfxInput('ei-name','w',stripPrefix(lg.name),'Ligue 1', isPoints(lg)?'oneshot':isMerguez(lg)?'merguez':'survivor')}
-    <label class="f">Lot à gagner (optionnel)</label><input class="in w" id="ei-prize" maxlength="80" placeholder="un maillot de Kaká" value="${esc(prizeOf(lg))}"><div class="help" style="margin:-4px 0 12px">Affiché dans l'onglet ${isPoints(lg)?'Classement':'Survivants'} : « ${isPoints(lg)?'Le gagnant':'Le dernier survivant'} de cette ligue gagne … ».</div>
+    <label class="f">Lot à gagner (optionnel)</label><div style="display:flex;gap:8px"><input class="in" style="width:90px;flex:none" id="ei-prizev" maxlength="10" placeholder="50€" value="${esc(prizeValOf(lg))}"><input class="in w" id="ei-prize" maxlength="80" placeholder="en bon d'achat Decathlon" value="${esc(prizeOf(lg))}"></div><div class="help" style="margin:-4px 0 12px">Affiché dans l'onglet ${isPoints(lg)?'Classement':'Survivants'} : « ${isPoints(lg)?'Le gagnant':'Le dernier survivant'} de cette ligue gagne … ».</div>
     ${c.status==='upcoming'?`<label class="f">Date de début (fin des inscriptions)</label><div class="row2"><input class="in w" type="date" id="ei-date" value="${dateIn(sd)}"><input class="in w" type="time" id="ei-time" value="${timeIn(sd)}"></div><div class="help">La ligue démarre le ${fmtDT(lg.startAt)}.</div>`:''}
     ${isPickMode(lg)?fmtBlock(isPoints(lg)?'points':'survivor','setFmt',lid,lg.target,c.rounds.some(r=>t(r.deadline)<=now())):''}
     ${isPickMode(lg)?optionsBlock(lg,isPoints(lg),'setLives',lid,c.status!=='upcoming'):''}
@@ -2041,6 +2084,12 @@ function viewProfil(){
   h+=`<div class="pf-hero"><button class="pf-av" data-a="photoMenu" aria-label="Changer la photo"><img src="${me.avatar?blobUrl(me.avatar):DEFAULT_AVATAR}" data-fb="${esc(initials(name))}" alt=""><i>${I.cam}</i></button><div class="pf-id"><b>${esc(name)}</b>${S.email?`<small>${esc(S.email)}</small>`:''}${S.isOwner?`<span class="pf-chip">${I.shield}ADMIN</span>`:''}</div><button class="pf-ed" data-a="editName" aria-label="Modifier le nom">${I.edit}</button></div>`;
   if(S.mode==='demo') h+=`<div class="card" style="font-size:14px;line-height:1.5;margin-top:14px"><b>Site de test.</b> Nouveau design avec des données fictives : rien n'est enregistré.</div>`;
   if(S.readOnly) h+=`<div class="card" style="background:var(--brand-soft);font-size:14px;line-height:1.5;margin-top:14px"><b>Lecture seule.</b> Pour jouer, l'organisateur doit t'inviter sur le site avec le rôle Éditeur.</div>`;
+  if(!S.guest && S.mode!=='demo' || S.mode==='demo'){ const st=refStock(), refs=refsOf(S.me), ok=refs.filter(([,p])=>hasAnyPick(p)).length, op=!!S.open.pfRef;
+    h+=`<div class="pf-sec">Parrainage</div><div class="pfj"><div class="pfj-h"><b>Mes jokers en stock</b><span>${st} / 3</span></div><div class="pfj-s">${[0,1,2].map(i=>`<i class="${i<st?'':'e'}">${CARD_ICO}</i>`).join('')}</div>
+      <div class="pfj-c"><div><small>MON CODE PARRAINAGE</small><b>${refCode(S.me)}</b></div><button data-a="refShare">Partager</button></div>
+      <p class="pfj-n">${ok?`${ok} pote${ok>1?'s ont':' a'} rejoint une ligue et parié avec ton code.`:'Aucun pote parrainé pour l’instant.'}${refs.length>ok?` ${refs.length-ok} inscrit${refs.length-ok>1?'s':''} en attente de son premier pari.`:''}</p>
+      ${!me.refBy&&!hasAnyPick(me)?`<div class="pfj-in"><input class="in" id="pf-ref" maxlength="6" placeholder="Code de ton parrain"><button data-a="refApply">Valider</button></div>`:me.refBy?`<p class="pfj-n">Parrainé par <b>${esc(nameOf(me.refBy))}</b>.</p>`:''}
+      <button class="ivx-m pfj-m" data-a="toggle" data-v="pfRef">Comment ça marche ?${CHEV_RND(op)}</button>${op?`<div class="ivx-b" style="padding:6px 0 0">${REF_RULES}</div>`:''}</div>`; }
   h+=`<div class="pf-sec">Une idée ?</div><a class="pf-fb" href="https://wa.me/33650710675?text=${encodeURIComponent('Salut ! Une remarque / idée pour Survivor : ')}" target="_blank" rel="noopener"><span class="pf-ic">${IC.chat}</span><span class="pf-tx">Donner mon feedback</span><em>›</em></a>`;
   const inst=installCard('profil');
   h+=`<div class="pf-sec">Réglages</div><div class="pf-list">${row('photoMenu',I.cam,'#FFF3C4','#16181D','Changer la photo',me.avatar?'Nouvelle photo ou recadrage':'')}${inst?row('toggle',IC.phone||I.phone||IC.chat,'#E0EEFF','#2F6FD6',"Installer l’appli","Sur l’écran d’accueil de ton téléphone",'','data-v="pfInst"'):''}</div>`;
@@ -2093,6 +2142,8 @@ function render(){
   if(S.mode==='loading'||(S.mode==='live'&&!(S.loaded.leagues&&S.loaded.players))){ app.innerHTML='<div class="spin"></div>'; return; }
   const keep={}; app.querySelectorAll('input,textarea,select').forEach(el=>{ if(el.id) keep[el.id]=el.value; });
   const focusId=document.activeElement&&document.activeElement.id;
+  try{ const rp=new URLSearchParams(location.search).get('r'); if(rp) localStorage.setItem('svRef',rp.toUpperCase()); }catch(e){}
+  try{ if(S.me&&!S.guest&&S.mode!=='demo'&&!S._refDone&&S.players[S.me]){ const code=localStorage.getItem('svRef'), me=S.players[S.me]; S._refDone=1; if(code&&!me.refBy&&!hasAnyPick(me)){ const u=Object.keys(S.players).find(x=>x!==S.me&&refCode(x)===code); if(u){ writeMe({refBy:u}); localStorage.removeItem('svRef'); } } } }catch(e){}
   try{ const dl=new URLSearchParams(location.search).get('l'); if(dl && !S._dl && S.leagues[dl]){ S._dl=1; S.view.tab='ligues'; S.view.league=dl; history.replaceState(null,'',location.pathname); } }catch(e){}
   const v=S.view; let body;
   if(v.tab==='ligues'&&v.league) body=viewLeague(v.league);

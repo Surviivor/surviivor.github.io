@@ -1236,3 +1236,38 @@ nav.bottom .nbadge{border:0}
 
 button.lh-chip.pl{border:0;margin:0;cursor:pointer;-webkit-appearance:none;appearance:none;width:100%}
 button.lh-chip.pl:active{transform:scale(.96)}
+
+/* ===== Ticket du lot ===== */
+.ptk{display:flex;background:var(--yel);border-radius:20px;position:relative;margin:0 0 12px}
+.ptk:before,.ptk:after{content:"";position:absolute;left:103px;width:18px;height:18px;border-radius:50%;background:var(--bg,#F1EFE8)}.ptk:before{top:-9px}.ptk:after{bottom:-9px}
+.ptk-l{width:112px;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 6px;border-right:2px dashed #16171B40;line-height:1}
+.ptk-l small{font-family:var(--bold);font-size:10px;font-weight:700;letter-spacing:.08em;color:#6b5a14}.ptk-l b{font-family:var(--bold);font-size:32px;font-weight:700;letter-spacing:-.02em;margin-top:3px;color:var(--on)}
+.ptk-r{flex:1;min-width:0;padding:13px 14px 13px 16px;display:flex;flex-direction:column;justify-content:center;line-height:1.15;color:var(--on)}
+.ptk-r b{font-family:var(--bold);font-size:15px;font-weight:700}.ptk-r small{font-size:12px;color:#4b4014;font-weight:500;margin-top:2px}
+.ptk-more{all:unset;cursor:pointer;align-self:flex-start;margin-top:3px;font-size:11.5px;font-weight:600;color:#4b4014;text-decoration:underline}
+.nc-main.haspz{position:relative;padding-right:104px}
+.ptm{position:absolute;right:0;top:12px;background:var(--yel);border-radius:12px;padding:7px 10px 8px;min-width:88px;max-width:100px;display:flex;flex-direction:column;align-items:center;text-align:center;line-height:1;color:var(--on)}
+.ptm:before,.ptm:after{content:"";position:absolute;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:#fff}.ptm:before{left:-6px}.ptm:after{right:-6px}
+.ptm small{font-family:var(--bold);font-size:9px;font-weight:700;letter-spacing:.06em;color:#6b5a14}.ptm b{font-family:var(--bold);font-size:21px;font-weight:700;margin:2px 0}.ptm em{font-style:normal;font-size:9.5px;font-weight:600;color:#4b4014;line-height:1.15;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.rlot{border-top:1.5px solid #EEEAE0;margin-top:14px;padding-top:12px;font-size:13.5px;line-height:1.45}
+.rlot-t{display:block;font-family:var(--bold);font-size:15px;margin-bottom:6px;line-height:1.15}.rlot-t small{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-top:1px}
+.rlot p{margin:0 0 6px}.rlot-f{font-size:11.5px;color:#9a9890}
+/* ===== Parrainage ===== */
+.jcard{width:28px;height:28px;display:block;flex:none}.jcard.sm{width:16px;height:16px;display:inline-block;vertical-align:-3px}
+.ivx{background:#fff;border-radius:20px;overflow:hidden;margin:0 0 12px}.ivx .ivc{margin:0;border-radius:0;padding-bottom:10px}
+.ivc-jk{width:42px;height:42px;flex:none;border-radius:14px;background:#EEEBFF;display:flex;align-items:center;justify-content:center}
+.ivc-tx.tt{line-height:1.12}.ivc-tx.tt b{font-size:14.5px}.ivc-tx.tt b.j{color:#5B4BC4}
+.ivx-m{all:unset;cursor:pointer;box-sizing:border-box;width:100%;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #EEEAE0;padding:9px 14px;font-size:12.5px;font-weight:600;color:#55534c}
+.cvr{width:24px;height:24px;border-radius:50%;background:#F5F2EA;display:flex;align-items:center;justify-content:center;color:var(--on)}.cvr svg{width:14px;height:14px}.cvr.up svg{transform:rotate(180deg)}
+.ivx-b{padding:4px 14px 14px}
+.rfr{font-size:13px;line-height:1.45;color:#3d3a30}.rfr p{margin:0 0 8px;display:flex;gap:10px}.rfr p>span:first-child{flex:none;width:22px;height:22px;border-radius:50%;background:#F5F2EA;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center}
+.rfr b{color:var(--on)}.rfr small{font-size:11.5px;color:#9a9890}
+.pfj{background:#fff;border-radius:20px;padding:16px;overflow:hidden}
+.pfj-h{display:flex;justify-content:space-between;align-items:center}.pfj-h b{font-family:var(--bold);font-size:15px}.pfj-h span{font-size:12px;color:var(--muted);font-weight:600}
+.pfj-s{display:flex;gap:8px;margin:12px 0}.pfj-s i{flex:1;height:54px;border-radius:14px;background:#EEEBFF;display:flex;align-items:center;justify-content:center}.pfj-s i .jcard{width:32px;height:32px}.pfj-s i.e{background:#F5F2EA;border:2px dashed #DCD6C8}.pfj-s i.e .jcard{opacity:.35;filter:grayscale(1)}
+.pfj-c{display:flex;align-items:center;gap:8px;background:#F5F2EA;border-radius:14px;padding:10px 10px 10px 14px}.pfj-c div{flex:1}.pfj-c small{display:block;font-size:11px;color:var(--muted);font-weight:600}.pfj-c b{font-family:var(--bold);font-size:18px;letter-spacing:.12em}
+.pfj-c button,.pfj-in button{all:unset;cursor:pointer;background:var(--on);color:#fff;border-radius:999px;padding:8px 14px;font-family:var(--bold);font-size:12.5px;font-weight:700}
+.pfj-n{font-size:12.5px;color:#55534c;margin:10px 0 0;line-height:1.45}
+.pfj-in{display:flex;gap:8px;margin-top:10px;align-items:center}.pfj-in .in{flex:1;margin:0;text-transform:uppercase}
+.pfj-m{margin:12px -16px 0;width:calc(100% + 32px);padding:10px 16px 0}
+.jre{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin-top:8px;background:#5B4BC4;color:#fff;border-radius:999px;padding:6px 12px 6px 8px;font-family:var(--bold);font-size:12px;font-weight:700}.jre .jcard{width:16px;height:16px}
