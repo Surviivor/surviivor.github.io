@@ -813,8 +813,8 @@ const A = {
   defRules(lid){ const lg=S.leagues[lid]; document.getElementById('ru-txt').value=defaultRules(lg); },
   startNow(lid){ modal('<h3>DÉMARRER MAINTENANT ?</h3><div class="muted">Les inscriptions seront closes immédiatement.</div>','DÉMARRER',()=>{ writeLeague(lid,{startAt:new Date().toISOString()}).then(()=>toast('La ligue a démarré !')); }); },
   invite(lid){ const c=C(lid); if(!c) return; const lg=c.lg;
-    const how=c.points?`chaque journée, choisis une équipe : le premier à ${c.N} points gagne`:'chaque journée, choisis une équipe qui gagne… le dernier en vie remporte la ligue';
-    const txt=`🏆 Je joue à ${lg.name.replace(/\s+X\s+/i,' · ')} sur SURVIVOR ! Le principe : ${how}. Inscriptions ouvertes jusqu'au ${fmtDT(lg.startAt)}, rejoins-moi 👉 https://surviivor.github.io/?l=${encodeURIComponent(lid)}`+(lg.private&&lg.code?` (code : ${lg.code})`:'');
+    const nm=String(lg.name||'').replace(/^\s*(survivor|race|merguez|one\s*shot)\b/i,m=>m.toUpperCase());
+    const txt=`Rejoins ma Ligue ${nm} https://surviivor.github.io/?l=${encodeURIComponent(lid)}`+(lg.private&&lg.code?` (code : ${lg.code})`:'');
     window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank'); },
   shareCode(lid){
     const lg=S.leagues[lid]; const txt=`Rejoins ma ligue « ${lg.name} » sur Survivor ! Code : ${lg.code}`;
