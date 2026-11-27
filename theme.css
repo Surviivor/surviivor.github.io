@@ -1307,3 +1307,21 @@ button.lh-chip.pl:active{transform:scale(.96)}
 .nci-m{margin-top:12px}.nci-mt{font-family:var(--bold);font-size:13px;font-weight:600;color:#dcdad3}.nci-mt b{font-size:15px;font-weight:700;color:#fff;margin-right:2px}
 .nci-bar{height:6px;border-radius:3px;background:#ffffff2e;margin-top:6px;position:relative;overflow:hidden}.nci-bar i{position:absolute;left:0;top:0;bottom:0;background:var(--yel);border-radius:3px}
 .nc-win.w{color:var(--yel);margin-top:8px}
+
+/* ===== Vignette de ligue ouverte (design J) ===== */
+.nci.up{min-height:240px}
+.nci-f{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px}
+.nci-pl{all:unset;cursor:pointer;display:flex;align-items:center;gap:7px;background:#ffffff26;border-radius:999px;padding:3px 12px 3px 3px;font-family:var(--bold);font-size:12.5px;font-weight:600;color:#fff;white-space:nowrap;min-height:24px}
+.nci-pl:not(:has(.nci-fc)){padding:5px 12px}
+.nci-fc{display:flex}.nci-fc .nc-face{width:24px;height:24px;border:2px solid #2b2c30;margin-right:-7px}.nci-fc .nc-face:last-child{margin-right:0}
+.nc-go{all:unset;cursor:pointer;display:flex;align-items:center;gap:6px;background:#22B35E;color:#fff;border-radius:999px;padding:5px 6px 5px 13px;font-family:var(--bold);font-weight:700;font-size:13px;box-shadow:0 0 0 3px #22B35E40;white-space:nowrap}
+.nc-go i{font-style:normal;width:18px;height:18px;border-radius:50%;background:#fff;color:#1E9E54;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1}
+.nci-f .nc-p.ok{background:#fff;color:#1E7B34}
+.nc-sep{height:4px;width:44px;border-radius:2px;background:#E6E1D5;margin:8px auto}
+.nc-tick{display:flex;background:var(--yel);border-radius:16px;position:relative;cursor:pointer;color:var(--on)}
+.nc-tick:before,.nc-tick:after{content:"";position:absolute;left:83px;width:16px;height:16px;border-radius:50%;background:#fff}.nc-tick:before{top:-8px}.nc-tick:after{bottom:-8px}
+.nc-tick-l{width:91px;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:9px 4px;border-right:2px dashed #16171B40;line-height:1}
+.nc-tick-l small{font-family:var(--bold);font-size:9.5px;font-weight:700;letter-spacing:.08em;color:#6b5a14}.nc-tick-l b{font-family:var(--bold);font-size:26px;font-weight:700;letter-spacing:-.02em;margin-top:2px}
+.nc-tick-r{flex:1;min-width:0;padding:9px 12px 9px 14px;display:flex;flex-direction:column;justify-content:center;line-height:1.15}
+.nc-tick-r b{font-family:var(--bold);font-size:14.5px;font-weight:700}.nc-tick-r small{font-size:12px;color:#4b4014;font-weight:500;margin-top:2px}
+.ncard.h:has(.nci){padding:8px}

@@ -1057,9 +1057,14 @@ function leagueCardNew(c){ let h='';
         <div class="nci-b">${title}${win}${meter}</div></div></div>`;
       return h;
     }
-    h+=`<div class="ncard h"><div class="nc-cover" data-a="open" data-v="${lg.id}" role="button" aria-label="Ouvrir la ligue">${coverHtml(lg)}<span class="nc-p cat">${esc(cat(lg.category).label)}</span><span class="nc-stk">${st}${act}</span>${band}</div>
-      <div class="nc-row"><button class="nc-main" data-a="open" data-v="${lg.id}">${leagueTitle(lg.name)}</button><button class="nc-faces" data-a="openSurv" data-v="${lg.id}" aria-label="Voir les joueurs">${faces}<em>${c.mem.length} joueur${c.mem.length>1?'s':''}</em></button></div>
-      ${extra?`<button class="nc-ex" data-a="open" data-v="${lg.id}">${extra}</button>`:''}</div>`;
+    { const title=leagueTitle(lg.name).replace(/src="img\/(survivor|race|oneshot|merguez|x)\.png/g,'src="img/$1-white.png');
+      const fc=c.mem.slice(0,3).map(u=>`<span class="nc-face">${(S.players[u]||{}).avatar?`<img src="${blobUrl(S.players[u].avatar)}" alt="">`:`<img src="${DEFAULT_AVATAR}" alt="">`}</span>`).join('');
+      const cta=mine?`<button class="nc-p ok" data-a="open" data-v="${lg.id}">Inscrit ✓</button>`:`<button class="nc-go" data-a="join" data-v="${lg.id}">Je m'inscris<i>›</i></button>`;
+      const tick=pz?`<div class="nc-sep"></div><div class="nc-tick" data-a="open" data-v="${lg.id}" role="button"><div class="nc-tick-l"><small>À GAGNER</small><b>${esc(pv||'🏆')}</b></div><div class="nc-tick-r"><b>${esc(capFirst(pz))}</b><small>pour le vainqueur de la ligue</small></div></div>`:'';
+      h+=`<div class="ncard h"><div class="nci up" data-a="open" data-v="${lg.id}" role="button" aria-label="Ouvrir la ligue">${coverHtml(lg)}<div class="nci-sh"></div>
+        <div class="nci-top"><span class="nc-p cat">${esc(cat(lg.category).label)}</span>${st}</div>
+        <div class="nci-b">${title}<div class="nci-f"><button class="nci-pl" data-a="openSurv" data-v="${lg.id}">${fc?`<span class="nci-fc">${fc}</span>`:''}${c.mem.length} joueur${c.mem.length>1?'s':''}</button>${cta}</div></div></div>${tick}</div>`;
+    }
   return h;
 }
 // Tableau de bord de l'accueil : paris à valider (anneau) + situation dans chaque ligue en cours
