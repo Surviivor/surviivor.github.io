@@ -1342,3 +1342,20 @@ button.lh-chip.pl:active{transform:scale(.96)}
 .nc-lot-v{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:700;color:var(--on);flex:none}
 .nc-lot .crown{width:24px;height:17px;flex:none}
 .nc-lot-t{overflow:hidden;text-overflow:ellipsis}
+
+/* Vignettes : angles serrés, statuts, sans ombre */
+.ncard.h{border-radius:18px;padding:6px}.nci{border-radius:12px}
+.nc-lot{border-radius:12px;border-left:0;box-shadow:inset 5px 0 0 var(--yel);margin-top:6px;padding-left:14px}
+.nc-go{box-shadow:none}
+.nc-p.up{background:#DDF3E4;color:#136B3B}.nc-p.live{background:var(--yel);color:var(--on)}
+.nci-top .nc-p.cat{background:#ffffffb3}
+/* Liseret du lot : encoche façon ticket */
+.nc-lot{box-shadow:none;position:relative;padding-left:16px}
+.nc-lot:before{content:"";position:absolute;left:-7px;top:50%;width:14px;height:14px;margin-top:-7px;border-radius:50%;background:#fff}
+.nc-lot{align-items:baseline}.nc-lot-v{align-self:center;align-items:baseline}.nc-lot .crown{align-self:center}
+.nc-lot-v{line-height:1.2}.nc-lot-t{line-height:1.2}
+.nci-top{justify-content:flex-start;gap:6px}
+.nc-lot{display:block;line-height:22px;text-overflow:ellipsis}
+.nc-lot-v{display:inline;font-size:15px;margin-right:6px}
+.nc-lot .crown{display:inline-block;vertical-align:-3px;margin-right:6px}
+.nc-lot-t{display:inline}
