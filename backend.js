@@ -277,9 +277,10 @@ async function ensurePlayer(u) {
   // Carnet d'adresses privé (lisible uniquement par l'admin) : e-mail du joueur
   if (u.email) {
     try {
+      // Pas de lecture ici : seuls les admins peuvent lire « contacts », un getDoc ferait échouer l'écriture pour tous les autres joueurs.
       const cref = doc(fs, 'contacts', u.uid);
-      const c = await getDoc(cref);
-      await setDoc(cref, { email: u.email, name: u.displayName || '', last: new Date().toISOString(), ...(c.exists() ? {} : { first: (u.metadata && u.metadata.creationTime) ? new Date(u.metadata.creationTime).toISOString() : new Date().toISOString() }) }, { merge: true });
+      const first = (u.metadata && u.metadata.creationTime) ? new Date(u.metadata.creationTime).toISOString() : new Date().toISOString();
+      await setDoc(cref, { email: u.email, name: u.displayName || '', first, last: new Date().toISOString() }, { merge: true });
     } catch (e) { /* règles pas encore à jour : on ignore */ }
   }
 }

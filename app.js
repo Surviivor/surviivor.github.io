@@ -718,10 +718,11 @@ const A = {
     if(!rows.length) return toast('Aucun e-mail enregistré pour l’instant : ils s’ajoutent à la prochaine connexion de chaque joueur.',true);
     const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
     const lines=[['Pseudo','E-mail','Inscrit le','Dernière visite','Ligues'].map(q).join(';')];
-    rows.sort((a,b)=>(a.first||'').localeCompare(b.first||'')).forEach(r=>{ const p=S.players[r.id]||{}; const lg=Object.keys(p.leagues||{}).map(l=>S.leagues[l]&&S.leagues[l].name).filter(Boolean).join(', ');
+    const known=new Set(rows.map(r=>r.id)); Object.keys(S.players).forEach(id=>{ if(!known.has(id)) rows.push({id,email:'(pas encore récupéré)',first:'',last:''}); });
+    rows.sort((a,b)=>(a.first||'9').localeCompare(b.first||'9')).forEach(r=>{ const p=S.players[r.id]||{}; const lg=Object.keys(p.leagues||{}).map(l=>S.leagues[l]&&S.leagues[l].name).filter(Boolean).join(', ');
       lines.push([nameOf(r.id)||r.name||'', r.email, (r.first||'').slice(0,10), (r.last||'').slice(0,10), lg].map(q).join(';')); });
     const blob=new Blob(['\ufeff'+lines.join('\n')],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='survivor-emails-'+new Date().toISOString().slice(0,10)+'.csv'; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1000);
-    toast(rows.length+' e-mail'+(rows.length>1?'s':'')+' exporté'+(rows.length>1?'s':'')+' !');
+    const ok=known.size; toast(ok+' e-mail'+(ok>1?'s':'')+' sur '+rows.length+' joueurs'+(rows.length>ok?' (les autres s’ajoutent à leur prochaine visite)':''));
   },
   saboStart(v){ if(guard()) return; const [lid,rk]=v.split('|'); S.view.sab={lid,rk}; render(); },
   saboTo(v){ if(!S.view.sab) return; S.view.sab.to=v; S.view.sab.team=null; render(); },
