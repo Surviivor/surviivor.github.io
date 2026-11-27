@@ -1073,7 +1073,7 @@ function leagueCardNew(c){ let h='';
 function dashCard(myL, todo){
   if(S.guest) return '';
   let open=0, done=0, next=null, nextAll=null;
-  myL.forEach(c=>{ if(c.status!=='live'||!c.alive.includes(S.me)) return; const r=c.rounds.find(r=>t(r.deadline)>now()); if(!r) return; open++;
+  myL.forEach(c=>{ if(c.status!=='live'||!c.alive.includes(S.me)) return; const r=openR(c); if(!r) return; open++;
     const ok=!!pickOf(S.me,c.lg.id,r.k), tt=t(r.deadline); if(ok) done++; else if(!next||tt<next) next=tt; if(!nextAll||tt<nextAll) nextAll=tt; });
   const ratio=open?done/open:1, C0=94.25, arc=Math.max(todo?4:0,Math.round(ratio*C0*10)/10);
   const ring=`<svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" stroke-opacity=".18" stroke-width="4"/><circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="${arc} 200"/></svg>`;
@@ -1121,7 +1121,7 @@ function viewHome(){
     line=(bits.length?'Tu es '+bits.join(' · '):'Aucune ligue en cours pour toi.')+(todo?` · <b class="hot">${todo} choix à faire</b>`:'');
     cta=`<button class="btn ${todo?'brand':'light'}" data-a="tab" data-v="paris">${todo?'À TOI DE JOUER':'MES PARIS'} ${I.arrow}</button>`;
   }
-  let nextDl=null; myL.forEach(c=>{ if(c.status==='finished'||!c.alive.includes(S.me)) return; const r=c.rounds.find(r=>t(r.deadline)>now()); if(!r) return; const done=!!pickOf(S.me,c.lg.id,r.k); const cand={t:t(r.deadline), name:stripPrefix(c.lg.name), done};
+  let nextDl=null; myL.forEach(c=>{ if(c.status==='finished'||!c.alive.includes(S.me)) return; const r=openR(c); if(!r) return; const done=!!pickOf(S.me,c.lg.id,r.k); const cand={t:t(r.deadline), name:stripPrefix(c.lg.name), done};
     if(!nextDl || (nextDl.done && !done) || (nextDl.done===done && cand.t<nextDl.t)) nextDl=cand; });
   const avImg=`<img src="${me.avatar?blobUrl(me.avatar):DEFAULT_AVATAR}" data-fb="${esc(initials(nm))}" alt="">`;
   let h=(S.guest?`<div class="nh-top"><div class="nh-hi"><small>Bienvenue sur</small><span class="nh-logo">${WM()}</span></div><button class="btn sm brand" data-a="tab" data-v="profil">Se connecter</button></div>`:`<div class="nh-top"><button class="nh-av" data-a="tab" data-v="profil" aria-label="Profil">${avImg}</button><div class="nh-hi"><small>Salut,</small><b>${esc(nm)}</b></div><span class="nh-logo">${WM()}</span></div>`)+installBand()+avatarBand()+`
@@ -1646,9 +1646,9 @@ function myUsedLine(c, r){
 }
 function survivorsView(c){
   const lg=c.lg, lid=lg.id; let h='';
-  const r=c.rounds.find(r=>t(r.deadline)>now());
+  const r=(!c.points&&pendR(c))||c.rounds.find(r=>t(r.deadline)>now());
   const n=r?((c.info[r.k]||{}).n||(c.rounds.indexOf(r)+1)):0;
-  const alive=c.status==='upcoming'?c.mem:c.alive, vis=picksVisible(lg);
+  const alive=c.status==='upcoming'?c.mem:c.alive, vis=picksVisible(lg)||(!!r&&t(r.deadline)<=now());
   const heart='<svg class="ic" viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9C.9 8.8 2.8 4.5 6.7 4.5c2.2 0 3.7 1.3 5.3 3.2 1.6-1.9 3.1-3.2 5.3-3.2 3.9 0 5.8 4.3 4.3 7.5C19.5 16.4 12 21 12 21z" fill="#1E9E54"/></svg>';
   const sides=[]; if(r) matchesOf(r).forEach(m=>{ sides.push(m.h, m.a); }); const F=i=>sides[i%Math.max(1,sides.length)]||{n:'Équipe'};
   // podium
@@ -1878,11 +1878,12 @@ function viewLeague(lid){
   const tab=S.view.ltab==='hist'?'surv':S.view.ltab;
   h+=`<div class="seg"><button class="${tab==='paris'?'on':''}" data-a="ltab" data-v="paris">${c.pick?'Paris':'Vote'}</button><button class="${tab==='surv'?'on':''}" data-a="ltab" data-v="surv">${c.points?'Classement':'Survivants'}</button></div>`;
   if(tab==='paris'){
-    const open=c.rounds.filter(r=>t(r.deadline)>now()).slice(0,1);
+    const open=[openR(c)].filter(Boolean);
     const waiting=c.rounds.filter(r=>t(r.deadline)<=now() && ['waiting'].includes((c.info[r.k]||{}).state));
     if(c.status==='finished') h+=`<div class="empty"><div class="ico">🏁</div><h3>C'EST FINI</h3><p>Revis la ligue dans l'historique.</p></div>`+rulesCard(lg);
     else {
       if(open.length) h+=open.map(r=>`<div class="jbig">${c.pick?'Journée':'Question'} ${((c.info[r.k]||{}).n||(c.rounds.findIndex(x=>x.k===r.k)+1))}</div><div class="jsub">${I.clock}<span>Choix ouvert jusqu'au ${fmtDT(r.deadline)}</span></div>`+(c.pick?statsCard(c):'')+jokersCard(c,r)+myUsedLine(c,r)+roundCard(c,r,{header:`<h3>${c.pick?'Mon choix':'Mon vote'}</h3>`, noDl:true})).join('');
+      else if(!c.points&&pendR(c)&&c.rounds.some(r=>t(r.deadline)>now())) h+=`<div class="card muted" style="text-align:center;font-size:15px">⏳ La prochaine journée s'ouvrira dès que les résultats de la journée en cours seront connus.</div>`;
       else h+=(c.pick?statsCard(c):'')+`<div class="card muted" style="text-align:center;font-size:15px">Pas de journée ouverte pour l'instant.${canManage(lg)?' Importe la prochaine depuis « Gérer la ligue ».':' La prochaine arrive bientôt !'}</div>`;
       h+=rulesCard(lg);
       if(waiting.length) h+=`<div class="sec2">EN ATTENTE DES RÉSULTATS</div>`+waiting.map(r=>roundCard(c,r)).join('');
@@ -1912,7 +1913,7 @@ function viewParis(){
   const next=[], wait=[], hist=[];
   my.forEach(c=>{
     const alive=c.alive.includes(S.me);
-    const open=c.rounds.find(r=>t(r.deadline)>now());
+    const open=openR(c);
     if(open && alive && c.status!=='finished') next.push([c,open]);
     c.rounds.forEach(r=>{ const ri=c.info[r.k]||{}; const p=pickOf(S.me,c.lg.id,r.k); if(t(r.deadline)<=now() && p){ if(ri.state==='waiting') wait.push([c,r]); else if(ri.state==='done'||ri.state==='cancelled') hist.push([c,r,p,ri]); } });
   });
@@ -2117,7 +2118,12 @@ function viewProfil(){
 }
 
 /* ================================================================ Render */
-function countTodo(){ let n=0; Object.keys(S.leagues).filter(lid=>isMember(lid)&&shownL(lid)).forEach(lid=>{ const c=C(lid); if(!c||c.status==='finished'||!c.alive.includes(S.me)) return; const r=c.rounds.find(r=>t(r.deadline)>now()); if(r && !pickOf(S.me,lid,r.k)) n++; }); return n; }
+// Journée en cours (date limite passée, résultats pas encore connus)
+const pendR = c => c.rounds.find(r=>(c.info[r.k]||{}).state==='waiting')||null;
+// Prochaine journée à parier : en Survivor, on attend la fin de la journée en cours
+// (sauf si la prochaine date limite arrive dans moins de 12 h, pour ne pas bloquer les joueurs).
+const openR = c => { const r=c.rounds.find(x=>t(x.deadline)>now()); if(!r) return null; if(!c.points && pendR(c) && t(r.deadline)-now()>12*3600e3) return null; return r; };
+function countTodo(){ let n=0; Object.keys(S.leagues).filter(lid=>isMember(lid)&&shownL(lid)).forEach(lid=>{ const c=C(lid); if(!c||c.status==='finished'||!c.alive.includes(S.me)) return; const r=openR(c); if(r && !pickOf(S.me,lid,r.k)) n++; }); return n; }
 // ---------- Écran « verdict » : résultat de la dernière journée, montré une seule fois
 const vKey=(lid,rk)=>'survivor-verdict-'+lid+'-'+rk;
 const vSeen=(lid,rk)=>{ try{ return !!localStorage.getItem(vKey(lid,rk)); }catch(e){ return true; } };
