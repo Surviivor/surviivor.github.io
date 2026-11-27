@@ -1392,3 +1392,10 @@ button.lh-chip.pl:active{transform:scale(.96)}
 .ub-card .ub-note{margin-top:-2px}
 .ub-card{box-shadow:none}
 .ub-r.zero b{color:var(--muted)}.ub-r.zero .ub-lg{opacity:.55}
+/* Race : colonne Pari J = logo seul */
+.rk-th,.rk-tr{grid-template-columns:22px 36px minmax(0,1fr) 28px 26px 58px;gap:7px}
+.rk-th span:nth-child(6){text-align:center;padding-left:0;white-space:nowrap}
+.rk-pk .rpk{width:auto;justify-content:center;background:none!important;padding:0;margin:0 auto}
+.rk-pk .rpk .rpk-im{width:30px;height:30px}
+.rk-pk .rpk.dr .rpk-im{width:22px;height:22px}.rk-pk .rpk.dr b{font-size:11px}
+.rk-pk{display:flex;justify-content:center}

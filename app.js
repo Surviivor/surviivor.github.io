@@ -1614,10 +1614,10 @@ function raceRanking(c){
   const pill=(u,i)=>{ const p=pickOf(u,lid,r.k); if(!p) return `<span class="rpk none">–</span>`;
     if(!vis && u!==S.me) return `<span class="rpk hid" title="Parié">${LOCK}</span>`;
     const x=pickSides(p)[0]; const m=(r.matches||{})[x.m]; if(!m) return `<span class="rpk none">–</span>`;
-    if(x.p==='D') return `<span class="rpk dr" title="Nul ${esc(m.h.n)} – ${esc(m.a.n)}">${logoTag(m.h,'rpk-im')}<span>Nul</span>${logoTag(m.a,'rpk-im')}</span>`;
-    const sd=x.p==='H'?m.h:m.a; return `<span class="rpk" title="${esc(sd.n)}">${logoTag(sd,'rpk-im')}<span>${esc(shortName(lg,m,sd))}</span></span>`; };
+    if(x.p==='D') return `<span class="rpk dr" title="Nul ${esc(m.h.n)} – ${esc(m.a.n)}">${logoTag(m.h,'rpk-im')}<b>=</b>${logoTag(m.a,'rpk-im')}</span>`;
+    const sd=x.p==='H'?m.h:m.a; return `<span class="rpk" title="${esc(sd.n)}">${logoTag(sd,'rpk-im')||`<span>${esc(shortName(lg,m,sd))}</span>`}</span>`; };
   let h=`<div class="card rk-card ${showPk?'':'nopk'}"><div class="sv-h"><span>${IC.trophy}Classement</span><small>Le premier à ${c.N} points gagne</small></div>`;
-  h+=`<div class="rk-th"><span>#</span><span></span><span>Joueur</span><span>GA</span><span>Pts</span>${showPk?`<span>J${n}</span>`:''}</div>`;
+  h+=`<div class="rk-th"><span>#</span><span></span><span>Joueur</span><span>GA</span><span>Pts</span>${showPk?`<span>Pari J${n}</span>`:''}</div>`;
   h+=c.ranking.map((x,i)=>`<div class="rk-tr ${x.pos===1?'first':''}"><div class="rk-pos">${x.pos}</div>${avatarOf(x.u)}<div class="rk-nm"><b>${esc(nameOf(x.u))}${x.u===S.me?'<span class="toi">TOI</span>':''}</b></div><div class="rk-ga ${x.ga>0?'p':x.ga<0?'n':''}">${x.ga>0?'+':''}${x.ga||0}</div><div class="rk-pts">${c.pts[x.u]||0}</div>${showPk?`<div class="rk-pk">${pill(x.u,i)}</div>`:''}</div>`).join('');
   if(showPk && !vis) h+=`<div class="rk-note">Les paris de la J${n} seront révélés le ${fmtDT(r.deadline)}. Tu vois seulement le tien.</div>`;
   h+=`</div>`;
