@@ -1606,7 +1606,7 @@ function pickPill(c, r, p, blur){
 // Onglet CLASSEMENT d'une Race : tableau (rang, joueur, points, pari de la prochaine journée) puis « Les plus choisies »
 const LOCK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 function raceRanking(c){
-  const lg=c.lg, lid=lg.id, r=c.rounds.find(r=>t(r.deadline)>now()), vis=picksVisible(lg);
+  const lg=c.lg, lid=lg.id, r=pendR(c)||c.rounds.find(r=>t(r.deadline)>now()), vis=picksVisible(lg)||(!!r&&t(r.deadline)<=now());
   const n=r?((c.info[r.k]||{}).n||(c.rounds.indexOf(r)+1)):0;
   const done=c.rounds.filter(x=>['done','cancelled'].includes((c.info[x.k]||{}).state)).length;
   const sides=[]; if(r) matchesOf(r).forEach(m=>{ sides.push(m.h, m.a); }); const F=i=>sides[i%Math.max(1,sides.length)]||{n:'Équipe'};
@@ -1646,7 +1646,7 @@ function myUsedLine(c, r){
 }
 function survivorsView(c){
   const lg=c.lg, lid=lg.id; let h='';
-  const r=(!c.points&&pendR(c))||c.rounds.find(r=>t(r.deadline)>now());
+  const r=pendR(c)||c.rounds.find(r=>t(r.deadline)>now());
   const n=r?((c.info[r.k]||{}).n||(c.rounds.indexOf(r)+1)):0;
   const alive=c.status==='upcoming'?c.mem:c.alive, vis=picksVisible(lg)||(!!r&&t(r.deadline)<=now());
   const heart='<svg class="ic" viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9C.9 8.8 2.8 4.5 6.7 4.5c2.2 0 3.7 1.3 5.3 3.2 1.6-1.9 3.1-3.2 5.3-3.2 3.9 0 5.8 4.3 4.3 7.5C19.5 16.4 12 21 12 21z" fill="#1E9E54"/></svg>';
@@ -1883,7 +1883,7 @@ function viewLeague(lid){
     if(c.status==='finished') h+=`<div class="empty"><div class="ico">🏁</div><h3>C'EST FINI</h3><p>Revis la ligue dans l'historique.</p></div>`+rulesCard(lg);
     else {
       if(open.length) h+=open.map(r=>`<div class="jbig">${c.pick?'Journée':'Question'} ${((c.info[r.k]||{}).n||(c.rounds.findIndex(x=>x.k===r.k)+1))}</div><div class="jsub">${I.clock}<span>Choix ouvert jusqu'au ${fmtDT(r.deadline)}</span></div>`+(c.pick?statsCard(c):'')+jokersCard(c,r)+myUsedLine(c,r)+roundCard(c,r,{header:`<h3>${c.pick?'Mon choix':'Mon vote'}</h3>`, noDl:true})).join('');
-      else if(!c.points&&pendR(c)&&c.rounds.some(r=>t(r.deadline)>now())) h+=`<div class="card muted" style="text-align:center;font-size:15px">⏳ La prochaine journée s'ouvrira dès que les résultats de la journée en cours seront connus.</div>`;
+      else if(pendR(c)&&c.rounds.some(r=>t(r.deadline)>now())) h+=`<div class="card muted" style="text-align:center;font-size:15px">⏳ La prochaine journée s'ouvrira dès que les résultats de la journée en cours seront connus.</div>`;
       else h+=(c.pick?statsCard(c):'')+`<div class="card muted" style="text-align:center;font-size:15px">Pas de journée ouverte pour l'instant.${canManage(lg)?' Importe la prochaine depuis « Gérer la ligue ».':' La prochaine arrive bientôt !'}</div>`;
       h+=rulesCard(lg);
       if(waiting.length) h+=`<div class="sec2">EN ATTENTE DES RÉSULTATS</div>`+waiting.map(r=>roundCard(c,r)).join('');
@@ -2120,9 +2120,9 @@ function viewProfil(){
 /* ================================================================ Render */
 // Journée en cours (date limite passée, résultats pas encore connus)
 const pendR = c => c.rounds.find(r=>(c.info[r.k]||{}).state==='waiting')||null;
-// Prochaine journée à parier : en Survivor, on attend la fin de la journée en cours
+// Prochaine journée à parier : on attend la fin de la journée en cours
 // (sauf si la prochaine date limite arrive dans moins de 12 h, pour ne pas bloquer les joueurs).
-const openR = c => { const r=c.rounds.find(x=>t(x.deadline)>now()); if(!r) return null; if(!c.points && pendR(c) && t(r.deadline)-now()>12*3600e3) return null; return r; };
+const openR = c => { const r=c.rounds.find(x=>t(x.deadline)>now()); if(!r) return null; if(pendR(c) && t(r.deadline)-now()>12*3600e3) return null; return r; };
 function countTodo(){ let n=0; Object.keys(S.leagues).filter(lid=>isMember(lid)&&shownL(lid)).forEach(lid=>{ const c=C(lid); if(!c||c.status==='finished'||!c.alive.includes(S.me)) return; const r=openR(c); if(r && !pickOf(S.me,lid,r.k)) n++; }); return n; }
 // ---------- Écran « verdict » : résultat de la dernière journée, montré une seule fois
 const vKey=(lid,rk)=>'survivor-verdict-'+lid+'-'+rk;
