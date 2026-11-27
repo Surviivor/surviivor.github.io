@@ -1170,3 +1170,55 @@ nav.bottom .nbadge{border:0}
 .mline.v2 .tn{line-height:1.2;font-weight:700}
 .mline.v2:not(.sc){display:flex;justify-content:space-between;gap:12px}
 .mline.v2:not(.sc) .tm{flex:0 1 auto;min-width:0}
+
+/* ===== Récap de journée ===== */
+.rcp-tz{display:flex;align-items:center;gap:10px;background:#fff;border:2px solid var(--yel);border-radius:18px;padding:12px 12px 12px 14px;margin:0 0 12px;cursor:pointer}
+.rcp-tzl{flex:1;min-width:0}.rcp-tzl span{display:block;font-family:var(--bold);font-size:12px;font-weight:600;color:#9a9890;text-transform:uppercase}
+.rcp-tzl b{font-family:var(--bold);font-size:16px;font-weight:700}
+.rcp-go{background:var(--on);color:var(--yel);font-family:var(--bold);font-weight:700;font-size:13px;border-radius:999px;padding:8px 16px}
+.rcp-ov{align-items:flex-start;overflow-y:auto;background:rgba(17,24,39,.88);z-index:300}
+.rcp-w{position:relative;width:100%;max-width:420px;margin:0 auto;padding:calc(max(16px,env(safe-area-inset-top)) + 24px) 14px 32px}
+.rcp{background:var(--on);color:#fff;border-radius:22px;padding:18px 16px 14px;font-family:var(--bold)}
+.rcp-top{display:flex;justify-content:space-between;align-items:center;gap:10px}.rcp-top img{height:18px;width:auto}
+.rcp-top span{font-size:12px;font-weight:600;color:#9a9890;text-transform:uppercase;text-align:right}
+.rcp h3{font-size:26px;font-weight:700;margin:12px 0 2px;line-height:1.12;text-transform:none}.rcp h3 em{font-style:normal;color:var(--yel)}
+.rcp-k{font-size:13px;color:#b7b4ab;margin:0 0 14px}
+.rcp-m{display:flex;gap:3px;margin-bottom:16px}.rcp-m i{flex:1;height:8px;border-radius:4px;background:var(--yel)}.rcp-m i.x{background:#E5484D}.rcp-m i.d{background:#3a3c42}
+.rcp-b{background:#22242A;border-radius:16px;padding:12px;margin-bottom:8px}
+.rcp-t{font-size:12px;font-weight:600;color:#9a9890;text-transform:uppercase;margin-bottom:8px}
+.rcp-r{display:flex;align-items:center;gap:9px;padding:4px 0}.rcp-r .av{width:30px;height:30px;flex:none}
+.rcp-r>b{font-size:14px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rcp-r small{font-size:12px;color:#b7b4ab;font-weight:500}
+.rcp-n{flex:1;min-width:0}.rcp-n b{display:block;font-size:14px;font-weight:600}
+.rcp-lg{width:24px;height:24px;object-fit:contain;flex:none}
+.rcp-sc{font-size:13px;font-weight:700;background:#33363D;border-radius:8px;padding:2px 8px;white-space:nowrap}
+.rcp-b.hl{background:var(--yel);color:var(--on)}.rcp-b.hl .rcp-t{color:#6b5a14}
+.rcp-au{display:flex;gap:8px;margin-bottom:8px}.rcp-au .av,.rcp-al{width:44px;height:44px;flex:none}.rcp-al{object-fit:contain}
+.rcp-p{margin:0;font-size:15px;font-weight:700;line-height:1.35}
+.rcp-ft{display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:11.5px;color:#77756d}
+.rcp-x{width:100%;margin-top:12px;background:#fff}
+/* ===== Joueur éliminé ===== */
+.elc{background:#fff;border-radius:20px;padding:16px;margin:0 0 12px}
+.elc-h{display:flex;gap:12px;align-items:center}.elc-ic{width:46px;height:46px;border-radius:14px;background:#FDECEC;display:flex;align-items:center;justify-content:center;font-size:24px;flex:none}
+.elc-h b{font-family:var(--bold);font-size:16px;font-weight:700;display:block}.elc-h small{font-size:13px;color:var(--muted)}
+.elc-b{width:100%;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px}.elc-b em{font-style:normal;color:var(--yel)}
+.elc-lt{font-family:var(--bold);font-size:13px;font-weight:700;margin:4px 0 8px}
+.elc-o{display:flex;align-items:center;gap:11px;background:#fff;border-radius:16px;padding:12px 12px 12px 14px;margin-bottom:8px}
+.elc-tx{flex:1;min-width:0}.elc-tx small{font-size:12px;color:var(--muted)}
+.elc-j{all:unset;cursor:pointer;background:var(--yel);color:var(--on);font-family:var(--bold);font-weight:700;font-size:12.5px;border-radius:999px;padding:7px 12px}
+/* ===== Chambrage ===== */
+.rx-r{padding:10px 0;border-bottom:1px solid #EEEAE0}.rx-r:last-child{border:0}
+.rx-t{display:flex;align-items:center;gap:10px}.rx-t .av{width:30px;height:30px;flex:none}
+.rx-t>b{flex:1;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rx-lg{width:24px;height:24px;object-fit:contain;flex:none}.rx-nul{font-size:12px;font-weight:700;color:var(--muted)}
+.rx-st{font-family:var(--bold);font-size:11px;font-weight:700;border-radius:6px;padding:2px 7px}.rx-st.ko{background:#FDECEC;color:#C62828}.rx-st.ok{background:#E6F6EA;color:#1E7B34}
+.rx-c{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0 40px}
+.rx{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:4px;background:#F5F2EA;border-radius:999px;padding:3px 9px;font-size:13px;font-weight:600;color:#55534c}
+.rx.me{background:var(--on);color:#fff}
+.rx.add{border:1.5px dashed #DCD6C8;background:#fff;color:#9a9890;padding:2px 9px}.rx.add.sm{font-size:12px;margin-left:2px}
+.rx-bar{display:flex;gap:2px;margin:8px 0 0 40px;background:var(--on);border-radius:999px;padding:5px 8px;width:max-content;max-width:calc(100% - 40px);overflow-x:auto}
+.rx-bar span{font-size:20px;padding:2px 4px;cursor:pointer}
+.rx-q{margin:6px 0 0 40px;display:flex;flex-wrap:wrap;gap:6px}
+.rx-q span{cursor:pointer;font-size:12px;font-weight:600;border:1.5px solid #E2DDD0;border-radius:999px;padding:4px 10px;background:#fff}.rx-q span.me{background:var(--on);color:#fff;border-color:var(--on)}
+.rx-m{margin:8px 0 0 40px;font-size:13px;background:#F5F2EA;border-radius:4px 14px 14px 14px;padding:7px 10px;width:max-content;max-width:calc(100% - 40px)}.rx-m b{font-weight:700;margin-right:4px}
+.modal.rcp-ov{background:rgba(12,13,16,.94)!important;z-index:300}
+.rcp-w .btn.rcp-x{background:#fff!important;color:var(--on)!important;border:0}

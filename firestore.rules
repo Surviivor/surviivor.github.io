@@ -36,6 +36,14 @@ service cloud.firestore {
     }
 
     // Sondages : un vote par joueur et par question ; chacun ne modifie que le sien.
+    match /reacts/{rid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && rid == request.resource.data.lid + '__' + request.resource.data.rk + '__' + request.resource.data.to + '__' + request.auth.uid
+        && request.resource.data.to != request.auth.uid;
+      allow delete: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+    }
     match /votes/{vid} {
       allow read: if signedIn();
       allow create, update: if signedIn()

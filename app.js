@@ -505,6 +505,7 @@ async function boot(){
     if(S.guest && err && err.code==='permission-denied'){ window.survivorLogin('Le dernier en vie remporte la ligue.',true); return; }
     toast('Données indisponibles pour le moment.',true); render(); });
   sub('leagues',S.leagues); sub('players',S.players);
+  try{ db.collection('reacts').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.reacts=o; render(); }, e=>console.warn('reacts',e)); }catch(e){}
   try{ db.collection('votes').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.votes=o; render(); }, e=>console.warn('votes',e)); }catch(e){}
   render(); setInterval(render,30000);
 }
@@ -652,6 +653,16 @@ const A = {
   openSurv(v){ A.open(v); S.view.ltab='surv'; render(); scrollTo(0,0); },
   back(){ S.view.league=null; render(); scrollTo(0,0); },
   ltab(v){ S.view.ltab=v; S.view.hv='days'; render(); },
+  recap(lid){ S.recap=lid; render(); },
+  recapClose(){ S.recap=null; render(); },
+  rxOpen(k){ S.view.rx=S.view.rx===k?null:k; render(); },
+  react(v){ if(S.guest) return window.survivorLogin&&window.survivorLogin('Connecte-toi pour réagir.');
+    const [lid,rk,to,kind,...rest]=v.split('|'); const val=rest.join('|'); if(to===S.me) return;
+    const id=[lid,rk,to,S.me].join('__'); const cur=S.reacts[id]||{lid,rk,to,uid:S.me,e:null,q:null};
+    const rec={...cur,at:Date.now()}; if(kind==='e') rec.e=cur.e===val?null:val; else rec.q=cur.q===val?null:val;
+    S.view.rx=null;
+    if(!rec.e&&!rec.q){ delete S.reacts[id]; render(); if(S.mode!=='demo') db.doc('reacts/'+id).delete().catch(e=>handleErr(e)); return; }
+    S.reacts[id]=rec; render(); if(S.mode!=='demo') db.doc('reacts/'+id).set(rec).catch(e=>handleErr(e)); },
   myUsed(lid){ S.open['svU'+lid]=true; S.view.ltab='surv'; render(); setTimeout(()=>{ const e=document.querySelector('[data-v="svU'+lid+'"]'); if(e) e.scrollIntoView({behavior:'smooth',block:'start'}); },50); },
   manage(v){ S.view.manage=v; const lg=S.leagues[v]; S.view.comp=(lg&&lg.comp)||cat(lg&&lg.category).comps[0]||null; if(S.view.comp) loadFeed(S.view.comp); render(); scrollTo(0,0); },
   unmanage(){ S.view.manage=null; render(); scrollTo(0,0); },
@@ -1602,6 +1613,7 @@ function survivorsView(c){
         return `<div class="ub-r">${logoTag(x.sd,'ub-lg')||'<span class="ub-lg"></span>'}<b>${esc(x.sd.n)}</b><span class="ub-who">${avs}<em>${x.us.length}/${ub.n}</em></span></div>`; }).join('');
       h+=svCard('svU'+lid,false,`<div class="sv-h"><span>${IC.x}Équipes utilisées</span><small>${ub.n} survivants</small></div>`,`<div class="ub-note">Ta photo, cerclée de jaune, indique les équipes que tu as déjà jouées.</div>`+rows);
     } }
+  if(c.status!=='upcoming') h+=chambrageCard(c);
   // éliminés : du dernier tombé au premier, avec la journée d'élimination
   const dead=standingRows(c).filter(x=>!c.alive.includes(x.u)&&!c.winners.includes(x.u));
   if(dead.length && c.status!=='upcoming'){
@@ -1609,6 +1621,72 @@ function survivorsView(c){
       return `<div class="sv-r2 dead">${avatarOf(u,'dead')}<div class="sv-n">${esc(nameOf(u))}${u===S.me?'<span class="toi">TOI</span>':''}</div><div class="sv-c"><span class="sv-j">J${jn}</span></div></div>`; }).join(''));
   }
   return h;
+}
+
+/* ===== Récap de journée, joueur éliminé, chambrage ===== */
+function lastDoneRound(c){ if(!c||!c.pick||c.points) return null; const d=c.rounds.filter(r=>(c.info[r.k]||{}).state==='done'); return d.length?d[d.length-1]:null; }
+function pickSide(r,p){ if(!p||!r.matches) return null; const m=r.matches[p.m]; if(!m) return null; return {m, sd:p.p==='H'?m.h:p.p==='A'?m.a:null, opp:p.p==='H'?m.a:p.p==='A'?m.h:null}; }
+function scoreNums(lg,m){ const s=matchScore(lg,m); const x=s.match(/(\d+)\s*-\s*(\d+)/); return x?[+x[1],+x[2]]:null; }
+function recapData(c){
+  const r=lastDoneRound(c); if(!r) return null; const lg=c.lg, ri=c.info[r.k]||{};
+  const before=ri.aliveBefore||[], out=ri.out||[], surv=before.filter(u=>!out.includes(u));
+  const cnt={}, keyOf=x=>x.sd?String(x.sd.id||x.sd.n):null;
+  before.forEach(u=>{ const x=pickSide(r,pickOf(u,lg.id,r.k)); const k=x&&keyOf(x); if(k) cnt[k]=(cnt[k]||{n:0,sd:x.sd,m:x.m}), cnt[k].n++; });
+  let bold=null; surv.forEach(u=>{ const p=pickOf(u,lg.id,r.k), x=pickSide(r,p); if(!x||!x.sd) return; const rk=pickRank(lg,r,p)||0; if(!bold||rk>bold.rk) bold={u,rk,x,alone:(cnt[keyOf(x)]||{}).n===1}; });
+  if(bold&&!bold.rk) bold=null;
+  let mir=null; surv.forEach(u=>{ if(bold&&u===bold.u) return; const x=pickSide(r,pickOf(u,lg.id,r.k)); if(!x||!x.sd) return; const sc=scoreNums(lg,x.m); if(!sc) return; if(Math.abs(sc[0]-sc[1])===1&&!mir) mir={u,x,sc}; });
+  const top=Object.values(cnt).sort((a,b)=>b.n-a.n)[0]||null;
+  const next=c.rounds.find(x=>t(x.deadline)>now());
+  return {r,ri,n:ri.n||(c.rounds.findIndex(x=>x.k===r.k)+1),before,out,surv,bold,mir,top,next};
+}
+function elimLine(c,r,u){ const lg=c.lg, x=pickSide(r,pickOf(u,lg.id,r.k)); if(!x) return 'Pas de pari'; const sc=matchScore(lg,x.m).replace(/\s/g,''); return `${shortName(lg,x.m,x.m.h)} ${sc||'–'} ${shortName(lg,x.m,x.m.a)}`; }
+function recapTeaser(c){ const d=recapData(c); if(!d) return ''; const k=d.out.length;
+  return `<div class="rcp-tz" data-a="recap" data-v="${c.lg.id}"><div class="rcp-tzl"><span>Récap de la J${d.n}</span><b>${k?`${k} éliminé${k>1?'s':''}`:'Aucun éliminé'}</b></div><span class="rcp-go">Voir</span></div>`; }
+function recapHtml(lid){
+  const c=C(lid); const d=c&&recapData(c); if(!d) return ''; const lg=c.lg, k=d.out.length;
+  const title=k===0?`Personne n'est <em>tombé</em>`:(k>=3&&k*4>=d.before.length)?`Hécatombe :<br><em>${k} éliminés</em> cette journée`:`<em>${k} éliminé${k>1?'s':''}</em> cette journée`;
+  const dead=c.mem.filter(u=>!d.before.includes(u)).length;
+  const meter=`<div class="rcp-m">${d.surv.map(()=>'<i></i>').join('')}${d.out.map(()=>'<i class="x"></i>').join('')}${Array(dead).fill('<i class="d"></i>').join('')}</div>`;
+  const wm=(leagueTitle(lg.name).match(/<img[^>]*>/)||[''])[0].replace(/src="img\/(survivor|race|oneshot|x)\.png/,'src="img/$1-white.png');
+  let h=`<div class="rcp"><div class="rcp-top">${wm||''}<span>${esc(((splitBrand(lg.name)||{}).rest||lg.name).replace(/^\s*X\s+/i,''))} · Journée ${d.n}</span></div><h3>${title}</h3><p class="rcp-k">${c.mem.length} joueurs au départ · ${d.surv.length} encore en vie</p>${meter}`;
+  if(k) h+=`<div class="rcp-b"><div class="rcp-t">💀 Les éliminés</div>${d.out.map(u=>{ const x=pickSide(d.r,pickOf(u,lid,d.r.k)); return `<div class="rcp-r">${avatarOf(u)}<b>${esc(nameOf(u))}</b>${x&&x.sd?logoTag(x.sd,'rcp-lg'):''}<span class="rcp-sc">${esc(x?(x.sd?shortName(lg,x.m,x.sd)+' ':'Nul ')+(matchScore(lg,x.m).replace(/\s/g,'')||''):'Pas de pari')}</span></div>`; }).join('')}</div>`;
+  if(d.bold){ const b=d.bold; h+=`<div class="rcp-b hl"><div class="rcp-t">🎯 Le pari le plus audacieux</div><div class="rcp-au">${avatarOf(b.u)}${logoTag(b.x.sd,'rcp-al')}</div><p class="rcp-p">${esc(nameOf(b.u))} a misé sur ${esc(shortName(lg,b.x.m,b.x.sd))} (${b.rk}e) contre ${esc(shortName(lg,b.x.m,b.x.opp))}. ${b.alone?'Personne d’autre ne l’avait joué… et ça passe !':'Et ça passe !'}</p></div>`; }
+  if(d.mir){ const m=d.mir; h+=`<div class="rcp-b"><div class="rcp-t">😮‍💨 Le miraculé</div><div class="rcp-r">${avatarOf(m.u)}<div class="rcp-n"><b>${esc(nameOf(m.u))}</b><small>${esc(shortName(lg,m.x.m,m.x.sd))} gagne à un but près (${m.sc[0]}-${m.sc[1]})</small></div>${logoTag(m.x.sd,'rcp-lg')}</div></div>`; }
+  if(d.top&&d.top.n>1) h+=`<div class="rcp-b"><div class="rcp-t">📊 Club le plus joué</div><div class="rcp-r">${logoTag(d.top.sd,'rcp-lg')}<b>${esc(shortName(lg,d.top.m,d.top.sd))}</b><small>${d.top.n} joueurs sur ${d.before.length}</small></div></div>`;
+  h+=`<div class="rcp-ft"><span>surviivor.github.io</span><span>${d.next?'Prochaine journée : '+fmtDT(d.next.deadline):''}</span></div></div>`;
+  return `<div class="modal rcp-ov"><div class="vd-bg" data-a="recapClose"></div><div class="rcp-w">${h}<button class="btn line rcp-x" data-a="recapClose">Fermer</button></div></div>`;
+}
+function elimCard(c){
+  const lg=c.lg; if(c.points||!c.pick||!isMember(lg.id)||c.alive.includes(S.me)||c.winners.includes(S.me)||c.status!=='live') return '';
+  const rk=c.elimAt[S.me]; const r=c.rounds.find(x=>x.k===rk); if(!r) return ''; const n=(c.info[rk]||{}).n||'?';
+  const open=Object.keys(S.leagues).filter(l=>shownL(l)&&!isMember(l)&&!(S.leagues[l]||{}).private).map(C).filter(x=>x&&x.status==='upcoming').sort((a,b)=>t(a.lg.startAt)-t(b.lg.startAt));
+  const op=!!S.open['elj'+lg.id];
+  let h=`<div class="elc"><div class="elc-h"><div class="elc-ic">💀</div><div><b>Éliminé à la J${n}</b><small>${esc(elimLine(c,r,S.me))}. Ça arrive aux meilleurs.</small></div></div>`;
+  h+=`<button class="btn elc-b" data-a="toggle" data-v="elj${lg.id}">Rejoindre une autre ligue <em>${op?'⌃':'›'}</em></button></div>`;
+  if(op){ h+=`<div class="elc-lt">Ligues ouvertes</div>`;
+    h+=open.length?open.map(x=>{ const sb=splitBrand(x.lg.name); return `<div class="elc-o"><div class="elc-tx"><div class="mp-nm">${sb?`${WM(sb.k)}<span>${xify(esc(sb.rest))}</span>`:`<span>${esc(x.lg.name)}</span>`}</div><small>Début ${until(x.lg.startAt)?'dans '+until(x.lg.startAt):fmtD(x.lg.startAt)} · ${x.mem.length} inscrit${x.mem.length>1?'s':''}</small></div><button class="elc-j" data-a="join" data-v="${x.lg.id}">Rejoindre</button></div>`; }).join(''):`<div class="card muted" style="text-align:center;font-size:14px">Aucune ligue ouverte pour l'instant. Reviens bientôt !</div>`;
+  }
+  return h;
+}
+const RX_E=['😂','🔥','💀','🍀','🤡','🐐','😱'];
+const RX_Q={ok:['Quelle chance 🍀','Respect 🫡','Tu vas tomber 😈'], ko:['Bien tenté 😅','Fallait pas 🤡','RIP 🪦']};
+S.reacts=S.reacts||{};
+function reactsOf(lid,rk,to){ return Object.values(S.reacts).filter(x=>x.lid===lid&&x.rk===rk&&x.to===to); }
+function chambrageCard(c){
+  const r=lastDoneRound(c); if(!r) return ''; const lg=c.lg, lid=lg.id, ri=c.info[r.k]||{}, n=ri.n||(c.rounds.findIndex(x=>x.k===r.k)+1);
+  const who=ri.aliveBefore||[]; if(!who.length) return '';
+  const rows=who.map(u=>{ const out=(ri.out||[]).includes(u), x=pickSide(r,pickOf(u,lid,r.k)), rx=reactsOf(lid,r.k,u);
+    const cnt={}; rx.forEach(a=>{ if(a.e) cnt[a.e]=(cnt[a.e]||0)+1; }); const mine=rx.find(a=>a.uid===S.me)||{};
+    const chips=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(([e,k])=>`<button class="rx ${mine.e===e?'me':''}" data-a="react" data-v="${lid}|${r.k}|${u}|e|${e}">${e} ${k}</button>`).join('');
+    const self=u===S.me, key=`${lid}|${r.k}|${u}`, open=S.view.rx===key;
+    const add=self||S.guest?'':`<button class="rx add ${chips?'':'sm'}" data-a="rxOpen" data-v="${key}">＋${chips?'':' Réagir'}</button>`;
+    const logo=x?(x.sd?logoTag(x.sd,'rx-lg'):`<span class="rx-nul">Nul</span>`):'';
+    let h=`<div class="rx-r"><div class="rx-t">${avatarOf(u)}<b>${esc(nameOf(u))}</b>${logo}<span class="rx-st ${out?'ko':'ok'}">${out?'ÉLIMINÉ':'EN VIE'}</span>${chips?'':add}</div>`;
+    if(chips) h+=`<div class="rx-c">${chips}${add}</div>`;
+    if(open){ const qs=RX_Q[out?'ko':'ok']; h+=`<div class="rx-bar">${RX_E.map(e=>`<span data-a="react" data-v="${key}|e|${e}">${e}</span>`).join('')}</div><div class="rx-q">${qs.map((q,i)=>`<span class="${mine.q===q?'me':''}" data-a="react" data-v="${key}|q|${q}">${esc(q)}</span>`).join('')}</div>`; }
+    h+=rx.filter(a=>a.q).map(a=>`<div class="rx-m"><b>${esc(nameOf(a.uid))}</b>${esc(a.q)}</div>`).join('');
+    return h+'</div>'; }).join('');
+  return svCard('svR'+lid,true,`<div class="sv-h"><span>${IC.chat||''}Paris de la J${n}</span><small>Réagis aux paris</small></div>`,rows);
 }
 function nextVotesCard(c){
   const lg=c.lg; if(!c.pick) return '';
@@ -1714,6 +1792,7 @@ function viewLeague(lid){
   else if(c.status==='finished') h+= c.winners.includes(S.me)?`<div class="banner win"><span class="ico">🏆</span>${c.winners.length>1?'Tu fais partie des 2 derniers survivants !':'Tu es le grand gagnant !'}</div>`:`<div class="banner dead"><span class="ico">🏁</span>Ligue terminée · ${c.winners.map(w=>esc(nameOf(w))).join(' & ')} ${c.winners.length>1?'gagnent':'gagne'}</div>`;
   else if(!mine) h+= c.status==='upcoming'?`<div class="banner info"><span class="ico">🎟️</span><div style="flex:1">Inscriptions ouvertes jusqu'au ${fmtDT(lg.startAt)}</div><button class="btn sm green" data-a="join" data-v="${lid}">JE M'INSCRIS</button></div>`:`<div class="banner info"><span class="ico">🔒</span>Inscriptions closes. Tu suis la ligue en spectateur.</div>`;
   h+=lastBanner(c);
+  h+=elimCard(c)+recapTeaser(c);
   const tab=S.view.ltab==='hist'?'surv':S.view.ltab;
   h+=`<div class="seg"><button class="${tab==='paris'?'on':''}" data-a="ltab" data-v="paris">${c.pick?'Paris':'Vote'}</button><button class="${tab==='surv'?'on':''}" data-a="ltab" data-v="surv">${c.points?'Classement':'Survivants'}</button></div>`;
   if(tab==='paris'){
@@ -2003,7 +2082,7 @@ function render(){
   const ptodo=pollTodo();
   app.innerHTML=deEmoji((S.mode==='demo'?`<div class="demo"><span><b>MODE DÉMO</b> · données fictives, rien n'est enregistré.</span></div>`:'')+
     (S.stale?`<div class="demo">⚠️ <span>Connexion lente : les données peuvent ne pas être à jour.</span><button class="demo-btn" data-a="reload">Réessayer</button></div>`:'')+
-    (()=>{ if(S.verdict===undefined){ S.verdict=findVerdict(); } return S.verdict?verdictHtml(S.verdict):''; })()+`<div class="page">${body}</div><nav class="bottom">${tabs.map(([k,l,ic])=>`<button class="${v.tab===k?'on':''}" data-a="tab" data-v="${k}">${ic}${l}${k==='paris'&&todo?`<span class="nbadge">${todo}</span>`:''}${k==='sondage'&&ptodo?`<span class="nbadge">${ptodo}</span>`:''}</button>`).join('')}</nav>`);
+    (()=>{ if(S.verdict===undefined){ S.verdict=findVerdict(); } return S.verdict?verdictHtml(S.verdict):''; })()+(S.recap?recapHtml(S.recap):'')+`<div class="page">${body}</div><nav class="bottom">${tabs.map(([k,l,ic])=>`<button class="${v.tab===k?'on':''}" data-a="tab" data-v="${k}">${ic}${l}${k==='paris'&&todo?`<span class="nbadge">${todo}</span>`:''}${k==='sondage'&&ptodo?`<span class="nbadge">${ptodo}</span>`:''}</button>`).join('')}</nav>`);
   Object.entries(keep).forEach(([id,val])=>{ const el=document.getElementById(id); if(el&&el.type!=='file') el.value=val; });
   if(focusId){ const el=document.getElementById(focusId); if(el) el.focus(); }
   wmify(app);
