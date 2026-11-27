@@ -516,7 +516,7 @@ async function boot(){
 }
 
 /* ---------- Visiteurs non connectés ---------- */
-const GUEST_OK=new Set(['hideBand','openSurv','reload','fmt','lfmt','hview','toLeagues','slide','install','hideInstall','filter','open','back','ltab','toggle','comp','peek']);
+const GUEST_OK=new Set(['hideBand','openSurv','reload','fmt','lfmt','hview','toLeagues','slide','install','hideInstall','filter','ltype','lsport','open','back','ltab','toggle','comp','peek']);
 function askLogin(a,v){
   const lg=v&&S.leagues[String(v).split('|')[0]];
   if(a==='join' && lg){ try{ sessionStorage.setItem('survivor-after-login',JSON.stringify({a:'join',v:lg.id})); }catch(e){} }
@@ -654,6 +654,8 @@ const A = {
   logout(){ if(window.survivorLogout) window.survivorLogout(); },
   tab(v){ S.view.tab=v; S.view.league=null; S.view.manage=null; render(); scrollTo(0,0); },
   filter(v){ S.view.filter=v; render(); },
+  ltype(v){ S.view.ltype=S.view.ltype===v?null:v; render(); },
+  lsport(v){ S.view.lsport=S.view.lsport===v?null:v; render(); },
   open(v){ S.view.league=v; S.view.ltab='paris'; S.view.hv='days'; S.view.tab='ligues'; render(); scrollTo(0,0); celebrate(v); },
   openSurv(v){ A.open(v); S.view.ltab='surv'; render(); scrollTo(0,0); },
   back(){ S.view.league=null; render(); scrollTo(0,0); },
@@ -1104,11 +1106,11 @@ function viewHome(){
   const fmt=S.view.fmt||'survivor', howOpen=!S.open.howX;
   const DESC={survivor:'Un mauvais pari et tu es éliminé. Le dernier en vie gagne.', oneshot:'Pas d’élimination : cumule des points pour gagner la ligue.'};
   const nOs=all.filter(c=>c.points).length, nSv=all.length-nOs;
-  const lfmt=S.view.lfmt||'survivor';
-  const allF=all.filter(c=>lfmt==='oneshot'?c.points:!c.points);
   const cats=Object.keys(CATS).filter(k=>!HIDDEN_CATS.includes(k));
-  const f=S.view.filter;
-  const list=allF.filter(c=> f==='all'?true : f==='mine'?isMember(c.lg.id) : (c.lg.category||'football')===f);
+  const f=['all','mine','up','live'].includes(S.view.filter)?S.view.filter:'all', ty=S.view.ltype||null, sp=S.view.lsport||null;
+  const list=all.filter(c=> (f==='all'||(f==='mine'?isMember(c.lg.id):f==='up'?c.status==='upcoming':c.status==='live'))
+    && (!ty||(ty==='oneshot'?c.points:!c.points)) && (!sp||(c.lg.category||'football')===sp));
+  const nMine=all.filter(c=>isMember(c.lg.id)).length;
   const myL=Object.keys(S.leagues).filter(lid=>isMember(lid)&&shownL(lid)).map(C).filter(Boolean);
   const aliveIn=myL.filter(c=>c.status==='live'&&c.alive.includes(S.me)).length, inGame=myL.filter(c=>c.status==='upcoming'||(c.status==='live'&&c.alive.includes(S.me))).length, soon=myL.filter(c=>c.status==='upcoming').length, todo=countTodo();
   const me=S.players[S.me]||{}, nm=nameOf(S.me);
@@ -1147,17 +1149,13 @@ ${fmt==='oneshot'?`    <div class="sl slide "><div class="sl-ph"><div class="il 
     <div class="sl slide dark mid full"><img class="sl-bgimg" src="img/slide-supporter.jpg" alt=""><div class="sl-ph"><div class="il il4p"></div><span class="sl-k">4<small>/4</small></span></div><div class="sl-tx nobtn"><div class="sl-h">Le dernier en vie <mark>gagne</mark>.</div></div></div>
 `}  </div><div class="sdots">${[0,1,2,3].map(i=>`<button data-a="slide" data-v="${i}" aria-label="Écran ${i+1}"></button>`).join('')}</div></div>`:`</div>`}</div>
   <div class="nh-sec" id="ligues"><span>Les ligues</span><small>${list.length} ligue${list.length>1?'s':''}</small></div>`;
-  h+=`<div class="lsw2 ${lfmt}"><div class="lsw2-tabs" role="tablist"><button role="tab" class="${lfmt==='survivor'?'on':''}" data-a="lfmt" data-v="survivor" aria-label="Ligues Survivor">${WM('survivor', lfmt==='survivor')}<em>${nSv}</em></button><button role="tab" class="${lfmt==='oneshot'?'on':''}" data-a="lfmt" data-v="oneshot" aria-label="Ligues Race">${WM('oneshot', false)}<em>${nOs}</em></button></div></div>`;
-  const fl=[['all','Toutes'],...(S.guest?[]:[['mine','Mes ligues']]),...cats.map(k=>[k,cat(k).label])];
-  h+=`<div class="ftabs" role="tablist">`+fl.map(([k,l])=>`<button role="tab" class="${f===k?'on':''}" data-a="filter" data-v="${k}">${esc(l)}</button>`).join('')+`</div>`;
+  const ft=[['all','Toutes'],...(S.guest?[]:[['mine','Mes ligues']]),['up','À venir'],['live','En cours']];
+  h+=`<div class="lft" role="tablist">`+ft.map(([k,l])=>`<button role="tab" class="${f===k?'on':''}" data-a="filter" data-v="${k}">${l}${k==='mine'&&nMine?`<em>${nMine}</em>`:''}</button>`).join('')+`</div>`;
+  h+=`<div class="lfc"><button class="lch wmc ${ty==='survivor'?'on':''}" data-a="ltype" data-v="survivor" aria-label="Survivor">${WM('survivor',ty==='survivor')}</button><button class="lch wmc ${ty==='oneshot'?'on':''}" data-a="ltype" data-v="oneshot" aria-label="Race">${WM('oneshot',ty==='oneshot')}</button><span class="ldv"></span>`+cats.map(k=>`<button class="lch ${sp===k?'on':''}" data-a="lsport" data-v="${k}">${cat(k).emo} ${esc(k==='basket'?'Basket':k==='football'?'Foot':cat(k).label)}</button>`).join('')+`</div>`;
   if(!list.length){
     h+=`<div class="empty"><div class="ico">${f==='mine'?'🎟️':'🏟️'}</div><h3>${f==='mine'?'AUCUNE LIGUE':'PAS ENCORE DE LIGUE'}</h3>${f==='mine'?'<p>Inscris-toi à une ligue ou entre un code privé.</p></div>':'<p>Crée-la et invite tes amis avec le bouton ci-dessous.</p></div>'}`;
   }
-  const grp={survivor:list.filter(c=>!c.points), oneshot:list.filter(c=>c.points)};
-  const order2=[lfmt];
-  order2.forEach(g=>{ const L2=grp[g]; if(!L2.length) return;
-    L2.forEach(c=>{ h+=leagueCardNew(c); });
-  });
+  list.forEach(c=>{ h+=leagueCardNew(c); });
   h+=`<button class="nc-join" data-a="joinCode">${I.key} Rejoindre une ligue privée avec un code</button>`;
   h+=`<button class="nc-join nc-create" data-a="tab" data-v="admin">${I.plus} Créer une ligue et invite tes amis</button>`;
   return h;

@@ -1364,3 +1364,14 @@ button.lh-chip.pl:active{transform:scale(.96)}
 .nci-top .nc-p.ok{background:#fff;color:#1E7B34}
 /* Même hauteur pour toutes les vignettes, photo +20 % */
 .nci,.nci.up{min-height:259px}
+
+/* Filtres des ligues : onglets + pastilles */
+.lft{display:flex;gap:18px;border-bottom:1.5px solid #E2DDD0;padding:0 4px;margin:4px 0 10px;overflow-x:auto;scrollbar-width:none}
+.lft button{all:unset;cursor:pointer;padding:8px 0 10px;font-family:var(--bold);font-weight:700;font-size:14px;color:#9a9890;white-space:nowrap}
+.lft button.on{color:var(--on);box-shadow:inset 0 -3px 0 var(--on)}
+.lft em{font-style:normal;background:var(--yel);color:var(--on);border-radius:999px;font-size:10.5px;padding:1px 6px;margin-left:4px}
+.lfc{display:flex;gap:6px;align-items:center;overflow-x:auto;scrollbar-width:none;margin:0 0 12px;padding-bottom:2px}
+.lch{all:unset;cursor:pointer;flex:none;display:inline-flex;align-items:center;height:32px;box-sizing:border-box;background:#fff;border-radius:999px;padding:0 12px;font-family:var(--bold);font-size:12.5px;font-weight:600;color:#55534c;border:1.5px solid #E2DDD0;white-space:nowrap}
+.lch.on{background:var(--on);color:#fff;border-color:var(--on)}
+.lch.wmc img.wm{height:13px;width:auto;display:block}
+.ldv{width:1px;height:22px;background:#D8D3C6;flex:none;margin:0 2px}
