@@ -558,11 +558,11 @@ function startDemo(){
   S.leagues.L5={...S.leagues.L1, id:'L5', name:'Race X Ligue 2', scoring:'points', target:20, private:true, lastRule:'drink', code:'RACE20', cover:'trophee', createdAt:iso(n-11*D)};
   const P=(id,pseudo,lg,picks)=>({id,pseudo,leagues:Object.fromEntries(lg.map(l=>[l,iso(n-10*D)])),picks});
   S.players={
-    moi:P('moi','Rémy',['L1','L2','L3','L5'],{L1:{r12:{m:'r12m0',p:'H'},r13:{m:'r13m0',p:'H'}},L2:{t1:{m:'t1m2',p:'H'}},L3:{q1:{p:'A'}},L5:{r12:{m:'r12m0',p:'H'}}}),
-    p1:P('p1','Karim',['L1','L3','L5'],{L1:{r12:{m:'r12m1',p:'D'},r13:{m:'r13m2',p:'A'}},L3:{q1:{p:'A'},q2:{p:'B'}},L5:{r12:{m:'r12m1',p:'H'}}}),
-    p2:P('p2','Léa',['L1','L3','L4','L5'],{L1:{r12:{m:'r12m2',p:'A'}},L3:{q1:{p:'B'}},L5:{r12:{m:'r12m2',p:'A'}}}),
+    moi:P('moi','Rémy',['L1','L2','L3','L5'],{L1:{r12:{m:'r12m0',p:'H'},r13:{m:'r13m0',p:'H'}},L2:{t1:{m:'t1m2',p:'H'}},L3:{q1:{p:'A'}},L5:{r12:{m:'r12m0',p:'H'},r13:{m:'r13m0',p:'H'}}}),
+    p1:P('p1','Karim',['L1','L3','L5'],{L1:{r12:{m:'r12m1',p:'D'},r13:{m:'r13m2',p:'A'}},L3:{q1:{p:'A'},q2:{p:'B'}},L5:{r12:{m:'r12m1',p:'H'},r13:{m:'r13m1',p:'D'}}}),
+    p2:P('p2','Léa',['L1','L3','L4','L5'],{L1:{r12:{m:'r12m2',p:'A'}},L3:{q1:{p:'B'}},L5:{r12:{m:'r12m2',p:'A'},r13:{m:'r13m2',p:'A'}}}),
     p3:P('p3','Hugo',['L1'],{L1:{r12:{m:'r12m0',p:'A'}}}),
-    p4:P('p4','Inès',['L1','L3','L5'],{L1:{r12:{m:'r12m0',p:'H'},r13:{m:'r13m3',p:'H'}},L3:{q1:{p:'A'}},L5:{r12:{m:'r12m0',p:'A'}}})
+    p4:P('p4','Inès',['L1','L3','L5'],{L1:{r12:{m:'r12m0',p:'H'},r13:{m:'r13m3',p:'H'}},L3:{q1:{p:'A'}},L5:{r12:{m:'r12m0',p:'A'},r13:{m:'r13m3',p:'H'}}})
   };
   afterData(); render(); setInterval(render,30000);
 }
@@ -1614,8 +1614,8 @@ function raceRanking(c){
   const pill=(u,i)=>{ const p=pickOf(u,lid,r.k); if(!p) return `<span class="rpk none">–</span>`;
     if(!vis && u!==S.me) return `<span class="rpk hid" title="Parié">${LOCK}</span>`;
     const x=pickSides(p)[0]; const m=(r.matches||{})[x.m]; if(!m) return `<span class="rpk none">–</span>`;
-    if(x.p==='D') return `<span class="rpk dr" title="Nul ${esc(m.h.n)} – ${esc(m.a.n)}">${logoTag(m.h,'rpk-im')}<b>=</b>${logoTag(m.a,'rpk-im')}</span>`;
-    const sd=x.p==='H'?m.h:m.a; return `<span class="rpk" title="${esc(sd.n)}">${logoTag(sd,'rpk-im')||`<b class="rpk-t">${esc((sd.n||'?').slice(0,3))}</b>`}</span>`; };
+    if(x.p==='D') return `<span class="rpk dr" title="Nul ${esc(m.h.n)} – ${esc(m.a.n)}">${logoTag(m.h,'rpk-im')}<span>Nul</span>${logoTag(m.a,'rpk-im')}</span>`;
+    const sd=x.p==='H'?m.h:m.a; return `<span class="rpk" title="${esc(sd.n)}">${logoTag(sd,'rpk-im')}<span>${esc(shortName(lg,m,sd))}</span></span>`; };
   let h=`<div class="card rk-card ${showPk?'':'nopk'}"><div class="sv-h"><span>${IC.trophy}Classement</span><small>Le premier à ${c.N} points gagne</small></div>`;
   h+=`<div class="rk-th"><span>#</span><span></span><span>Joueur</span><span>GA</span><span>Pts</span>${showPk?`<span>J${n}</span>`:''}</div>`;
   h+=c.ranking.map((x,i)=>`<div class="rk-tr ${x.pos===1?'first':''}"><div class="rk-pos">${x.pos}</div>${avatarOf(x.u)}<div class="rk-nm"><b>${esc(nameOf(x.u))}${x.u===S.me?'<span class="toi">TOI</span>':''}</b></div><div class="rk-ga ${x.ga>0?'p':x.ga<0?'n':''}">${x.ga>0?'+':''}${x.ga||0}</div><div class="rk-pts">${c.pts[x.u]||0}</div>${showPk?`<div class="rk-pk">${pill(x.u,i)}</div>`:''}</div>`).join('');
