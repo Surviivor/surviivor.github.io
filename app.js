@@ -657,7 +657,7 @@ const A = {
   open(v){ S.view.league=v; S.view.ltab='paris'; S.view.hv='days'; S.view.tab='ligues'; render(); scrollTo(0,0); celebrate(v); },
   openSurv(v){ A.open(v); S.view.ltab='surv'; render(); scrollTo(0,0); },
   back(){ S.view.league=null; render(); scrollTo(0,0); },
-  ltab(v){ S.view.ltab=v; S.view.hv='days'; render(); },
+  ltab(v){ S.view.ltab=v; S.view.hv='days'; render(); if(v==='surv'){ const e=document.querySelector('.seg'); if(e&&e.getBoundingClientRect().top<0) e.scrollIntoView({behavior:'smooth',block:'start'}); } },
   recap(lid){ S.recap=lid; render(); },
   recapClose(){ S.recap=null; render(); },
   rxOpen(k){ S.view.rx=S.view.rx===k?null:k; render(); },
@@ -1781,24 +1781,24 @@ function leagueHero(c, lid){
   const G=(w,l,r)=>`<div class="lh-g"><div class="bar"><i style="width:${Math.max(2,Math.min(100,w))}%"></i></div><small><span>${l}</span><span>${r||''}</span></small></div>`;
   if(c.status==='upcoming'){
     if(mine) chips.push(['ok',`${IC.check}Inscrit`]);
-    chips.push(['',`${n} joueur${n>1?'s':''}`],['',`${IC.clock}${shortDur(t(lg.startAt))}`]);
+    chips.push(['pl',`${n} joueur${n>1?'s':''}`],['',`${IC.clock}${shortDur(t(lg.startAt))}`]);
   } else if(c.points){
     const me=c.rankOf[S.me]||{};
     if(c.status==='finished') chips.push(['ok',wonBy(c,S.me)?`${IC.trophy}Gagnant`:'Terminée']);
     else if(mine) chips.push(['ok',`${me.pos||'–'}${me.pos===1?'er':'e'}`]);
-    if(mine) chips.push(['',`${me.pts||0} / ${c.N} pts`]); else chips.push(['',`${n} joueurs`]);
+    if(mine) chips.push(['pl',`${me.pts||0} / ${c.N} pts`]); else chips.push(['pl',`${n} joueurs`]);
     if(c.status!=='finished') chips.push(['',`${cal}J${jn}`]);
     if(mine && c.status!=='finished'){ const lead=Math.max(0,...Object.values(c.pts||{})); gauge=G((me.pts||0)*100/c.N,`<b>${me.pts||0} pts</b> sur ${c.N} pour gagner`,`le 1er a ${lead} pt${lead>1?'s':''}`); }
   } else {
     if(c.status==='finished') chips.push(['ok',c.winners.includes(S.me)?`${IC.trophy}Gagnant`:'Terminée']);
     else if(mine) chips.push(alive?['ok','En vie']:['bad',`Éliminé J${(c.info[c.elimAt[S.me]]||{}).n||'?'}`]);
     if(mine && alive && c.status!=='finished' && (+lg.lives>0||lg.redLantern)) chips.push(['',`${CI.heart}${(c.lives||{})[S.me]||0}`]);
-    else chips.push(['',`${n} joueurs`]);
+    else chips.push(['pl',`${n} joueurs`]);
     if(c.status!=='finished') chips.push(['',`${cal}J${jn}`]);
     const done=c.rounds.filter(r=>['done','cancelled'].includes((c.info[r.k]||{}).state)).length;
     gauge=G(c.alive.length*100/Math.max(1,n),`<b>${c.alive.length} survivant${c.alive.length>1?'s':''}</b> sur ${n}`,done?`après ${done} journée${done>1?'s':''}`:'');
   }
-  return `<div class="lh-backw"><button class="lh-back" data-a="back" aria-label="Retour">${I.back}</button></div><div class="lhero ${canManage(lg)?'adm':''}">${canManage(lg)?`<button class="lh-c lh-gear" data-a="manage" data-v="${lid}" aria-label="Gérer la ligue">${I.gear}</button>`:''}${title}<div class="lh-chips" style="grid-template-columns:repeat(${chips.length},1fr)">${chips.map(([k,x])=>`<span class="lh-chip ${k}">${x}</span>`).join('')}</div>${gauge}</div>`;
+  return `<div class="lh-backw"><button class="lh-back" data-a="back" aria-label="Retour">${I.back}</button></div><div class="lhero ${canManage(lg)?'adm':''}">${canManage(lg)?`<button class="lh-c lh-gear" data-a="manage" data-v="${lid}" aria-label="Gérer la ligue">${I.gear}</button>`:''}${title}<div class="lh-chips" style="grid-template-columns:repeat(${chips.length},1fr)">${chips.map(([k,x])=>k==='pl'?`<button class="lh-chip pl" data-a="ltab" data-v="surv">${x}</button>`:`<span class="lh-chip ${k}">${x}</span>`).join('')}</div>${gauge}</div>`;
 }
 function viewLeague(lid){
   const c=C(lid);
