@@ -994,7 +994,7 @@ const visible = lg => !HIDDEN_CATS.includes(lg.category);
 
 /* Lot : maillot rétro du championnat (ligues de football) */
 // Lot de la ligue : champ « prize » réglé dans Gérer la ligue (valeur par défaut pour Race X Ligue 1)
-const prizeOf = lg => typeof lg.prize==='string' ? lg.prize.trim().replace(/^.*kak[aá].*$/i,'') : '';
+const prizeOf = lg => lg.private ? '' : typeof lg.prize==='string' ? lg.prize.trim().replace(/^.*kak[aá].*$/i,'') : '';
 const prizeValOf = lg => String(lg.prizeVal||'').trim();
 const capFirst = x => x ? x.charAt(0).toUpperCase()+x.slice(1) : x;
 function prizeBand(lg, cls){
@@ -1206,7 +1206,7 @@ function liveChoice(c, u){
   const p=pickOf(u,c.lg.id,r.k); return ` · ${IC.eye} ${p?esc(pickLabel(c.lg,r,p)):'pas encore choisi'}`;
 }
 // ---------- Jokers : encart repliable « JOKERS (X) » au-dessus de « Mon choix »
-const canXj = lg => !S.guest && refStock()>0 && !xjOf(S.me,lg.id) && !prizeOf(lg);
+const canXj = lg => !S.guest && refStock()>0 && !xjOf(S.me,lg.id);
 function jokerItems(c, r){
   const lg=c.lg, out=[], closed=t(r.deadline)<=now(), can=!closed&&canPick(c,r), my=pickOf(S.me,lg.id,r.k);
   const jn=k=>{ const n=(c.info[k]||{}).n; return n?'journée '+n:''; };
@@ -1245,7 +1245,7 @@ function jokersCard(c, r){
   const n=items.filter(x=>x.avail && x.state!=='used').length, k='jkc'+lg.id;
   const op=S.open[k] || (S.view.jk&&S.view.jk.startsWith(lg.id+'|')) || (S.view.sab&&S.view.sab.lid===lg.id);
   const body=items.map(x=>`<div class="jitem ${x.state||''}"><div class="jt">${x.ico}<b>${x.t}</b>${x.state==='used'?'<span class="jtag">Utilisé</span>':x.state==='on'&&!x.btn?'<span class="jtag on">En cours</span>':''}${x.btn||''}</div><small>${x.d}</small>${x.note?`<div class="jnote">${x.note}</div>`:''}${x.react||''}${x.panel||''}</div>`).join('');
-  const st0=refStock(); const regain=n===0?(st0>0&&!prizeOf(lg)?`<div class="help" style="margin:10px 0 0">${CARD_ICO.replace('jcard','jcard sm')} Tu as ${st0} joker${st0>1?'s':''} en stock : 1 réactivation possible par ligue.</div>`:'<div class="help" style="margin:10px 0 0">Chaque joker ne s\'utilise qu\'une fois par ligue. Parraine des potes pour gagner des jokers.</div>'):'';
+  const st0=refStock(); const regain=n===0?(st0>0?`<div class="help" style="margin:10px 0 0">${CARD_ICO.replace('jcard','jcard sm')} Tu as ${st0} joker${st0>1?'s':''} en stock : 1 réactivation possible par ligue.</div>`:'<div class="help" style="margin:10px 0 0">Chaque joker ne s\'utilise qu\'une fois par ligue. Parraine des potes pour gagner des jokers.</div>'):'';
   // comment gagner des vies / points bonus
   const how=[];
   if(!c.points && +lg.lives>0) how.push([TI('heart'),'Une vie en réserve','Chaque joueur démarre avec une vie : à sa première erreur, il la perd mais reste en jeu.']);
@@ -1747,7 +1747,7 @@ function refStock(u=S.me){ const earned=refsOf(u).filter(([,p])=>hasAnyPick(p)).
 const xjOf = (u,lid) => (((S.players[u]||{}).xj)||{})[lid]||null;
 const CARD_ICO='<svg class="jcard" viewBox="0 0 32 32" aria-hidden="true"><rect x="7" y="3" width="18" height="26" rx="4" fill="#fff" stroke="#5B4BC4" stroke-width="2.2"/><path d="M16 9.5l1.9 3.9 4.3.6-3.1 3 .7 4.3-3.8-2-3.8 2 .7-4.3-3.1-3 4.3-.6z" fill="#F2C94C" stroke="#5B4BC4" stroke-width="1.4" stroke-linejoin="round"/></svg>';
 const CHEV_RND=up=>`<span class="cvr ${up?'up':''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>`;
-const REF_RULES=`<div class="rfr"><p><span>1</span><span><b>Invite un pote</b> avec le bouton « Inviter » : ton code parrainage est inclus dans le message.</span></p><p><span>2</span><span><b>Il s'inscrit à une ligue</b> avec ton code <b>et place son premier pari</b> : tu gagnes <b>1 joker</b>.</span></p><p><span>3</span><span><b>Ton joker, au choix :</b> 💣 Sabotage ou Double chance, dans une ligue qui propose ces jokers.</span></p><p><span>4</span><span><b>1 joker par ligue</b> au maximum, et <b>3 jokers</b> maximum en stock. Pas utilisable dans les ligues avec un lot à gagner.</span></p><small>Un code ne peut être utilisé qu'une fois par nouveau compte, et pas pour soi-même.</small></div>`;
+const REF_RULES=`<div class="rfr"><p><span>1</span><span><b>Invite un pote</b> avec le bouton « Inviter » : ton code parrainage est inclus dans le message.</span></p><p><span>2</span><span><b>Il s'inscrit à une ligue</b> avec ton code <b>et fait son premier choix</b> : tu gagnes <b>1 joker</b>.</span></p><p><span>3</span><span><b>Ton joker, au choix :</b> Sabotage ou Double chance, dans une ligue qui propose ces jokers.</span></p><p><span>4</span><span><b>1 joker par ligue</b> au maximum, et <b>3 jokers</b> maximum en stock.</span></p><small>Un code ne peut être utilisé qu'une fois par nouveau compte, et pas pour soi-même.</small></div>`;
 function inviteCard(c){
   if(c.status!=='upcoming') return ''; const lg=c.lg, k='ivh'+lg.id, op=!!S.open[k];
   const ico='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>';
@@ -1964,7 +1964,7 @@ function viewManage(lid){
   const sd=new Date(lg.startAt);
   h+=`<div class="card"><div class="h-disp">NOM &amp; RÉGLAGES</div>
     <label class="f">Nom de la ligue</label>${pfxInput('ei-name','w',stripPrefix(lg.name),'Ligue 1', isPoints(lg)?'oneshot':isMerguez(lg)?'merguez':'survivor')}
-    <label class="f">Lot à gagner (optionnel)</label><div style="display:flex;gap:8px"><input class="in" style="width:90px;flex:none" id="ei-prizev" maxlength="10" placeholder="50€" value="${esc(prizeValOf(lg))}"><input class="in w" id="ei-prize" maxlength="80" placeholder="en bon d'achat Decathlon" value="${esc(prizeOf(lg))}"></div><div class="help" style="margin:-4px 0 12px">Affiché dans l'onglet ${isPoints(lg)?'Classement':'Survivants'} : « ${isPoints(lg)?'Le gagnant':'Le dernier survivant'} de cette ligue gagne … ».</div>
+    ${S.isOwner&&!lg.private?`<label class="f">Lot à gagner (optionnel)</label><div style="display:flex;gap:8px"><input class="in" style="width:90px;flex:none" id="ei-prizev" maxlength="10" placeholder="50€" value="${esc(prizeValOf(lg))}"><input class="in w" id="ei-prize" maxlength="80" placeholder="en bon d'achat Decathlon" value="${esc(prizeOf(lg))}"></div><div class="help" style="margin:-4px 0 12px">Montant (ex. 50€) et lot (ex. en bon d'achat Decathlon) : affichés dans un ticket sur la page de la ligue et sur sa vignette.</div>`:''}
     ${c.status==='upcoming'?`<label class="f">Date de début (fin des inscriptions)</label><div class="row2"><input class="in w" type="date" id="ei-date" value="${dateIn(sd)}"><input class="in w" type="time" id="ei-time" value="${timeIn(sd)}"></div><div class="help">La ligue démarre le ${fmtDT(lg.startAt)}.</div>`:''}
     ${isPickMode(lg)?fmtBlock(isPoints(lg)?'points':'survivor','setFmt',lid,lg.target,c.rounds.some(r=>t(r.deadline)<=now())):''}
     ${isPickMode(lg)?optionsBlock(lg,isPoints(lg),'setLives',lid,c.status!=='upcoming'):''}
