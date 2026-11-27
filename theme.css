@@ -1294,3 +1294,16 @@ button.lh-chip.pl:active{transform:scale(.96)}
 .ncard.h .nc-faces{flex:none;margin-bottom:2px;font-family:var(--bold);font-weight:600}
 .ncard.h .nc-faces em{font-family:var(--bold);font-weight:600;font-size:13px;font-style:normal}
 .nc-ex{all:unset;box-sizing:border-box;display:block;width:100%;cursor:pointer;padding:6px 6px 0}
+
+/* ===== Vignette de ligue commencée (design I) ===== */
+.nci{position:relative;display:flex;flex-direction:column;min-height:236px;border-radius:20px;overflow:hidden;cursor:pointer;color:#fff;background:var(--on)}
+.nci>img,.nci>.cover-img,.nci>picture{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.nci-sh{position:absolute;inset:0;background:linear-gradient(180deg,#16171B26 0%,#16171BB3 50%,#16171BF2 100%)}
+.nci-top{position:relative;display:flex;justify-content:space-between;align-items:flex-start;padding:10px}
+.nci-top .nc-p.cat,.nci-top .nc-stk{position:static}
+.nc-p.pl{background:#ffffff33;color:#fff;backdrop-filter:blur(4px)}
+.nci-b{position:relative;margin-top:auto;padding:0 14px 14px}
+.nci-b .ltitle img.wm{height:31px}.nci-b .ltitle .rest{font-size:30px;line-height:1.05;margin-top:4px;color:#fff}
+.nci-m{margin-top:12px}.nci-mt{font-family:var(--bold);font-size:13px;font-weight:600;color:#dcdad3}.nci-mt b{font-size:15px;font-weight:700;color:#fff;margin-right:2px}
+.nci-bar{height:6px;border-radius:3px;background:#ffffff2e;margin-top:6px;position:relative;overflow:hidden}.nci-bar i{position:absolute;left:0;top:0;bottom:0;background:var(--yel);border-radius:3px}
+.nc-win.w{color:var(--yel);margin-top:8px}

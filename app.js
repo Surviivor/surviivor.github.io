@@ -1047,6 +1047,16 @@ function leagueCardNew(c){ let h='';
       c.lastRule&&c.status!=='finished'?`<div class="nc-opt">${LAST_RULES[c.lastRule].ico} ${LAST_RULES[c.lastRule].t}</div>`:'',
       c.status==='upcoming'?'':(!c.points?survMeter(c,true):`<div class="nc-info"><span>${I.chart}${esc(`Objectif ${c.N} pts · leader à ${c.ranking[0]?c.ranking[0].pts:0}`)}</span></div>`)
     ].join('');
+    if(c.status!=='upcoming'){
+      const meter=c.points?`<div class="nci-m"><div class="nci-mt">Objectif <b>${c.N}</b> pts · leader à ${c.ranking[0]?c.ranking[0].pts:0}</div><div class="nci-bar"><i style="width:${Math.min(100,Math.round((c.ranking[0]?c.ranking[0].pts:0)*100/Math.max(1,c.N)))}%"></i></div></div>`
+        :`<div class="nci-m"><div class="nci-mt"><b>${c.alive.length}</b> survivant${c.alive.length>1?'s':''} sur ${c.mem.length}</div><div class="nci-bar"><i style="width:${Math.round(c.alive.length*100/Math.max(1,c.mem.length))}%"></i></div></div>`;
+      const win=[c.winners.length?`<div class="nc-win w">🏆 ${[...c.winners,...(c.lastRule==='wins'?c.lasts:[])].map(w=>esc(nameOf(w))).join(' & ')}</div>`:'', c.lastRule==='drink'&&c.lasts.length?`<div class="nc-win w">🍺 ${c.lasts.map(w=>esc(nameOf(w))).join(' & ')} ${c.lasts.length>1?'doivent':'doit'} un verre</div>`:''].join('');
+      const title=leagueTitle(lg.name).replace(/src="img\/(survivor|race|oneshot|merguez|x)\.png/g,'src="img/$1-white.png');
+      h+=`<div class="ncard h"><div class="nci" data-a="open" data-v="${lg.id}" role="button" aria-label="Ouvrir la ligue">${coverHtml(lg)}<div class="nci-sh"></div>
+        <div class="nci-top"><span class="nc-p cat">${esc(cat(lg.category).label)}</span><span class="nc-stk">${st}<button class="nc-p pl" data-a="openSurv" data-v="${lg.id}">${c.mem.length} joueur${c.mem.length>1?'s':''}</button></span></div>
+        <div class="nci-b">${title}${win}${meter}</div></div></div>`;
+      return h;
+    }
     h+=`<div class="ncard h"><div class="nc-cover" data-a="open" data-v="${lg.id}" role="button" aria-label="Ouvrir la ligue">${coverHtml(lg)}<span class="nc-p cat">${esc(cat(lg.category).label)}</span><span class="nc-stk">${st}${act}</span>${band}</div>
       <div class="nc-row"><button class="nc-main" data-a="open" data-v="${lg.id}">${leagueTitle(lg.name)}</button><button class="nc-faces" data-a="openSurv" data-v="${lg.id}" aria-label="Voir les joueurs">${faces}<em>${c.mem.length} joueur${c.mem.length>1?'s':''}</em></button></div>
       ${extra?`<button class="nc-ex" data-a="open" data-v="${lg.id}">${extra}</button>`:''}</div>`;
