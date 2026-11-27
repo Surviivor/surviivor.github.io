@@ -1230,3 +1230,5 @@ nav.bottom .nbadge{border:0}
 .ivc-tx{flex:1;min-width:0;margin-left:8px;line-height:1.2}.ivc-tx b{display:block;font-family:var(--bold);font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ivc-tx small{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ivc-go{all:unset;cursor:pointer;flex:none;display:flex;align-items:center;gap:5px;background:var(--yel);color:var(--on);border-radius:999px;padding:9px 13px;font-family:var(--bold);font-weight:700;font-size:13px}.ivc-go svg{width:15px;height:15px}
+@media (max-width:389px){.ivc-av:nth-child(2):not(.plus){display:none}.ivc-go{padding:9px 11px 9px 9px}.ivc-tx{margin-left:6px}}
+.ivc-tx small{font-size:11px}.ivc-go{font-size:12.5px}
