@@ -1376,3 +1376,12 @@ button.lh-chip.pl:active{transform:scale(.96)}
 .lch.wmc img.wm{height:13px;width:auto;display:block}
 .ldv{width:1px;height:22px;background:#D8D3C6;flex:none;margin:0 2px}
 #ligues.nh-sec span{font-size:24px}
+
+/* En-tête de ligue : photo en fond */
+.lhero.ph{position:relative;overflow:hidden;min-height:250px;display:flex;flex-direction:column;justify-content:flex-end}
+.lhero.ph>*{position:relative;z-index:1}
+.lhero.ph>.lh-bg,.lhero.ph>.lh-sh{position:absolute;inset:0;z-index:0}
+.lh-bg img,.lh-bg .cover-img{width:100%;height:100%;object-fit:cover;display:block}
+.lh-sh{background:linear-gradient(180deg,#16171B40 0%,#16171BE6 75%)}
+.lhero.ph .lh-gear{position:absolute;z-index:2}
+.lhero.ph .lh-chip:not(.ok){background:#ffffff26;backdrop-filter:blur(6px)}
