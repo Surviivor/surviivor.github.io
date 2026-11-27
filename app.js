@@ -806,6 +806,10 @@ const A = {
   saveRules(lid){ writeLeague(lid,{rules:document.getElementById('ru-txt').value.slice(0,3000)}).then(()=>toast('Règles enregistrées.')); },
   defRules(lid){ const lg=S.leagues[lid]; document.getElementById('ru-txt').value=defaultRules(lg); },
   startNow(lid){ modal('<h3>DÉMARRER MAINTENANT ?</h3><div class="muted">Les inscriptions seront closes immédiatement.</div>','DÉMARRER',()=>{ writeLeague(lid,{startAt:new Date().toISOString()}).then(()=>toast('La ligue a démarré !')); }); },
+  invite(lid){ const c=C(lid); if(!c) return; const lg=c.lg;
+    const how=c.points?`chaque journée, choisis une équipe : le premier à ${c.N} points gagne`:'chaque journée, choisis une équipe qui gagne… le dernier en vie remporte la ligue';
+    const txt=`🏆 Je joue à ${lg.name.replace(/\s+X\s+/i,' · ')} sur SURVIVOR ! Le principe : ${how}. Inscriptions ouvertes jusqu'au ${fmtDT(lg.startAt)}, rejoins-moi 👉 https://surviivor.github.io/?l=${encodeURIComponent(lid)}`+(lg.private&&lg.code?` (code : ${lg.code})`:'');
+    window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank'); },
   shareCode(lid){
     const lg=S.leagues[lid]; const txt=`Rejoins ma ligue « ${lg.name} » sur Survivor ! Code : ${lg.code}`;
     try{ navigator.clipboard.writeText(txt).then(()=>toast('Code copié ! Colle-le à tes proches.'),()=>toast('Code : '+lg.code)); }catch(e){ toast('Code : '+lg.code); }
@@ -1688,6 +1692,13 @@ function chambrageCard(c){
     return h+'</div>'; }).join('');
   return svCard('svR'+lid,true,`<div class="sv-h"><span>${IC.chat||''}Paris de la J${n}</span><small>Réagis aux paris</small></div>`,rows);
 }
+
+function inviteCard(c){
+  if(c.status!=='upcoming') return ''; const lg=c.lg;
+  const avs=c.mem.slice(0,2).map(u=>`<span class="ivc-av">${avatarOf(u)}</span>`).join('')+'<span class="ivc-av plus">+</span>';
+  const ico='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>';
+  return `<div class="ivc"><div class="ivc-avs">${avs}</div><div class="ivc-tx"><b>Ramène tes potes</b><small>Ligue commence dans ${shortDur(t(lg.startAt))}</small></div><button class="ivc-go" data-a="invite" data-v="${lg.id}">Inviter</button></div>`;
+}
 function nextVotesCard(c){
   const lg=c.lg; if(!c.pick) return '';
   const r=c.rounds.find(r=>t(r.deadline)>now()); if(!r) return '';
@@ -1792,7 +1803,7 @@ function viewLeague(lid){
   else if(c.status==='finished') h+= c.winners.includes(S.me)?`<div class="banner win"><span class="ico">🏆</span>${c.winners.length>1?'Tu fais partie des 2 derniers survivants !':'Tu es le grand gagnant !'}</div>`:`<div class="banner dead"><span class="ico">🏁</span>Ligue terminée · ${c.winners.map(w=>esc(nameOf(w))).join(' & ')} ${c.winners.length>1?'gagnent':'gagne'}</div>`;
   else if(!mine) h+= c.status==='upcoming'?`<div class="banner info"><span class="ico">🎟️</span><div style="flex:1">Inscriptions ouvertes jusqu'au ${fmtDT(lg.startAt)}</div><button class="btn sm green" data-a="join" data-v="${lid}">JE M'INSCRIS</button></div>`:`<div class="banner info"><span class="ico">🔒</span>Inscriptions closes. Tu suis la ligue en spectateur.</div>`;
   h+=lastBanner(c);
-  h+=elimCard(c)+recapTeaser(c);
+  h+=inviteCard(c)+elimCard(c)+recapTeaser(c);
   const tab=S.view.ltab==='hist'?'surv':S.view.ltab;
   h+=`<div class="seg"><button class="${tab==='paris'?'on':''}" data-a="ltab" data-v="paris">${c.pick?'Paris':'Vote'}</button><button class="${tab==='surv'?'on':''}" data-a="ltab" data-v="surv">${c.points?'Classement':'Survivants'}</button></div>`;
   if(tab==='paris'){
@@ -2070,6 +2081,7 @@ function render(){
   if(S.mode==='loading'||(S.mode==='live'&&!(S.loaded.leagues&&S.loaded.players))){ app.innerHTML='<div class="spin"></div>'; return; }
   const keep={}; app.querySelectorAll('input,textarea,select').forEach(el=>{ if(el.id) keep[el.id]=el.value; });
   const focusId=document.activeElement&&document.activeElement.id;
+  try{ const dl=new URLSearchParams(location.search).get('l'); if(dl && !S._dl && S.leagues[dl]){ S._dl=1; S.view.tab='ligues'; S.view.league=dl; history.replaceState(null,'',location.pathname); } }catch(e){}
   const v=S.view; let body;
   if(v.tab==='ligues'&&v.league) body=viewLeague(v.league);
   else if(v.tab==='ligues') body=viewHome();
