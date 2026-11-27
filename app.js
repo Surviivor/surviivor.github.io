@@ -1628,10 +1628,16 @@ function raceRanking(c){
   return h;
 }
 // Équipes déjà utilisées par les survivants (avant la journée r)
+const lg_comp = c => c.lg.comp || '';
 function usedBoard(c, r){
   const lid=c.lg.id, alive=c.status==='upcoming'?c.mem:c.alive, map={};
   const r0t=r?t(r.deadline):Infinity;
   alive.forEach(u=>{ c.rounds.forEach(rr=>{ if(t(rr.deadline)>=r0t) return; pickSides(pickOf(u,lid,rr.k)).forEach(x=>{ if(x.p==='D') return; const m=(rr.matches||{})[x.m]; if(!m) return; const sd=x.p==='H'?m.h:m.a, k=teamKey(sd); (map[k]=map[k]||{sd,us:new Set()}).us.add(u); }); }); });
+  // clubs pas encore choisis : toutes les équipes de la compétition (flux) + celles des journées de la ligue
+  const nk=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[^a-z0-9]/g,''), seen=new Set(Object.values(map).map(o=>nk(o.sd.n)));
+  const add=sd=>{ const k=teamKey(sd), q=nk(sd&&sd.n); if(k && !map[k] && !seen.has(q)){ map[k]={sd,us:new Set()}; seen.add(q); } };
+  c.rounds.forEach(rr=>matchesOf(rr).forEach(m=>{ add(m.h); add(m.a); }));
+  const f=S.feeds[lg_comp(c)]; if(f&&f.events&&f.teams){ const ids=new Set(); Object.values(f.events).forEach(e=>{ if(e.h) ids.add(String(e.h)); if(e.a) ids.add(String(e.a)); }); ids.forEach(id=>{ const tm=f.teams[id]; if(tm&&tm.n) add({n:tm.n,id,logo:logoOf(tm)}); }); }
   return {rows:Object.values(map).map(o=>({sd:o.sd,us:[...o.us]})).sort((a,b)=>b.us.length-a.us.length||a.sd.n.localeCompare(b.sd.n)), n:alive.length};
 }
 function svCard(key, defOpen, head, body){
@@ -1675,10 +1681,10 @@ function survivorsView(c){
     return `<div class="sv-r2">${avatarOf(u)}<div class="sv-n">${esc(nameOf(u))}${u===S.me?'<span class="toi">TOI</span>':''}${lv?`<small>${CI.heart} ${lv} vie${lv>1?'s':''}</small>`:''}</div><div class="sv-c">${right}</div></div>`; }).join('');
   h+=svCard('svA'+lid,true,headA,hb);
   { const ub=usedBoard(c, r&&t(r.deadline)<=now()?{deadline:new Date(t(r.deadline)+1).toISOString()}:(r||c.rounds[c.rounds.length-1]));
-    if(ub.rows.length && c.status!=='finished'){
+    if(ub.rows.some(x=>x.us.length) && c.status!=='finished'){
       const rows=ub.rows.map(x=>{ const mine=x.us.includes(S.me), others=x.us.filter(u=>u!==S.me);
         const avs=(mine?[`<span class="ub-av me">${avatarOf(S.me)}</span>`]:[]).concat(others.slice(0,mine?3:4).map(u=>`<span class="ub-av">${avatarOf(u)}</span>`)).join('');
-        return `<div class="ub-r">${logoTag(x.sd,'ub-lg')||'<span class="ub-lg"></span>'}<b>${esc(x.sd.n)}</b><span class="ub-who">${avs}<em>${x.us.length}/${ub.n}</em></span></div>`; }).join('');
+        return `<div class="ub-r${x.us.length?'':' zero'}">${logoTag(x.sd,'ub-lg')||'<span class="ub-lg"></span>'}<b>${esc(x.sd.n)}</b><span class="ub-who">${avs}<em>${x.us.length}/${ub.n}</em></span></div>`; }).join('');
       h+=svCard('svU'+lid,true,`<div class="sv-h"><span>${IC.x}Clubs déjà choisis</span><small>${ub.n} survivant${ub.n>1?'s':''}</small></div>`,`<div class="ub-note">Un club déjà choisi ne peut plus être rejoué par ce joueur. Ta photo, cerclée de jaune, indique les tiens.</div>`+rows).replace('class="card sv svc"','class="card sv svc ub-card"');
     } }
   if(c.status!=='upcoming') h+=chambrageCard(c);
