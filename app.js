@@ -1858,7 +1858,7 @@ function leagueHero(c, lid){
     const done=c.rounds.filter(r=>['done','cancelled'].includes((c.info[r.k]||{}).state)).length;
     gauge=G(c.alive.length*100/Math.max(1,n),`<b>${c.alive.length} survivant${c.alive.length>1?'s':''}</b> sur ${n}`,done?`après ${done} journée${done>1?'s':''}`:'');
   }
-  return `<div class="lh-backw"><button class="lh-back" data-a="back" aria-label="Retour">${I.back}</button></div><div class="lhero ph ${canManage(lg)?'adm':''}"><div class="lh-bg">${coverHtml(lg)}</div><div class="lh-sh"></div>${canManage(lg)?`<button class="lh-c lh-gear" data-a="manage" data-v="${lid}" aria-label="Gérer la ligue">${I.gear}</button>`:''}${title}<div class="lh-chips" style="grid-template-columns:repeat(${chips.length},1fr)">${chips.map(([k,x])=>k==='pl'?`<button class="lh-chip pl" data-a="ltab" data-v="surv">${x}</button>`:`<span class="lh-chip ${k}">${x}</span>`).join('')}</div>${gauge}</div>`;
+  return `<div class="lh-backw"><button class="lh-back" data-a="back" aria-label="Retour">${I.back}</button></div><div class="lhero ${canManage(lg)?'adm':''}">${canManage(lg)?`<button class="lh-c lh-gear" data-a="manage" data-v="${lid}" aria-label="Gérer la ligue">${I.gear}</button>`:''}${title}<div class="lh-chips" style="grid-template-columns:repeat(${chips.length},1fr)">${chips.map(([k,x])=>k==='pl'?`<button class="lh-chip pl" data-a="ltab" data-v="surv">${x}</button>`:`<span class="lh-chip ${k}">${x}</span>`).join('')}</div>${gauge}</div>`;
 }
 function viewLeague(lid){
   const c=C(lid);
