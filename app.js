@@ -1264,7 +1264,7 @@ function jokersCard(c, r){
   const op=S.open[k] || (S.view.jk&&S.view.jk.startsWith(lg.id+'|')) || (S.view.sab&&S.view.sab.lid===lg.id);
   const body=items.map(x=>`<div class="jitem ${x.state||''}"><div class="jt">${x.ico}<b>${x.t}</b>${x.state==='used'?'<span class="jtag">Utilisé</span>':x.state==='on'&&!x.btn?'<span class="jtag on">En cours</span>':''}${x.btn||''}</div><small>${x.d}</small>${x.note?`<div class="jnote">${x.note}</div>`:''}${x.react||''}${x.panel||''}</div>`).join('');
   const st0=refStock(), anyUsed=items.some(x=>x.state==='used');
-  const regain=(anyUsed&&st0===0&&!S.guest)?`<div class="jinv">${CARD_ICO}<b>1 pote invité = 1 joker en plus</b><button class="ivc-go sm" data-a="invite" data-v="${lg.id}">Inviter</button></div>`:(n===0&&st0>0)?`<div class="help" style="margin:10px 0 0">${CARD_ICO.replace('jcard','jcard sm')} Tu as ${st0} joker${st0>1?'s':''} en stock : 1 réactivation possible par ligue.</div>`:'';
+  const regain=(anyUsed&&st0===0&&!S.guest)?`<div class="jinv">${CARD_ICO}<b>1 pote invité = 1 joker</b><button class="ivc-go sm" data-a="invite" data-v="${lg.id}">Inviter</button></div>`:(n===0&&st0>0)?`<div class="help" style="margin:10px 0 0">${CARD_ICO.replace('jcard','jcard sm')} Tu as ${st0} joker${st0>1?'s':''} en stock : 1 réactivation possible par ligue.</div>`:'';
   // comment gagner des vies / points bonus
   const how=[];
   if(!c.points && +lg.lives>0) how.push([TI('heart'),'Une vie en réserve','Chaque joueur démarre avec une vie : à sa première erreur, il la perd mais reste en jeu.']);
