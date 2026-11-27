@@ -20,6 +20,7 @@ const compFromName = n => { for(const [k,rx] of COMP_RX) if(rx.test(String(n||''
 const POINTS_N = 20; // Race : points à atteindre par défaut
 const pointsRules = n => `Le premier joueur à atteindre ${n} points gagne la ligue.\nÀ chaque journée, choisis UNE équipe parmi les matchs proposés.\nElle gagne : 3 points. Match nul : 1 point. Elle perd : 0 point. Pas de choix = 0 point.\nAttention : tu ne peux choisir qu'une seule fois la même équipe sur toute la ligue.\nLes choix restent secrets jusqu'à l'heure limite.\nSi plusieurs joueurs atteignent ${n} points lors de la même journée, celui qui a le meilleur goal-average gagne (buts marqués moins buts encaissés par les équipes qu'il a choisies).`;
 const DEFAULT_RULES = {
+  merguez:"Ligue MERGUEZ : tout est à l'envers ! À chaque journée, choisis UNE équipe qui va PERDRE son match.\nSi ton équipe perd, tu restes en course pour la journée suivante. Si elle gagne ou fait match nul, tu es éliminé. Pas de pari = éliminé.\nMême principe pour les survivants à chaque journée, mais tu ne peux pas choisir plusieurs fois la même équipe tout au long de la ligue : les équipes déjà jouées sont grisées.\nLe dernier joueur en vie remporte la ligue.\nLes choix restent secrets jusqu'à l'heure limite.",
   pick:"À chaque journée, choisis UN seul match et parie sur l'équipe ou le résultat de ton choix.\nSi ton pari se réalise, tu restes en course pour la journée suivante. Sinon (ton équipe perd ou fait match nul), tu es éliminé. Pas de pari = éliminé.\nMême principe pour les survivants à chaque journée, mais tu ne peux pas choisir plusieurs fois la même équipe tout au long de la ligue : les équipes déjà jouées sont grisées.\nLe dernier joueur en vie remporte la ligue.\nLes choix restent secrets jusqu'à l'heure limite. Tu peux ensuite retrouver les choix de chacun dans l'onglet « HISTORIQUE ».\nSi tous les survivants tombent la même journée, ils sont départagés à l'audace : gagne celui qui a joué, en moyenne depuis le début, les équipes les moins bien classées avant chaque journée.",
   majority:"À chaque question, vote pour l'option de ton choix.\nTu restes en vie si tu votes comme la majorité des survivants.\nSi tu votes comme la minorité, ou si tu ne votes pas, tu es éliminé…\nLes votes restent secrets jusqu'à l'heure limite. Tu peux ensuite retrouver le résultat dans l'onglet « HISTORIQUE ».\nEn cas d'égalité parfaite entre les 2 options, personne parmi les votants n'est éliminé.\nLes 2 derniers survivants remportent la ligue."
 };
@@ -107,18 +108,18 @@ document.addEventListener('error', e=>{
 }, true);
 
 // Logos : « Survivor » (élimination) et « Race » (ligue aux points)
-const BRANDS = { survivor:{img:'survivor', txt:'SURVIVOR', alt:'Survivor'}, oneshot:{img:'race', txt:'RACE', alt:'Race'} };
-const brandOf = s => /^(one\s*shot|race)$/i.test(String(s).trim()) ? 'oneshot' : 'survivor';
+const BRANDS = { survivor:{img:'survivor', txt:'SURVIVOR', alt:'Survivor'}, oneshot:{img:'race', txt:'RACE', alt:'Race'}, merguez:{img:'merguez', txt:'MERGUEZ', alt:'Merguez'} };
+const brandOf = s => /^(one\s*shot|race)$/i.test(String(s).trim()) ? 'oneshot' : /^merguez$/i.test(String(s).trim()) ? 'merguez' : 'survivor';
 const WM = (k='survivor', white=false) => { const b=BRANDS[k]||BRANDS.survivor; return `<img class="wm" src="img/${b.img}${white?'-white':''}.png" data-fb="${esc('<span class="wm-txt">'+b.txt+'</span>')}" alt="${b.alt}">`; };
-const WM_RE=/survivor|one shot|\bRACE\b|\bRace\b/i;
+const WM_RE=/survivor|one shot|\bRACE\b|\bRace\b|\bmerguez\b/i;
 function isLight(el){ try{ const c=getComputedStyle(el).color.match(/\d+(\.\d+)?/g); if(!c) return false; const [r,g,b]=c.map(Number); return (0.299*r+0.587*g+0.114*b)>160; }catch(e){ return false; } }
 function wmify(root){
   if(!root) return;
   const tw=document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {acceptNode:n=>{ const p=n.parentElement; if(!p||/^(SCRIPT|STYLE|OPTION|SELECT|TEXTAREA|TITLE)$/.test(p.tagName)||p.closest('.wm-txt')) return NodeFilter.FILTER_REJECT; return WM_RE.test(n.nodeValue)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_SKIP; }});
   const nodes=[]; while(tw.nextNode()) nodes.push(tw.currentNode);
   nodes.forEach(n=>{
-    const light=isLight(n.parentElement); const parts=n.nodeValue.split(/(survivor|one shot|\bRACE\b|\bRace\b)/i); const frag=document.createDocumentFragment();
-    parts.forEach(pt=>{ if(/^(survivor|one shot|race)$/i.test(pt)){ const b=BRANDS[brandOf(pt)]; const img=document.createElement('img'); img.className='wm in'; img.alt=b.alt; img.src=`img/${b.img}${light?'-white':''}.png`; img.dataset.fb=`<span class="wm-txt">${b.txt}</span>`; frag.appendChild(img); } else if(pt) frag.appendChild(document.createTextNode(pt)); });
+    const light=isLight(n.parentElement); const parts=n.nodeValue.split(/(survivor|one shot|\bRACE\b|\bRace\b|\bmerguez\b)/i); const frag=document.createDocumentFragment();
+    parts.forEach(pt=>{ if(/^(survivor|one shot|race|merguez)$/i.test(pt)){ const b=BRANDS[brandOf(pt)]; const img=document.createElement('img'); img.className='wm in'; img.alt=b.alt; img.src=`img/${b.img}${light?'-white':''}.png`; img.dataset.fb=`<span class="wm-txt">${b.txt}</span>`; frag.appendChild(img); } else if(pt) frag.appendChild(document.createTextNode(pt)); });
     n.replaceWith(frag);
   });
 }
@@ -131,10 +132,10 @@ function unaccent(root){
 }
 const _obs=new MutationObserver(ms=>{ ms.forEach(m=>m.addedNodes.forEach(nd=>{ if(nd.nodeType===1){ wmify(nd); } else if(nd.nodeType===3 && nd.parentElement) wmify(nd.parentElement); })); });
 document.addEventListener('DOMContentLoaded',()=>{});
-const stripPrefix = n => String(n||'').replace(/^\s*(survivor|one\s*shot|race)\s*(x\b)?\s*/i,'').trim();
+const stripPrefix = n => String(n||'').replace(/^\s*(survivor|one\s*shot|race|merguez)\s*(x\b)?\s*/i,'').trim();
 const fmtBrand = f => f==='points' ? 'oneshot' : 'survivor';
-const fullName = (rest, f) => (f==='points'?'Race X ':'Survivor X ')+stripPrefix(rest);
-const splitBrand = name => { const m=String(name||'').match(/^\s*(survivor|one\s*shot|race)\b\s*(.*)$/i); return m?{k:brandOf(m[1]), rest:m[2]}:null; };
+const fullName = (rest, f) => (f==='points'?'Race X ':f==='merguez'?'Merguez X ':'Survivor X ')+stripPrefix(rest);
+const splitBrand = name => { const m=String(name||'').match(/^\s*(survivor|one\s*shot|race|merguez)\b\s*(.*)$/i); return m?{k:brandOf(m[1]), rest:m[2]}:null; };
 const XI = () => `<img class="xm" src="img/x.png" data-fb="X" alt="X">`;
 const xify = h => { const m=String(h).match(/^\s*x(\s+|$)(.*)$/i); return m ? `${XI()}<span>${m[2]}</span>` : h; };
 const pfxInput = (id, cls, val, ph, k='survivor') => `<div class="pfx-in ${cls} ${k}"><span class="pfx">${WM(k)}${XI()}</span><input class="in ${cls}" id="${id}" maxlength="48" value="${esc(val||'')}" placeholder="${esc(ph)}"></div>`;
@@ -229,8 +230,11 @@ function logoTag(side, cls='lg'){ const u=logoOf(side); return u ? `<img class="
 const isPickMode = lg => (lg.mode||cat(lg.category).mode)==='pick';
 const isPoints = lg => !!lg && lg.scoring==='points' && isPickMode(lg);
 const nRoundsOf = lg => Math.max(1, +lg.target || POINTS_N); // ici : points à atteindre
-const defaultRules = lg => isPoints(lg) ? pointsRules(nRoundsOf(lg)) : DEFAULT_RULES[isPickMode(lg)?'pick':'majority'];
-const allowDraw = lg => isPoints(lg) ? false : lg.allowDraw!==undefined ? lg.allowDraw : cat(lg.category).draw;
+const defaultRules = lg => isPoints(lg) ? pointsRules(nRoundsOf(lg)) : isMerguez(lg) ? DEFAULT_RULES.merguez : DEFAULT_RULES[isPickMode(lg)?'pick':'majority'];
+const isMerguez = lg => !!(lg && lg.merguez && !isPoints(lg));
+// Merguez : on survit si l'équipe choisie PERD
+const pickOk = (lg, res, side) => isMerguez(lg) ? ((side==='H'&&res==='A')||(side==='A'&&res==='H')) : res===side;
+const allowDraw = lg => isPoints(lg) ? false : isMerguez(lg) ? false : lg.allowDraw!==undefined ? lg.allowDraw : cat(lg.category).draw;
 const roundsOf = lg => Object.entries(lg.rounds||{}).map(([k,r])=>({...r,k})).sort((a,b)=>t(a.deadline)-t(b.deadline)||a.k.localeCompare(b.k));
 const matchesOf = r => Object.entries(r.matches||{}).map(([k,m])=>({...m,k})).sort((a,b)=>t(a.d)-t(b.d)||a.k.localeCompare(b.k));
 const teamKey = side => side ? String(side.id || side.n || '').toLowerCase() : '';
@@ -360,7 +364,7 @@ function compute(lid){
       ms.forEach(m=>{ const x=matchResult(lg,m); if(x) res[m.k]=x.r; else all=false; });
       ri.res=res;
       if(!ms.length || !all){ ri.state='waiting'; blocked=true; continue; }
-      let correct=A.filter(u=>{ const p=effPick(u,lid,r); return p && pickSides(p).some(x=>res[x.m]===x.p); });
+      let correct=A.filter(u=>{ const p=effPick(u,lid,r); return p && pickSides(p).some(x=>pickOk(lg,res[x.m],x.p)); });
       const anyPick=A.some(u=>pickOf(u,lid,r.k));
       if(!anyPick){ ri.state='cancelled'; ri.out=[]; }
       // tous les survivants perdent la même journée : tout le monde est repêché, la journée est annulée pour eux
@@ -748,15 +752,16 @@ const A = {
   newCat(v){ if(HIDDEN_CATS.includes(v)) return; S.view.newCat=v; render(); },
   newFmt(v){ S.view.newFmt=v; render(); },
   newLast(v){ S.view.newLast=v; render(); },
-  newLives(v){ if(v==='lastwins') S.view.newLast=S.view.newLast==='wins'?'':'wins'; else if(v==='lives') S.view.newLives=S.view.newLives?0:1; else if(v==='joker') S.view.newJoker=!S.view.newJoker; else if(v==='sabotage') S.view.newSabotage=!S.view.newSabotage; else if(v==='lantern') S.view.newLantern=!S.view.newLantern; else if(v.startsWith('vis:')) S.view.newVis=v.slice(4); else S.view.newAway=!S.view.newAway; render(); },
-  setLives(v){ const [lid,k]=v.split('|'); const lg=S.leagues[lid]; if(!lg) return; const patch=k==='lastwins'?{lastRule:lg.lastRule==='wins'?null:'wins'}:k==='lives'?{lives:(+lg.lives?0:1)}:k==='joker'?{joker:!lg.joker}:k==='sabotage'?{sabotage:!lg.sabotage}:k==='lantern'?{redLantern:!lg.redLantern}:k.startsWith('vis:')?{picksVis:k.slice(4)}:{awayBonus:!lg.awayBonus}; writeLeague(lid,patch).then(()=>toast('Option mise à jour.')); },
+  newLives(v){ if(v==='lastwins') S.view.newLast=S.view.newLast==='wins'?'':'wins'; else if(v==='lives') S.view.newLives=S.view.newLives?0:1; else if(v==='joker') S.view.newJoker=!S.view.newJoker; else if(v==='sabotage') S.view.newSabotage=!S.view.newSabotage; else if(v==='lantern') S.view.newLantern=!S.view.newLantern; else if(v==='merguez'){ S.view.newMerguez=!S.view.newMerguez; if(S.view.newMerguez) S.view.newLantern=false; } else if(v.startsWith('vis:')) S.view.newVis=v.slice(4); else S.view.newAway=!S.view.newAway; render(); },
+  setLives(v){ const [lid,k]=v.split('|'); const lg=S.leagues[lid]; if(!lg) return; if(k==='merguez'){ const on=!lg.merguez; return writeLeague(lid,{merguez:on, ...(on?{redLantern:false}:{}), name:fullName(stripPrefix(lg.name), on?'merguez':'survivor').slice(0,60)}).then(()=>toast(on?'Option MERGUEZ activée.':'Option MERGUEZ désactivée.')); }
+    const patch=k==='lastwins'?{lastRule:lg.lastRule==='wins'?null:'wins'}:k==='lives'?{lives:(+lg.lives?0:1)}:k==='joker'?{joker:!lg.joker}:k==='sabotage'?{sabotage:!lg.sabotage}:k==='lantern'?{redLantern:!lg.redLantern}:k.startsWith('vis:')?{picksVis:k.slice(4)}:{awayBonus:!lg.awayBonus}; writeLeague(lid,patch).then(()=>toast('Option mise à jour.')); },
   setLast(v){ const [lid,k]=v.split('|'); if(!S.leagues[lid]) return; writeLeague(lid,{lastRule:k||null}).then(()=>toast(k?'Option activée : '+LAST_RULES[k].t.toLowerCase()+'.':'Option désactivée.')); },
   setFmt(v){ const [lid,f]=v.split('|'); const lg=S.leagues[lid]; if(!lg) return;
     const name=fullName(stripPrefix(lg.name), f).slice(0,60);
-    writeLeague(lid, f==='points'?{scoring:'points', target:+lg.target||POINTS_N, name}:{scoring:'survivor', name}).then(()=>toast(f==='points'?'Ligue passée au format Race.':'Ligue passée au format Survivor.')); },
+    writeLeague(lid, f==='points'?{scoring:'points', target:+lg.target||POINTS_N, name, merguez:false}:{scoring:'survivor', name:lg.merguez?fullName(stripPrefix(lg.name),'merguez').slice(0,60):name}).then(()=>toast(f==='points'?'Ligue passée au format Race.':'Ligue passée au format Survivor.')); },
   createLeague(){
     const g=id=>document.getElementById(id);
-    const rest=stripPrefix(g('nl-name').value), name=fullName(rest, (cat(S.view.newCat).mode==='pick'&&S.view.newFmt==='points')?'points':'survivor'), d=g('nl-date').value, h=g('nl-time').value||'20:00';
+    const rest=stripPrefix(g('nl-name').value), mz=cat(S.view.newCat).mode==='pick'&&S.view.newFmt!=='points'&&!!S.view.newMerguez, name=fullName(rest, (cat(S.view.newCat).mode==='pick'&&S.view.newFmt==='points')?'points':mz?'merguez':'survivor'), d=g('nl-date').value, h=g('nl-time').value||'20:00';
     if(rest.length<2) return toast('Complète le nom de la ligue.',true);
     if(!d) return toast('Choisis la date de fin des inscriptions.',true);
     if(!S.isOwner && S.leagues[S.me]) return toast('Tu as déjà créé ta ligue.',true);
@@ -764,12 +769,12 @@ const A = {
     const k=S.view.newCat, cc=cat(k);
     const id=S.isOwner ? 'l'+rid() : S.me;
     const pts=cc.mode==='pick'&&S.view.newFmt==='points'; const nr=Math.min(40,Math.max(10,+((g('nl-nr')||{}).value)||POINTS_N));
-    const lg={...(pts?{scoring:'points',target:nr}:{}),name:name.slice(0,60),category:k,mode:cc.mode,comp:(cc.comps.includes(compFromName(name))?compFromName(name):cc.comps[0])||null,startAt:new Date(d+'T'+h).toISOString(),createdAt:new Date().toISOString(),createdBy:S.me,private:!S.isOwner,...(pts&&S.view.newLast==='wins'?{lastRule:'wins'}:{}),...(!pts&&cc.mode==='pick'?{lives:S.view.newLives?1:0,joker:!!S.view.newJoker}:{}),...(cc.mode==='pick'?{sabotage:!!S.view.newSabotage,redLantern:!!S.view.newLantern,picksVis:S.view.newVis==='visible'?'visible':'hidden'}:{}),code:genCode(),cover:'auto',rules:'',rounds:{}};
+    const lg={...(pts?{scoring:'points',target:nr}:{}),name:name.slice(0,60),category:k,mode:cc.mode,comp:(cc.comps.includes(compFromName(name))?compFromName(name):cc.comps[0])||null,startAt:new Date(d+'T'+h).toISOString(),createdAt:new Date().toISOString(),createdBy:S.me,private:!S.isOwner,...(pts&&S.view.newLast==='wins'?{lastRule:'wins'}:{}),...(!pts&&cc.mode==='pick'?{lives:S.view.newLives?1:0,joker:!!S.view.newJoker,...(mz?{merguez:true}:{})}:{}),...(cc.mode==='pick'?{sabotage:!!S.view.newSabotage,redLantern:!!S.view.newLantern,picksVis:S.view.newVis==='visible'?'visible':'hidden'}:{}),code:genCode(),cover:'auto',rules:'',rounds:{}};
     writeLeague(id,lg,'set').then(()=>{ if(!isMember(id)) writeMe({leagues:{[id]:new Date().toISOString()}}); toast('Ligue créée ! Code : '+lg.code); A.manage(id); setTimeout(()=>autoImport(id),400); });
   },
   saveInfo(lid){
     const g=id=>document.getElementById(id);
-    const rest=stripPrefix(g('ei-name').value); if(rest.length<2) return toast('Complète le nom de la ligue.',true); const name=fullName(rest, isPoints(S.leagues[lid])?'points':'survivor');
+    const rest=stripPrefix(g('ei-name').value); if(rest.length<2) return toast('Complète le nom de la ligue.',true); const name=fullName(rest, isPoints(S.leagues[lid])?'points':isMerguez(S.leagues[lid])?'merguez':'survivor');
     const patch={name:name.slice(0,60)};
     const pzI=g('ei-prize'); if(pzI) patch.prize=pzI.value.trim().slice(0,80);
     const cf=compFromName(name), lgx=S.leagues[lid]; if(cf && cat(lgx.category).comps.includes(cf) && cf!==lgx.comp){ patch.comp=cf; S.view.comp=cf; loadFeed(cf); }
@@ -1144,9 +1149,9 @@ function tileHtml(c, r, m, side, opts){
   const used = side!=='D' && ((opts.used && opts.used.has(teamKey(sd))) || ban);
   const lant = side!=='D' && lg.redLantern && isLantern(lg,r,{m:m.k,p:side});
   let cls='tile v2'; if(sel) cls+=' sel'; if(!can && !sel) cls+=' off'; if(used && !sel) cls+=' used'; if(ban && !sel) cls+=' ban';
-  if(res){ if(res.r===side) cls+=' win'; else if(sel) cls+=' lose'; }
+  if(res){ if(pickOk(lg,res.r,side)) cls+=' win'; else if(sel) cls+=' lose'; }
   const bd = side==='D' ? '<b class="eq">=</b>' : (logoOf(sd)?`<img src="${esc(logoOf(sd))}" data-fb="${esc(initials(sd.n).slice(0,1))}" alt="">`:esc(initials(sd.n).slice(0,1)));
-  const name = side==='D' ? 'Nul' : 'Victoire';
+  const name = side==='D' ? 'Nul' : isMerguez(lg) ? 'Défaite' : 'Victoire';
   let pct=''; if(opts.dist){ const tot=opts.dist.tot; const k=m.k+'|'+side; const v=tot?Math.round((opts.dist.c[k]||0)*100/tot):0; pct=`<span class="vlab">${v} %</span>`; }
   const act = can && !used ? `data-a="pick" data-v="${lg.id}|${r.k}|${m.k}|${side}"` : 'disabled';
   return `<button class="${cls}" ${act} aria-label="${side==='D'?'Match nul':'Victoire '+esc(sd.n)}">${sel?`<span class="ck">${I.check}</span>`:''}${ban?'<span class="bomb" title="Sabotée">'+IC.bomb+'</span>':''}<span class="nm">${name}</span>${lant?`<span class="lnt">${CI.lantern} ${c.points?'+2 pts':'+1 vie'}</span>`:''}${pct}</button>`;
@@ -1229,7 +1234,7 @@ function roundCard(c, r, o={}){
   else h+=`<h3>Journée ${ri.n||(c.rounds.findIndex(x=>x.k===r.k)+1)}</h3>`;
   if(!o.noDl) h+=dlLine(r);
   if(!c.pick) return h+duelHtml(c,r,{can,closed})+roundFoot(c,r)+'</div>';
-  if(!closed && o.hint!==false) h+=`<div class="hint">Choisis UN seul match et parie dessus.${allowDraw(lg)?'':' Pas de match nul.'} Les équipes déjà jouées sont grisées.</div>`;
+  if(!closed && o.hint!==false) h+=`<div class="hint">${isMerguez(lg)?'Choisis UNE équipe qui va <b>perdre</b>.':'Choisis UN seul match et parie dessus.'}${allowDraw(lg)?'':' Pas de match nul.'} Les équipes déjà jouées sont grisées.</div>`;
   h+=saboAlert(c,r);
   const used=usedTeams(c,S.me,r.k), ban=saboOn(lg)?new Set(sabosOn(lg.id,S.me,r.k).map(x=>x.team)):null; const dist=(closed||picksVisible(lg))?roundDist(c,r):null;
   if(dist&&dist.tot) h+=`<div class="pct-note">% = part des joueurs ayant fait ce choix.</div>`;
@@ -1266,7 +1271,7 @@ function roundFoot(c,r){
 function pickLabel(lg,r,p){
   if(!p) return '—';
   if(!isPickMode(lg)) return p.p==='A'?r.a.n:r.b.n;
-  const one=x=>{ const m=(r.matches||{})[x.m]; if(!m) return '—'; return x.p==='H'?m.h.n : x.p==='A'?m.a.n : `Nul (${m.h.n} – ${m.a.n})`; };
+  const one=x=>{ const m=(r.matches||{})[x.m]; if(!m) return '—'; return isMerguez(lg)&&x.p!=='D'?'Défaite '+(x.p==='H'?m.h.n:m.a.n) : x.p==='H'?m.h.n : x.p==='A'?m.a.n : `Nul (${m.h.n} – ${m.a.n})`; };
   return pickSides(p).map(one).join(' + ')+(p.j&&p.m2?' (joker)':'');
 }
 const rankCache=new WeakMap();
@@ -1335,7 +1340,7 @@ function rulesPics(lg){
   const last=`<div class="rp-il photo"><img src="img/slide-supporter.jpg" alt=""></div>`;
   return `<div class="rpics">`+
     `<div class="rp">${pick}<p>Chaque journée, choisis <b>une équipe</b></p></div>`+
-    `<div class="rp">${win}<p>Elle gagne : <b>tu survis</b>. Sinon, éliminé</p></div>`+
+    `<div class="rp">${win}<p>${isMerguez(lg)?'Elle perd':'Elle gagne'} : <b>tu survis</b>. Sinon, éliminé</p></div>`+
     `<div class="rp yel">${once}<p>Une équipe ne peut être choisie <b>2 fois</b></p></div>`+
     `<div class="rp">${last}<p>Le <b>dernier en vie</b> gagne</p></div></div>`;
 }
@@ -1359,9 +1364,10 @@ function optionsBlock(lg, pts, act, lid, locked){
   if(pts){
     o+=opt('lastwins', lg.lastRule==='wins', `${TI('trophy')}Le dernier gagne aussi`, 'Le dernier du classement à la fin remporte lui aussi la ligue.', 'Deux courses en une : les joueurs décrochés ne lâchent rien et misent sur les équipes qui vont perdre. Tout le monde reste à fond jusqu’au bout.');
   } else {
+    o+=opt('merguez', !!lg.merguez, `<span class="lopt-wm">${WM('merguez')}</span>`, 'Tout à l’envers : pour survivre, les joueurs doivent parier sur un club qui va PERDRE. Le nom de la ligue change en conséquence.');
     o+=opt('lives', +lg.lives>0, `${TI('heart')}Une vie en réserve`, 'Chaque joueur a droit à une erreur : si son pari est raté, il perd sa vie mais reste en jeu.');
   }
-  o+=opt('lantern', !!lg.redLantern, `${TI('lantern')}Lanterne rouge`, pts?'Si un joueur gagne avec la dernière équipe du classement, il marque 2 points bonus.':'Si un joueur gagne avec la dernière équipe du classement, il gagne 1 vie supplémentaire.');
+  if(pts||!lg.merguez) o+=opt('lantern', !!lg.redLantern, `${TI('lantern')}Lanterne rouge`, pts?'Si un joueur gagne avec la dernière équipe du classement, il marque 2 points bonus.':'Si un joueur gagne avec la dernière équipe du classement, il gagne 1 vie supplémentaire.');
   if(!pts) j+=opt('joker', !!lg.joker, `${TI('joker')}Double chance`, 'Une fois par ligue, un joueur peut choisir 2 équipes sur une journée : il survit si au moins une des 2 équipes gagne.');
   j+=opt('sabotage', !!lg.sabotage, `${TI('bomb')}Sabotage`, 'Une fois par ligue, un joueur peut interdire une équipe à un adversaire pour une journée. La victime découvre qui l’a saboté au moment de parier.');
   const VIS=lg.picksVis==='visible';
@@ -1447,7 +1453,7 @@ function trendSection(c){
   const res=ri.res||{};
   const rows=Object.values(cnt).sort((a,b)=>b.n-a.n).slice(0,5).map(({p,n})=>{
     const pct=Math.round(n*100/tot); let logo='', ok='';
-    if(c.pick){ const m=(r.matches||{})[p.m]; const sd=m&&(p.p==='H'?m.h:p.p==='A'?m.a:null); if(sd&&logoOf(sd)) logo=`<img src="${esc(logoOf(sd))}" data-fb="" alt="">`; if(res[p.m]) ok=res[p.m]===p.p?' ✓':' ✗'; }
+    if(c.pick){ const m=(r.matches||{})[p.m]; const sd=m&&(p.p==='H'?m.h:p.p==='A'?m.a:null); if(sd&&logoOf(sd)) logo=`<img src="${esc(logoOf(sd))}" data-fb="" alt="">`; if(res[p.m]) ok=pickOk(lg,res[p.m],p.p)?' ✓':' ✗'; }
     else if(ri.win){ ok=ri.win===p.p?' ✓':' ✗'; }
     return `<div class="trow">${logo||'<span class="sdot"></span>'}<div class="tn">${esc(pickLabel(lg,{...r,k:r.k},p))}${ok?`<span class="${ok.includes('✓')?'green':'red'}">${ok}</span>`:''}<div class="tbar"><span style="width:${pct}%"></span></div></div><div class="tp"><b>${pct}%</b><span>${n} joueur${n>1?'s':''}</span></div></div>`;
   }).join('');
@@ -1636,7 +1642,7 @@ function recapData(c){
   const before=ri.aliveBefore||[], out=ri.out||[], surv=before.filter(u=>!out.includes(u));
   const cnt={}, keyOf=x=>x.sd?String(x.sd.id||x.sd.n):null;
   before.forEach(u=>{ const x=pickSide(r,pickOf(u,lg.id,r.k)); const k=x&&keyOf(x); if(k) cnt[k]=(cnt[k]||{n:0,sd:x.sd,m:x.m}), cnt[k].n++; });
-  let bold=null; surv.forEach(u=>{ const p=pickOf(u,lg.id,r.k), x=pickSide(r,p); if(!x||!x.sd) return; const rk=pickRank(lg,r,p)||0; if(!bold||rk>bold.rk) bold={u,rk,x,alone:(cnt[keyOf(x)]||{}).n===1}; });
+  let bold=null; surv.forEach(u=>{ const p=pickOf(u,lg.id,r.k), x=pickSide(r,p); if(!x||!x.sd) return; const rk=pickRank(lg,r,p)||0; if(!rk) return; if(!bold||(isMerguez(lg)?rk<bold.rk:rk>bold.rk)) bold={u,rk,x,alone:(cnt[keyOf(x)]||{}).n===1}; });
   if(bold&&!bold.rk) bold=null;
   let mir=null; surv.forEach(u=>{ if(bold&&u===bold.u) return; const x=pickSide(r,pickOf(u,lg.id,r.k)); if(!x||!x.sd) return; const sc=scoreNums(lg,x.m); if(!sc) return; if(Math.abs(sc[0]-sc[1])===1&&!mir) mir={u,x,sc}; });
   const top=Object.values(cnt).sort((a,b)=>b.n-a.n)[0]||null;
@@ -1651,10 +1657,10 @@ function recapHtml(lid){
   const title=k===0?`Personne n'est <em>tombé</em>`:(k>=3&&k*4>=d.before.length)?`Hécatombe :<br><em>${k} éliminés</em> cette journée`:`<em>${k} éliminé${k>1?'s':''}</em> cette journée`;
   const dead=c.mem.filter(u=>!d.before.includes(u)).length;
   const meter=`<div class="rcp-m">${d.surv.map(()=>'<i></i>').join('')}${d.out.map(()=>'<i class="x"></i>').join('')}${Array(dead).fill('<i class="d"></i>').join('')}</div>`;
-  const wm=(leagueTitle(lg.name).match(/<img[^>]*>/)||[''])[0].replace(/src="img\/(survivor|race|oneshot|x)\.png/,'src="img/$1-white.png');
+  const wm=(leagueTitle(lg.name).match(/<img[^>]*>/)||[''])[0].replace(/src="img\/(survivor|race|oneshot|merguez|x)\.png/,'src="img/$1-white.png');
   let h=`<div class="rcp"><div class="rcp-top">${wm||''}<span>${esc(((splitBrand(lg.name)||{}).rest||lg.name).replace(/^\s*X\s+/i,''))} · Journée ${d.n}</span></div><h3>${title}</h3><p class="rcp-k">${c.mem.length} joueurs au départ · ${d.surv.length} encore en vie</p>${meter}`;
   if(k) h+=`<div class="rcp-b"><div class="rcp-t">💀 Les éliminés</div>${d.out.map(u=>{ const x=pickSide(d.r,pickOf(u,lid,d.r.k)); return `<div class="rcp-r">${avatarOf(u)}<b>${esc(nameOf(u))}</b>${x&&x.sd?logoTag(x.sd,'rcp-lg'):''}<span class="rcp-sc">${esc(x?(x.sd?shortName(lg,x.m,x.sd)+' ':'Nul ')+(matchScore(lg,x.m).replace(/\s/g,'')||''):'Pas de pari')}</span></div>`; }).join('')}</div>`;
-  if(d.bold){ const b=d.bold; h+=`<div class="rcp-b hl"><div class="rcp-t">🎯 Le pari le plus audacieux</div><div class="rcp-au">${avatarOf(b.u)}${logoTag(b.x.sd,'rcp-al')}</div><p class="rcp-p">${esc(nameOf(b.u))} a misé sur ${esc(shortName(lg,b.x.m,b.x.sd))} (${b.rk}e) contre ${esc(shortName(lg,b.x.m,b.x.opp))}. ${b.alone?'Personne d’autre ne l’avait joué… et ça passe !':'Et ça passe !'}</p></div>`; }
+  if(d.bold){ const b=d.bold; h+=`<div class="rcp-b hl"><div class="rcp-t">🎯 Le pari le plus audacieux</div><div class="rcp-au">${avatarOf(b.u)}${logoTag(b.x.sd,'rcp-al')}</div><p class="rcp-p">${esc(nameOf(b.u))} a misé sur ${isMerguez(lg)?'la défaite de ':''}${esc(shortName(lg,b.x.m,b.x.sd))} (${b.rk}${b.rk===1?'er':'e'}) contre ${esc(shortName(lg,b.x.m,b.x.opp))}. ${b.alone?'Personne d’autre ne l’avait joué… et ça passe !':'Et ça passe !'}</p></div>`; }
   if(d.top&&d.top.n>1) h+=`<div class="rcp-b"><div class="rcp-t">📊 Club le plus joué</div><div class="rcp-r">${logoTag(d.top.sd,'rcp-lg')}<b>${esc(shortName(lg,d.top.m,d.top.sd))}</b><small>${d.top.n} joueurs sur ${d.before.length}</small></div></div>`;
   if(d.surv.length) h+=`<div class="rcp-b"><div class="rcp-t">💚 Les survivants</div>${d.surv.map(u=>{ const x=pickSide(d.r,pickOf(u,lid,d.r.k)); return `<div class="rcp-r">${avatarOf(u)}<b>${esc(nameOf(u))}</b>${x&&x.sd?logoTag(x.sd,'rcp-lg'):''}<span class="rcp-sc">${esc(x?(x.sd?shortName(lg,x.m,x.sd)+' ':'Nul ')+(matchScore(lg,x.m).replace(/\s/g,'')||''):'Pas de pari')}</span></div>`; }).join('')}</div>`;
   h+=`<div class="rcp-ft"><span>surviivor.github.io</span><span>${d.next?'Prochaine journée : '+fmtDT(d.next.deadline):''}</span></div></div>`;
@@ -1762,7 +1768,7 @@ function standingRows(c){
 // En-tête de page ligue : carte noire (retour, gérer, titre, 3 infos, jauge)
 function leagueHero(c, lid){
   const lg=c.lg, mine=isMember(lid), alive=c.alive.includes(S.me);
-  const title=leagueTitle(lg.name).replace(/src="img\/(survivor|race|oneshot|x)\.png/g,'src="img/$1-white.png');
+  const title=leagueTitle(lg.name).replace(/src="img\/(survivor|race|oneshot|merguez|x)\.png/g,'src="img/$1-white.png');
   const curR=c.rounds.find(r=>t(r.deadline)>now())||c.rounds[c.rounds.length-1];
   const jn=curR?((c.info[curR.k]||{}).n||(c.rounds.indexOf(curR)+1)):0;
   const cal='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>';
@@ -1881,11 +1887,11 @@ function viewAdmin(){
     const d=new Date(now()+864e5); d.setHours(20,0,0,0);
     const k=S.view.newCat, cc=cat(k);
     h+=`<div class="card"><div class="ctitle" style="margin-bottom:18px">Créer une ligue</div>
-      <label class="f">Nom</label>${pfxInput('nl-name','','','Ligue des potes', (cc.mode==='pick'&&S.view.newFmt==='points')?'oneshot':'survivor')}
+      <label class="f">Nom</label>${pfxInput('nl-name','','','Ligue des potes', (cc.mode==='pick'&&S.view.newFmt==='points')?'oneshot':(cc.mode==='pick'&&S.view.newMerguez)?'merguez':'survivor')}
       <label class="f fbig">Catégories</label><div class="chips in">${Object.entries(CATS).filter(([kk])=>!HIDDEN_CATS.includes(kk)).map(([kk,v])=>`<button class="chip ${kk===k?'on':''}" data-a="newCat" data-v="${kk}">${esc(v.label)}</button>`).join('')}</div>
-      <div class="help" style="margin:0">${cc.mode==='pick'?`Chaque joueur choisit UN seul match par journée et parie dessus. Interdit de reprendre une équipe déjà jouée.${cc.draw&&S.view.newFmt!=='points'?' Le match nul peut être parié.':''}`:'Chaque question oppose 2 options : ceux qui votent comme la minorité sont éliminés.'}</div>
+      <div class="help" style="margin:0">${cc.mode==='pick'?`Chaque joueur choisit UN seul match par journée et parie dessus. Interdit de reprendre une équipe déjà jouée.${cc.draw&&S.view.newFmt!=='points'&&!S.view.newMerguez?' Le match nul peut être parié.':''}`:'Chaque question oppose 2 options : ceux qui votent comme la minorité sont éliminés.'}</div>
       ${cc.mode==='pick'?fmtBlock(S.view.newFmt,'newFmt',null,POINTS_N,false):''}
-      ${cc.mode==='pick'?optionsBlock({lastRule:S.view.newLast,lives:S.view.newLives,joker:S.view.newJoker,sabotage:S.view.newSabotage,redLantern:S.view.newLantern,picksVis:S.view.newVis},S.view.newFmt==='points','newLives',null,false):''}
+      ${cc.mode==='pick'?optionsBlock({merguez:S.view.newMerguez&&S.view.newFmt!=='points',lastRule:S.view.newLast,lives:S.view.newLives,joker:S.view.newJoker,sabotage:S.view.newSabotage,redLantern:S.view.newLantern,picksVis:S.view.newVis},S.view.newFmt==='points','newLives',null,false):''}
       <label class="f">Fin des inscriptions (date + heure)</label><div class="row2"><input class="in" type="date" id="nl-date" value="${dateIn(d)}"><input class="in" type="time" id="nl-time" value="20:00"></div>
       <button class="btn pop full" style="margin-top:18px" data-a="createLeague">CRÉER LA LIGUE</button></div>`;
   }
@@ -1909,7 +1915,7 @@ function viewManage(lid){
   // info
   const sd=new Date(lg.startAt);
   h+=`<div class="card"><div class="h-disp">NOM &amp; RÉGLAGES</div>
-    <label class="f">Nom de la ligue</label>${pfxInput('ei-name','w',stripPrefix(lg.name),'Ligue 1', isPoints(lg)?'oneshot':'survivor')}
+    <label class="f">Nom de la ligue</label>${pfxInput('ei-name','w',stripPrefix(lg.name),'Ligue 1', isPoints(lg)?'oneshot':isMerguez(lg)?'merguez':'survivor')}
     <label class="f">Lot à gagner (optionnel)</label><input class="in w" id="ei-prize" maxlength="80" placeholder="un maillot de Kaká" value="${esc(prizeOf(lg))}"><div class="help" style="margin:-4px 0 12px">Affiché dans l'onglet ${isPoints(lg)?'Classement':'Survivants'} : « ${isPoints(lg)?'Le gagnant':'Le dernier survivant'} de cette ligue gagne … ».</div>
     ${c.status==='upcoming'?`<label class="f">Date de début (fin des inscriptions)</label><div class="row2"><input class="in w" type="date" id="ei-date" value="${dateIn(sd)}"><input class="in w" type="time" id="ei-time" value="${timeIn(sd)}"></div><div class="help">La ligue démarre le ${fmtDT(lg.startAt)}.</div>`:''}
     ${isPickMode(lg)?fmtBlock(isPoints(lg)?'points':'survivor','setFmt',lid,lg.target,c.rounds.some(r=>t(r.deadline)<=now())):''}

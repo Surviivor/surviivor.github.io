@@ -1232,3 +1232,4 @@ nav.bottom .nbadge{border:0}
 .ivc-go{all:unset;cursor:pointer;flex:none;display:flex;align-items:center;gap:5px;background:var(--yel);color:var(--on);border-radius:999px;padding:9px 13px;font-family:var(--bold);font-weight:700;font-size:13px}.ivc-go svg{width:15px;height:15px}
 @media (max-width:389px){.ivc-av:nth-child(2):not(.plus){display:none}.ivc-go{padding:9px 11px 9px 9px}.ivc-tx{margin-left:6px}}
 .ivc-tx small{font-size:11px}.ivc-go{font-size:12.5px}
+.lopt-wm img.wm{height:15px;width:auto;vertical-align:-2px}
