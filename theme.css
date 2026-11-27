@@ -1362,3 +1362,5 @@ button.lh-chip.pl:active{transform:scale(.96)}
 .nci-top{justify-content:space-between}
 .nci-top .nc-stk{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
 .nci-top .nc-p.ok{background:#fff;color:#1E7B34}
+/* Même hauteur pour toutes les vignettes, photo +20 % */
+.nci,.nci.up{min-height:288px}
