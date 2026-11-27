@@ -1053,7 +1053,7 @@ function leagueCardNew(c){ let h='';
       const win=[c.winners.length?`<div class="nc-win w">🏆 ${[...c.winners,...(c.lastRule==='wins'?c.lasts:[])].map(w=>esc(nameOf(w))).join(' & ')}</div>`:'', c.lastRule==='drink'&&c.lasts.length?`<div class="nc-win w">🍺 ${c.lasts.map(w=>esc(nameOf(w))).join(' & ')} ${c.lasts.length>1?'doivent':'doit'} un verre</div>`:''].join('');
       const title=leagueTitle(lg.name).replace(/src="img\/(survivor|race|oneshot|merguez|x)\.png/g,'src="img/$1-white.png');
       h+=`<div class="ncard h"><div class="nci" data-a="open" data-v="${lg.id}" role="button" aria-label="Ouvrir la ligue">${coverHtml(lg)}<div class="nci-sh"></div>
-        <div class="nci-top"><span class="nc-p cat">${esc(cat(lg.category).label)}</span>${st}</div>
+        <div class="nci-top"><span class="nc-p cat">${esc(cat(lg.category).label)}</span><span class="nc-stk">${st}${mine?`<button class="nc-p ok" data-a="open" data-v="${lg.id}">Inscrit ✓</button>`:''}</span></div>
         <div class="nci-b">${title}${win}${meter}</div></div>${pz?`<div class="nc-lot" data-a="open" data-v="${lg.id}" role="button"><span class="nc-lot-v"><svg class="crown" viewBox="0 0 48 34" aria-hidden="true"><path d="M3 9.5c-.6-2.6 2.2-4.4 4.3-2.8l6.2 4.7c1.5 1.1 3.6.9 4.8-.5l4.4-5.2c1.3-1.5 3.6-1.5 4.9 0l4.4 5.2c1.2 1.4 3.3 1.6 4.8.5l6.2-4.7c2.1-1.6 4.9.2 4.3 2.8L39.1 30.6c-.3 1.5-1.6 2.4-3.1 2.4H12c-1.5 0-2.8-.9-3.1-2.4z" fill="#F2B84B"/></svg>${esc(pv||'')}</span><span class="nc-lot-t">à gagner ${esc(pz)}</span></div>`:''}</div>`;
       return h;
     }
