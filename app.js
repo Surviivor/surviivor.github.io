@@ -1153,7 +1153,7 @@ ${fmt==='oneshot'?`    <div class="sl slide "><div class="sl-ph"><div class="il 
   h+=`<div class="lft" role="tablist">`+ft.map(([k,l])=>`<button role="tab" class="${f===k?'on':''}" data-a="filter" data-v="${k}">${l}${k==='mine'&&nMine?`<em>${nMine}</em>`:''}</button>`).join('')+`</div>`;
   h+=`<div class="lfc"><button class="lch wmc ${ty==='survivor'?'on':''}" data-a="ltype" data-v="survivor" aria-label="Survivor">${WM('survivor',ty==='survivor')}</button><button class="lch wmc ${ty==='oneshot'?'on':''}" data-a="ltype" data-v="oneshot" aria-label="Race">${WM('oneshot',ty==='oneshot')}</button><span class="ldv"></span>`+cats.map(k=>`<button class="lch ${sp===k?'on':''}" data-a="lsport" data-v="${k}">${cat(k).emo} ${esc(k==='basket'?'Basket':k==='football'?'Foot':cat(k).label)}</button>`).join('')+`</div>`;
   if(!list.length){
-    h+=`<div class="empty"><div class="ico">${f==='mine'?'🎟️':'🏟️'}</div><h3>${f==='mine'?'AUCUNE LIGUE':'PAS ENCORE DE LIGUE'}</h3>${f==='mine'?'<p>Inscris-toi à une ligue ou entre un code privé.</p></div>':'<p>Crée-la et invite tes amis avec le bouton ci-dessous.</p></div>'}`;
+    h+=`<div class="empty"><div class="ico">${f==='mine'?'🎟️':'🏟️'}</div><h3>${f==='mine'?'AUCUNE LIGUE':'PAS ENCORE DE LIGUE'}</h3>${f==='mine'?'<p>Inscris-toi à une ligue ou entre un code privé.</p></div>':'</div>'}`;
   }
   list.forEach(c=>{ h+=leagueCardNew(c); });
   h+=`<button class="nc-join" data-a="joinCode">${I.key} Rejoindre une ligue privée avec un code</button>`;
