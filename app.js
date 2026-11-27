@@ -1030,23 +1030,26 @@ function survMeter(c, small){
   const done=c.rounds.filter(r=>['done','cancelled'].includes((c.info[r.k]||{}).state)).length;
   return `<div class="smeter ${small?'sm':''}"><div class="sm-top"><b>${a}</b><span>survivant${a>1?'s':''} sur ${n}</span>${(small||!done)?'':`<em>après ${done} journée${done>1?'s':''}</em>`}</div><div class="sm-bar"><i style="width:${pct}%"></i></div></div>`;
 }
+function cardDur(iso){ const d=t(iso)-now(); if(d<=0) return ''; const m=Math.floor(d/60000), h=Math.floor(m/60), j=Math.floor(h/24); return j>=1?`${j}j`:h>=1?`${h}h`:`${Math.max(1,m)} min`; }
 function leagueCardNew(c){ let h='';
-    const lg=c.lg, mine=isMember(lg.id), cd=c.status==='upcoming'?until(lg.startAt):null;
+    const lg=c.lg, mine=isMember(lg.id), pz=prizeOf(lg), pv=prizeValOf(lg);
     let act;
-    if(c.status==='upcoming') act = mine?`<button class="nc-btn ok" data-a="open" data-v="${lg.id}">Inscrit ✓</button>`:`<button class="nc-btn go" data-a="join" data-v="${lg.id}">Je m'inscris</button>`;
-    else if(c.status==='live' && mine && c.alive.includes(S.me)) act=`<button class="nc-btn dark" data-a="open" data-v="${lg.id}">Parier</button>`;
-    else act=`<button class="nc-btn" data-a="open" data-v="${lg.id}">Voir</button>`;
-    const pill=c.status==='upcoming'?`<span class="nc-pill up">À venir</span>`:c.status==='finished'?`<span class="nc-pill end">Terminée</span>`:`<span class="nc-pill live">En cours</span>`;
+    if(c.status==='upcoming') act = mine?`<button class="nc-p ok" data-a="open" data-v="${lg.id}">Inscrit ✓</button>`:`<button class="nc-p go" data-a="join" data-v="${lg.id}">Je m'inscris</button>`;
+    else if(c.status==='live' && mine && c.alive.includes(S.me)) act=`<button class="nc-p dark" data-a="open" data-v="${lg.id}">Parier</button>`;
+    else act=`<button class="nc-p" data-a="open" data-v="${lg.id}">Voir</button>`;
+    const dur=c.status==='upcoming'?cardDur(lg.startAt):'';
+    const st=c.status==='upcoming'?`<span class="nc-p up">À venir${dur?' · '+dur:''}</span>`:c.status==='finished'?`<span class="nc-p end">Terminée</span>`:`<span class="nc-p live">En cours</span>`;
     const faces=c.mem.slice(0,3).map(u=>`<span class="nc-face">${(S.players[u]||{}).avatar?`<img src="${blobUrl(S.players[u].avatar)}" alt="">`:`<img src="${DEFAULT_AVATAR}" alt="">`}</span>`).join('');
-    const info=c.points?`Objectif ${c.N} pts · leader à ${c.ranking[0]?c.ranking[0].pts:0}`:c.status==='upcoming'?`Début dans ${cd||'quelques instants'}`:`${c.alive.length} en vie sur ${c.mem.length}`;
-    h+=`<div class="ncard"><button class="nc-cover" data-a="open" data-v="${lg.id}" aria-label="Ouvrir la ligue">${coverHtml(lg)}${pill}<span class="nc-cat">${catTag(lg.category)}</span></button>
-      <div class="nc-body"><button class="nc-main ${prizeOf(lg)?'haspz':''}" data-a="open" data-v="${lg.id}">${prizeMini(lg)}${leagueTitle(lg.name)}
-        ${c.winners.length?`<div class="nc-win">🏆 ${[...c.winners,...(c.lastRule==='wins'?c.lasts:[])].map(w=>esc(nameOf(w))).join(' & ')}</div>`:''}
-        ${c.lastRule==='drink'&&c.lasts.length?`<div class="nc-win">🍺 ${c.lasts.map(w=>esc(nameOf(w))).join(' & ')} ${c.lasts.length>1?'doivent':'doit'} un verre</div>`:''}
-        ${c.lastRule&&c.status!=='finished'?`<div class="nc-opt">${LAST_RULES[c.lastRule].ico} ${LAST_RULES[c.lastRule].t}</div>`:''}
-        ${(!c.points&&c.status!=='upcoming')?survMeter(c,true):`<div class="nc-info"><span>${c.points?I.chart:I.clock}${esc(info)}</span></div>`}</button>
-        <div class="nc-foot"><button class="nc-faces" data-a="openSurv" data-v="${lg.id}" aria-label="Voir les joueurs">${faces}<em>${c.mem.length} joueur${c.mem.length>1?'s':''}</em></button>${act}</div>
-      </div></div>`;
+    const band=pz?`<span class="nc-band">${pv?`<span class="nc-tk">${esc(pv)}</span>`:''}<span>à gagner ${esc(pz)}</span></span>`:'';
+    const extra=[
+      c.winners.length?`<div class="nc-win">🏆 ${[...c.winners,...(c.lastRule==='wins'?c.lasts:[])].map(w=>esc(nameOf(w))).join(' & ')}</div>`:'',
+      c.lastRule==='drink'&&c.lasts.length?`<div class="nc-win">🍺 ${c.lasts.map(w=>esc(nameOf(w))).join(' & ')} ${c.lasts.length>1?'doivent':'doit'} un verre</div>`:'',
+      c.lastRule&&c.status!=='finished'?`<div class="nc-opt">${LAST_RULES[c.lastRule].ico} ${LAST_RULES[c.lastRule].t}</div>`:'',
+      c.status==='upcoming'?'':(!c.points?survMeter(c,true):`<div class="nc-info"><span>${I.chart}${esc(`Objectif ${c.N} pts · leader à ${c.ranking[0]?c.ranking[0].pts:0}`)}</span></div>`)
+    ].join('');
+    h+=`<div class="ncard h"><div class="nc-cover" data-a="open" data-v="${lg.id}" role="button" aria-label="Ouvrir la ligue">${coverHtml(lg)}<span class="nc-p cat">${esc(cat(lg.category).label)}</span><span class="nc-stk">${st}${act}</span>${band}</div>
+      <div class="nc-row"><button class="nc-main" data-a="open" data-v="${lg.id}">${leagueTitle(lg.name)}</button><button class="nc-faces" data-a="openSurv" data-v="${lg.id}" aria-label="Voir les joueurs">${faces}<em>${c.mem.length} joueur${c.mem.length>1?'s':''}</em></button></div>
+      ${extra?`<button class="nc-ex" data-a="open" data-v="${lg.id}">${extra}</button>`:''}</div>`;
   return h;
 }
 // Tableau de bord de l'accueil : paris à valider (anneau) + situation dans chaque ligue en cours

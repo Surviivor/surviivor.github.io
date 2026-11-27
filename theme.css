@@ -1276,3 +1276,21 @@ button.lh-chip.pl:active{transform:scale(.96)}
 .jinv{display:flex;align-items:center;gap:10px;margin-top:10px;background:#EEEBFF;border-radius:14px;padding:10px 10px 10px 12px}
 .jinv .jcard{width:24px;height:24px}.jinv b{flex:1;font-size:13px;line-height:1.25;color:#3c3290}
 .ivc-go.sm{padding:7px 12px;font-size:12px}
+
+/* ===== Vignette de ligue (version H) ===== */
+.ncard.h{padding:8px 8px 14px}
+.ncard.h .nc-cover{height:184px;cursor:pointer}
+.nc-p{all:unset;box-sizing:border-box;cursor:pointer;display:inline-block;font-family:var(--bold);font-size:12.5px;font-weight:700;line-height:1.2;padding:5px 12px;border-radius:999px;background:#fff;color:var(--on);white-space:nowrap}
+.nc-p.cat{position:absolute;top:10px;left:10px;cursor:inherit;background:#ffffffee}
+.nc-stk{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;align-items:flex-end;gap:6px;z-index:1}
+.nc-p.up{background:var(--yel)}.nc-p.live{background:var(--ok-soft);color:#136B3B}.nc-p.end{background:var(--on);color:#fff}
+.nc-p.ok{background:#fff;color:#1E7B34}.nc-p.go{background:#1E9E54;color:#fff}.nc-p.dark{background:var(--on);color:#fff}
+.nc-band{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:8px;background:var(--yel);padding:7px 10px;font-family:var(--bold);font-size:12.5px;font-weight:600;color:var(--on)}
+.nc-band>span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nc-tk{flex:none;background:var(--on);color:var(--yel);font-weight:700;font-size:13px;border-radius:6px;padding:2px 7px}
+.nc-row{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;padding:12px 6px 0}
+.nc-row .nc-main{flex:1;min-width:0}
+.ncard.h .ltitle img.wm{height:34px}.ncard.h .ltitle .rest{font-size:32px;line-height:1.05;margin-top:4px}
+.ncard.h .nc-faces{flex:none;margin-bottom:2px;font-family:var(--bold);font-weight:600}
+.ncard.h .nc-faces em{font-family:var(--bold);font-weight:600;font-size:13px;font-style:normal}
+.nc-ex{all:unset;box-sizing:border-box;display:block;width:100%;cursor:pointer;padding:6px 6px 0}
