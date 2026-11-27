@@ -303,6 +303,7 @@ function isLantern(lg, r, x){
   if(!x||x.p==='D'||!r.matches) return false; const m=r.matches[x.m]; if(!m) return false;
   const f=S.feeds[m.comp||lg.comp]; if(!f||!f.standings||!f.standings.length) return false;
   const rk=sideRank(lg,m,x.p==='H'?m.h:m.a); if(!rk) return false;
+  if(isMerguez(lg)) return rk===1; // option Leader : parier sur la défaite du 1er
   const g=f.standings.find(g=>g.rows.some(rw=>String(rw.t)===String((x.p==='H'?m.h:m.a).id)))||f.standings[0];
   return rk===g.rows.length;
 }
@@ -752,8 +753,8 @@ const A = {
   newCat(v){ if(HIDDEN_CATS.includes(v)) return; S.view.newCat=v; render(); },
   newFmt(v){ S.view.newFmt=v; render(); },
   newLast(v){ S.view.newLast=v; render(); },
-  newLives(v){ if(v==='lastwins') S.view.newLast=S.view.newLast==='wins'?'':'wins'; else if(v==='lives') S.view.newLives=S.view.newLives?0:1; else if(v==='joker') S.view.newJoker=!S.view.newJoker; else if(v==='sabotage') S.view.newSabotage=!S.view.newSabotage; else if(v==='lantern') S.view.newLantern=!S.view.newLantern; else if(v==='merguez'){ S.view.newMerguez=!S.view.newMerguez; if(S.view.newMerguez) S.view.newLantern=false; } else if(v.startsWith('vis:')) S.view.newVis=v.slice(4); else S.view.newAway=!S.view.newAway; render(); },
-  setLives(v){ const [lid,k]=v.split('|'); const lg=S.leagues[lid]; if(!lg) return; if(k==='merguez'){ const on=!lg.merguez; return writeLeague(lid,{merguez:on, ...(on?{redLantern:false}:{}), name:fullName(stripPrefix(lg.name), on?'merguez':'survivor').slice(0,60)}).then(()=>toast(on?'Option MERGUEZ activée.':'Option MERGUEZ désactivée.')); }
+  newLives(v){ if(v==='lastwins') S.view.newLast=S.view.newLast==='wins'?'':'wins'; else if(v==='lives') S.view.newLives=S.view.newLives?0:1; else if(v==='joker') S.view.newJoker=!S.view.newJoker; else if(v==='sabotage') S.view.newSabotage=!S.view.newSabotage; else if(v==='lantern') S.view.newLantern=!S.view.newLantern; else if(v==='merguez'){ S.view.newMerguez=!S.view.newMerguez; } else if(v.startsWith('vis:')) S.view.newVis=v.slice(4); else S.view.newAway=!S.view.newAway; render(); },
+  setLives(v){ const [lid,k]=v.split('|'); const lg=S.leagues[lid]; if(!lg) return; if(k==='merguez'){ const on=!lg.merguez; return writeLeague(lid,{merguez:on, name:fullName(stripPrefix(lg.name), on?'merguez':'survivor').slice(0,60)}).then(()=>toast(on?'Option MERGUEZ activée.':'Option MERGUEZ désactivée.')); }
     const patch=k==='lastwins'?{lastRule:lg.lastRule==='wins'?null:'wins'}:k==='lives'?{lives:(+lg.lives?0:1)}:k==='joker'?{joker:!lg.joker}:k==='sabotage'?{sabotage:!lg.sabotage}:k==='lantern'?{redLantern:!lg.redLantern}:k.startsWith('vis:')?{picksVis:k.slice(4)}:{awayBonus:!lg.awayBonus}; writeLeague(lid,patch).then(()=>toast('Option mise à jour.')); },
   setLast(v){ const [lid,k]=v.split('|'); if(!S.leagues[lid]) return; writeLeague(lid,{lastRule:k||null}).then(()=>toast(k?'Option activée : '+LAST_RULES[k].t.toLowerCase()+'.':'Option désactivée.')); },
   setFmt(v){ const [lid,f]=v.split('|'); const lg=S.leagues[lid]; if(!lg) return;
@@ -1154,7 +1155,7 @@ function tileHtml(c, r, m, side, opts){
   const name = side==='D' ? 'Nul' : isMerguez(lg) ? 'Défaite' : 'Victoire';
   let pct=''; if(opts.dist){ const tot=opts.dist.tot; const k=m.k+'|'+side; const v=tot?Math.round((opts.dist.c[k]||0)*100/tot):0; pct=`<span class="vlab">${v} %</span>`; }
   const act = can && !used ? `data-a="pick" data-v="${lg.id}|${r.k}|${m.k}|${side}"` : 'disabled';
-  return `<button class="${cls}" ${act} aria-label="${side==='D'?'Match nul':'Victoire '+esc(sd.n)}">${sel?`<span class="ck">${I.check}</span>`:''}${ban?'<span class="bomb" title="Sabotée">'+IC.bomb+'</span>':''}<span class="nm">${name}</span>${lant?`<span class="lnt">${CI.lantern} ${c.points?'+2 pts':'+1 vie'}</span>`:''}${pct}</button>`;
+  return `<button class="${cls}" ${act} aria-label="${side==='D'?'Match nul':'Victoire '+esc(sd.n)}">${sel?`<span class="ck">${I.check}</span>`:''}${ban?'<span class="bomb" title="Sabotée">'+IC.bomb+'</span>':''}<span class="nm">${name}</span>${lant?`<span class="lnt">${isMerguez(lg)?'👑':CI.lantern} ${c.points?'+2 pts':'+1 vie'}</span>`:''}${pct}</button>`;
 }
 function roundDist(c, r){
   const voters=(c.info[r.k]&&c.info[r.k].aliveBefore)||c.mem; const cnt={}; let tot=0;
@@ -1212,7 +1213,8 @@ function jokersCard(c, r){
   // comment gagner des vies / points bonus
   const how=[];
   if(!c.points && +lg.lives>0) how.push([TI('heart'),'Une vie en réserve','Chaque joueur démarre avec une vie : à sa première erreur, il la perd mais reste en jeu.']);
-  if(lg.redLantern) how.push([TI('lantern'),'Lanterne rouge',c.points?'Une victoire avec la dernière équipe du classement : +2 points bonus.':'Une victoire avec la dernière équipe du classement : +1 vie.']);
+  if(lg.redLantern&&isMerguez(lg)) how.push([TI('trophy'),'Leader','Une défaite du leader du championnat sur ton pari : +1 vie.']);
+  else if(lg.redLantern) how.push([TI('lantern'),'Lanterne rouge',c.points?'Une victoire avec la dernière équipe du classement : +2 points bonus.':'Une victoire avec la dernière équipe du classement : +1 vie.']);
   const myL=!c.points&&c.lives?c.lives[S.me]||0:0, st=0;
   const howH=!how.length?'':c.points
     ? `<div class="jhow"><div class="jhow-t">Comment gagner des points bonus</div>${how.map(([i,tt,d])=>`<div class="jhow-r"><span>${i}</span><div><b>${tt}</b><small>${d}</small></div></div>`).join('')}</div>`
@@ -1348,7 +1350,8 @@ function livesRulesHtml(lg){
   if(!isPickMode(lg)) return '';
   let h='';
   if(lg.sabotage) h+=`<p class="lrule">${CI.bomb} <b>Sabotage :</b> une fois par ligue, un joueur peut interdire une équipe à un adversaire pour une journée. La victime découvre qui l'a saboté au moment de parier.</p>`;
-  if(lg.redLantern) h+=`<p class="lrule">${CI.lantern} <b>Lanterne rouge :</b> si un joueur gagne avec la dernière équipe du classement, il ${isPoints(lg)?'marque <b>2 points bonus</b>':'gagne <b>1 vie supplémentaire</b>'}.</p>`;
+  if(lg.redLantern&&isMerguez(lg)) h+=`<p class="lrule">${CI.trophy||''} <b>Leader :</b> si un joueur parie sur la défaite du leader du championnat et que le leader perd, il gagne <b>1 vie bonus</b>.</p>`;
+  else if(lg.redLantern) h+=`<p class="lrule">${CI.lantern} <b>Lanterne rouge :</b> si un joueur gagne avec la dernière équipe du classement, il ${isPoints(lg)?'marque <b>2 points bonus</b>':'gagne <b>1 vie supplémentaire</b>'}.</p>`;
   h+=`<p class="lrule">${picksVisible(lg)?IC.eye+' <b>Paris visibles :</b> tu peux voir les choix des autres avant l\'heure limite.':IC.eyeOff+' <b>Paris cachés :</b> les choix des autres sont dévoilés à l\'heure limite.'}</p>`;
   if(isPoints(lg)) return h;
   if(+lg.lives>0) h+=`<p class="lrule">${CI.heart} <b>Option de la ligue :</b> chaque joueur a droit à <b>une erreur</b> : si son pari est raté, il perd sa vie mais reste en jeu.</p>`;
@@ -1367,7 +1370,8 @@ function optionsBlock(lg, pts, act, lid, locked){
     o+=opt('merguez', !!lg.merguez, `<span class="lopt-wm">${WM('merguez')}</span>`, 'Tout à l’envers : pour survivre, les joueurs doivent parier sur un club qui va PERDRE. Le nom de la ligue change en conséquence.');
     o+=opt('lives', +lg.lives>0, `${TI('heart')}Une vie en réserve`, 'Chaque joueur a droit à une erreur : si son pari est raté, il perd sa vie mais reste en jeu.');
   }
-  if(pts||!lg.merguez) o+=opt('lantern', !!lg.redLantern, `${TI('lantern')}Lanterne rouge`, pts?'Si un joueur gagne avec la dernière équipe du classement, il marque 2 points bonus.':'Si un joueur gagne avec la dernière équipe du classement, il gagne 1 vie supplémentaire.');
+  if(!pts&&lg.merguez) o+=opt('lantern', !!lg.redLantern, `${TI('trophy')}Leader`, 'Si un joueur parie sur la défaite du leader du championnat et que le leader perd, il gagne 1 vie bonus.');
+  else o+=opt('lantern', !!lg.redLantern, `${TI('lantern')}Lanterne rouge`, pts?'Si un joueur gagne avec la dernière équipe du classement, il marque 2 points bonus.':'Si un joueur gagne avec la dernière équipe du classement, il gagne 1 vie supplémentaire.');
   if(!pts) j+=opt('joker', !!lg.joker, `${TI('joker')}Double chance`, 'Une fois par ligue, un joueur peut choisir 2 équipes sur une journée : il survit si au moins une des 2 équipes gagne.');
   j+=opt('sabotage', !!lg.sabotage, `${TI('bomb')}Sabotage`, 'Une fois par ligue, un joueur peut interdire une équipe à un adversaire pour une journée. La victime découvre qui l’a saboté au moment de parier.');
   const VIS=lg.picksVis==='visible';
@@ -1399,7 +1403,8 @@ function rulesCard(lg){
   // gagner des vies / points bonus
   const lv=[];
   if(!pts && +lg.lives>0) lv.push(row(TI('heart'),'Une vie en réserve','Chaque joueur démarre avec une vie : à sa première erreur, il la perd mais reste en jeu.'));
-  if(lg.redLantern) lv.push(row(TI('lantern'),'Lanterne rouge',pts?'Si un joueur gagne avec la dernière équipe du classement, il marque 2 points bonus.':'Si un joueur gagne avec la dernière équipe du classement, il gagne 1 vie supplémentaire.'));
+  if(lg.redLantern&&isMerguez(lg)) lv.push(row(TI('trophy'),'Leader','Si un joueur parie sur la défaite du leader du championnat et que le leader perd, il gagne 1 vie bonus.'));
+  else if(lg.redLantern) lv.push(row(TI('lantern'),'Lanterne rouge',pts?'Si un joueur gagne avec la dernière équipe du classement, il marque 2 points bonus.':'Si un joueur gagne avec la dernière équipe du classement, il gagne 1 vie supplémentaire.'));
   const lvH=lv.length?`<div class="rsec">${pts?'Points bonus':'Les vies'}</div>${lv.join('')}${!pts?'<div class="rnote">Une vie sauve d’une élimination : le joueur la perd et reste en jeu.</div>':''}`:'';
   // jokers
   const jk=[];
@@ -2004,6 +2009,7 @@ function viewManage(lid){
 // ---------- Sondages (questions de l'organisateur ; ajouter les nouvelles en haut de la liste)
 const POLLS=[
   {id:'looser', q:'Pouvoir créer des ligues LOOSER : tu dois parier sur une équipe qui va perdre pour survivre.', a:[['J’aime l’idée !','thumb'],['Non merci','x']]},
+  {id:'formats', q:'As-tu vu qu’il y avait des ligues SUR​VIVOR (tu rates, tu sors) et des ligues RA​CE, où le premier à X points gagne la ligue ?', a:[['Ja','thumb'],['Nein','x']]},
   {id:'vis', q:'Les paris des autres joueurs…', a:[['Je veux pouvoir les voir tout de suite','eye'],['C’est mieux de les garder secrets jusqu’au début de la journée','eyeOff']]},
 ];
 S.votes=S.votes||{};
