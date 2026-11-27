@@ -1770,7 +1770,7 @@ const REF_RULES=`<div class="rfr"><p><span>1</span><span><b>Invite un pote</b> a
 function inviteCard(c){
   if(c.status!=='upcoming') return ''; const lg=c.lg, k='ivh'+lg.id, op=!!S.open[k];
   const ico='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>';
-  return `<div class="ivx"><div class="ivc"><span class="ivc-jk">${CARD_ICO}</span><div class="ivc-tx tt"><b>Ramène tes potes</b><b class="j">et gagne des jokers</b></div><button class="ivc-go" data-a="invite" data-v="${lg.id}">${ico}Inviter</button></div><button class="ivx-m" data-a="toggle" data-v="${k}">Comment ça marche ?${CHEV_RND(op)}</button>${op?`<div class="ivx-b">${REF_RULES}</div>`:''}</div>`;
+  return `<div class="iva"><div class="iva-c"><div class="iva-r"><span class="iva-jk">${CARD_ICO}</span><div class="iva-tx"><b>Ramène tes potes</b><b class="j">et gagne des jokers</b></div><button class="ivc-go" data-a="invite" data-v="${lg.id}">${ico}Inviter</button></div>${op?`<div class="iva-b">${REF_RULES}</div>`:''}</div><button class="iva-m" data-a="toggle" data-v="${k}">${op?'Masquer':'Comment ça marche ?'}</button></div>`;
 }
 function nextVotesCard(c){
   const lg=c.lg; if(!c.pick) return '';
