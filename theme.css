@@ -1271,3 +1271,8 @@ button.lh-chip.pl:active{transform:scale(.96)}
 .pfj-in{display:flex;gap:8px;margin-top:10px;align-items:center}.pfj-in .in{flex:1;margin:0;text-transform:uppercase}
 .pfj-m{margin:12px -16px 0;width:calc(100% + 32px);padding:10px 16px 0}
 .jre{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin-top:8px;background:#5B4BC4;color:#fff;border-radius:999px;padding:6px 12px 6px 8px;font-family:var(--bold);font-size:12px;font-weight:700}.jre .jcard{width:16px;height:16px}
+
+.ivc-tx.tt b{padding-bottom:1px;line-height:1.22}
+.jinv{display:flex;align-items:center;gap:10px;margin-top:10px;background:#EEEBFF;border-radius:14px;padding:10px 10px 10px 12px}
+.jinv .jcard{width:24px;height:24px}.jinv b{flex:1;font-size:13px;line-height:1.25;color:#3c3290}
+.ivc-go.sm{padding:7px 12px;font-size:12px}
