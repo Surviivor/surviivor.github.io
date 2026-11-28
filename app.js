@@ -1293,6 +1293,12 @@ function roundCard(c, r, o={}){
   h+=saboAlert(c,r);
   const used=usedTeams(c,S.me,r.k), ban=saboOn(lg)?new Set(sabosOn(lg.id,S.me,r.k).map(x=>x.team)):null; const dist=(closed||picksVisible(lg))?roundDist(c,r):null;
   if(dist&&dist.tot) h+=`<div class="pct-note">% = part des joueurs ayant fait ce choix.</div>`;
+  if(dist&&dist.tot&&closed&&!['done','cancelled'].includes(ri.state)&&!o.compact){
+    const rows=Object.entries(dist.c).map(([k,v])=>{ const [mk,pp]=k.split('|'), m=(r.matches||{})[mk]; if(!m) return null;
+      const lb=pp==='D'?`Nul ${shortName(lg,m,m.h)} – ${shortName(lg,m,m.a)}`:shortName(lg,m,pp==='H'?m.h:m.a); return [lb,v]; }).filter(Boolean).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+    if(rows.length){ const mx=rows[0][1];
+      h+=`<div class="wc"><div class="wc-t">Où sont partis les choix</div>${rows.map(([lb,v])=>`<div class="wc-r"><span>${esc(lb)}</span><div class="wc-b"><i class="${v>=mx*.7?'hi':''}" style="width:${Math.max(8,v*100/mx)}%"></i></div><b>${v}</b></div>`).join('')}</div>`; }
+  }
   matchesOf(r).forEach(m=>{
     const res=matchResult(lg,m); const sc=matchScore(lg,m);
     const chosen=o.compact && pickSides(my).some(x=>x.m===m.k);

@@ -1434,3 +1434,11 @@ button.lh-chip.pl:active{transform:scale(.96)}
 .jsc.todo{font-size:12.5px;font-weight:600;color:var(--muted)}
 .sv-r2.pk-lost .sv-n,.sv-r2.pk-none .sv-n{color:#9A9DA3}
 .sv-r2.pk-lost .sv-pk,.sv-r2.pk-lost .av,.sv-r2.pk-none .av{filter:grayscale(1);opacity:.55}
+/* Où sont partis les choix (journée en cours) */
+.wc{background:var(--bg);border-radius:16px;padding:14px 14px 8px;margin:10px 0 14px}
+.wc-t{font-family:var(--bold);font-weight:800;font-size:16px;margin-bottom:8px}
+.wc-r{display:grid;grid-template-columns:minmax(0,108px) 1fr 26px;gap:12px;align-items:center;margin:0 0 9px}
+.wc-r span{font-family:var(--bold);font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wc-b{height:14px;border-radius:999px;background:rgba(22,24,29,.07);overflow:hidden}
+.wc-b i{display:block;height:100%;border-radius:999px;background:#F9DC8E}.wc-b i.hi{background:var(--yel)}
+.wc-r b{font-family:var(--bold);font-weight:800;font-size:15px;text-align:right}
