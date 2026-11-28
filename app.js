@@ -1295,9 +1295,8 @@ function roundCard(c, r, o={}){
   if(dist&&dist.tot) h+=`<div class="pct-note">% = part des joueurs ayant fait ce choix.</div>`;
   if(dist&&dist.tot&&closed&&!['done','cancelled'].includes(ri.state)&&!o.compact){
     const rows=Object.entries(dist.c).map(([k,v])=>{ const [mk,pp]=k.split('|'), m=(r.matches||{})[mk]; if(!m) return null;
-      const lb=pp==='D'?`Nul ${shortName(lg,m,m.h)} – ${shortName(lg,m,m.a)}`:shortName(lg,m,pp==='H'?m.h:m.a); return [lb,v]; }).filter(Boolean).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
-    if(rows.length){ const mx=rows[0][1];
-      h+=`<div class="wc"><div class="wc-t">Où sont partis les choix</div>${rows.map(([lb,v])=>`<div class="wc-r"><span>${esc(lb)}</span><div class="wc-b"><i class="${v>=mx*.7?'hi':''}" style="width:${Math.max(8,v*100/mx)}%"></i></div><b>${v}</b></div>`).join('')}</div>`; }
+      return pp==='D'?[`Nul ${m.h.n} – ${m.a.n}`,v,[m.h,m.a]]:[(pp==='H'?m.h:m.a).n,v,[pp==='H'?m.h:m.a]]; }).filter(Boolean).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+    if(rows.length) h+=`<div class="rc-t3">${top3Bars(rows.map(([nm,v,sd])=>[nm,Math.round(v*100/dist.tot),sd]),'',ri.n||(c.rounds.indexOf(r)+1))}</div>`;
   }
   matchesOf(r).forEach(m=>{
     const res=matchResult(lg,m); const sc=matchScore(lg,m);
@@ -1627,7 +1626,7 @@ function raceRanking(c){
     c.mem.forEach(u=>{ const p=pickOf(u,lid,r.k); if(!p) return; tot++; pickSides(p).forEach(x=>{ const m=(r.matches||{})[x.m]; if(!m) return; const k=x.p==='D'?'Nul '+m.h.n+' – '+m.a.n:(x.p==='H'?m.h:m.a).n; cnt[k]=(cnt[k]||0)+1; if(!lk[k]) lk[k]=x.p==='D'?[m.h,m.a]:[x.p==='H'?m.h:m.a]; }); });
     const t3=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,3);
     if(t3.length) top=`<div class="card">${top3Bars(t3.map(([k,v])=>[k,Math.round(v*100/tot),lk[k]]),'',n)}</div>`; }
-  let h=top+`<div class="card rk-card ${showPk?'':'nopk'}"><div class="sv-h"><span>${IC.trophy}Classement</span><small>Le premier à ${c.N} points gagne</small></div>`;
+  let h=`<div class="card rk-card ${showPk?'':'nopk'}"><div class="sv-h"><span>${IC.trophy}Classement</span><small>Le premier à ${c.N} points gagne</small></div>`;
   h+=`<div class="rk-th"><span>#</span><span></span><span>Joueur</span><span>GA</span><span>Pts</span>${showPk?`<span>Pari J${n}</span>`:''}</div>`;
   h+=c.ranking.map((x,i)=>`<div class="rk-tr ${x.pos===1?'first':''}"><div class="rk-pos">${x.pos}</div>${avatarOf(x.u)}<div class="rk-nm"><b>${esc(nameOf(x.u))}${x.u===S.me?'<span class="toi">TOI</span>':''}</b></div><div class="rk-ga ${x.ga>0?'p':x.ga<0?'n':''}">${x.ga>0?'+':''}${x.ga||0}</div><div class="rk-pts">${c.pts[x.u]||0}</div>${showPk?`<div class="rk-pk">${pill(x.u,i)}</div>`:''}</div>`).join('');
   if(showPk && !vis) h+=`<div class="rk-note">Les paris de la J${n} seront révélés le ${fmtDT(r.deadline)}. Tu vois seulement le tien.</div>`;
@@ -1675,7 +1674,6 @@ function survivorsView(c){
   const title=c.status==='finished'?'Vainqueur'+(c.winners.length>1?'s':''):c.status==='upcoming'?'Inscrits':`En vie${n?' · J'+n:''}`;
   const headA=`<div class="sv-h"><span>${c.status==='finished'?IC.trophy:heart}${title}</span><small>${c.status==='finished'?'':`${alive.length} sur ${c.mem.length}`}</small></div>`; let hb='';
   if(r && !vis && c.status!=='finished') hb+=`<div class="sv-lock">${IC.eyeOff}Choix révélés le ${fmtDT(r.deadline)}</div>`;
-  hb+=top;
   let list=c.status==='finished'?c.winners:alive;
   // Journée en cours : suivi (qualifiés / éliminés / à jouer) + état de chaque choix, trié par heure du match
   const pkSt={};
