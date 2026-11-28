@@ -1705,7 +1705,7 @@ function survivorsView(c){
     return `<div class="sv-r2${pkSt[u]?' pk-'+pkSt[u].k:''}">${avatarOf(u)}<div class="sv-n">${esc(nameOf(u))}${u===S.me?'<span class="toi">TOI</span>':''}${lv?`<small>${CI.heart} ${lv} vie${lv>1?'s':''}</small>`:''}</div><div class="sv-c">${right}${stTag(u)}</div></div>`; }).join('');
   h+=svCard('svA'+lid,true,headA,hb);
   { const ub=usedBoard(c, r&&t(r.deadline)<=now()?{deadline:new Date(t(r.deadline)+1).toISOString()}:(r||c.rounds[c.rounds.length-1]));
-    if(ub.rows.some(x=>x.us.length) && c.status!=='finished'){
+    if(false && ub.rows.some(x=>x.us.length) && c.status!=='finished'){
       const rows=ub.rows.map(x=>{ const mine=x.us.includes(S.me), others=x.us.filter(u=>u!==S.me);
         const avs=(mine?[`<span class="ub-av me">${avatarOf(S.me)}</span>`]:[]).concat(others.slice(0,mine?3:4).map(u=>`<span class="ub-av">${avatarOf(u)}</span>`)).join('');
         return `<div class="ub-r${x.us.length?'':' zero'}">${logoTag(x.sd,'ub-lg')||'<span class="ub-lg"></span>'}<b>${esc(x.sd.n)}</b><span class="ub-who">${avs}<em>${x.us.length}/${ub.n}</em></span></div>`; }).join('');
