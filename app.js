@@ -1025,10 +1025,20 @@ function prizeRulesHtml(lg){
     <p><b>Remise :</b> le lot est envoyé par e-mail au gagnant à la fin de la ligue.</p>
     <p class="rlot-f">Participation gratuite et sans obligation d'achat. Un seul compte par personne.</p></div>`;
 }
+// Survivants « en direct » : on retire ceux déjà éliminés dans la journée en cours (match perdu ou pas de pari)
+function aliveNow(c){
+  if(c.points || c.status!=='live') return c.alive;
+  const r=pendR(c); if(!r) return c.alive;
+  const lid=c.lg.id;
+  return c.alive.filter(u=>{ if(c.lives && (c.lives[u]||0)>0) return true;
+    const p=pickOf(u,lid,r.k); if(!p) return false;
+    const x=pickSides(p)[0], m=x&&(r.matches||{})[x.m]; if(!m) return true;
+    const res=matchResult(c.lg,m); return !res || pickOk(c.lg,res.r,x.p); });
+}
 // Compteur « X survivants sur Y » avec jauge qui se vide
 function survMeter(c, small){
   if(c.points || c.status==='upcoming' || !c.mem.length) return '';
-  const a=c.alive.length, n=c.mem.length, pct=Math.max(2,Math.round(a*100/n));
+  const a=aliveNow(c).length, n=c.mem.length, pct=Math.max(2,Math.round(a*100/n));
   const done=c.rounds.filter(r=>['done','cancelled'].includes((c.info[r.k]||{}).state)).length;
   return `<div class="smeter ${small?'sm':''}"><div class="sm-top"><b>${a}</b><span>survivant${a>1?'s':''} sur ${n}</span>${(small||!done)?'':`<em>après ${done} journée${done>1?'s':''}</em>`}</div><div class="sm-bar"><i style="width:${pct}%"></i></div></div>`;
 }
@@ -1051,7 +1061,7 @@ function leagueCardNew(c){ let h='';
     ].join('');
     if(c.status!=='upcoming'){
       const meter=c.points?`<div class="nci-m"><div class="nci-mt">Objectif <b>${c.N}</b> pts · leader à ${c.ranking[0]?c.ranking[0].pts:0}</div><div class="nci-bar"><i style="width:${Math.min(100,Math.round((c.ranking[0]?c.ranking[0].pts:0)*100/Math.max(1,c.N)))}%"></i></div></div>`
-        :`<div class="nci-m"><div class="nci-mt"><b>${c.alive.length}</b> survivant${c.alive.length>1?'s':''} sur ${c.mem.length} inscrit${c.mem.length>1?'s':''}</div><div class="nci-bar"><i style="width:${Math.round(c.alive.length*100/Math.max(1,c.mem.length))}%"></i></div></div>`;
+        :`<div class="nci-m"><div class="nci-mt"><b>${aliveNow(c).length}</b> survivant${aliveNow(c).length>1?'s':''} sur ${c.mem.length} inscrit${c.mem.length>1?'s':''}</div><div class="nci-bar"><i style="width:${Math.round(aliveNow(c).length*100/Math.max(1,c.mem.length))}%"></i></div></div>`;
       const win=[c.winners.length?`<div class="nc-win w">🏆 ${[...c.winners,...(c.lastRule==='wins'?c.lasts:[])].map(w=>esc(nameOf(w))).join(' & ')}</div>`:'', c.lastRule==='drink'&&c.lasts.length?`<div class="nc-win w">🍺 ${c.lasts.map(w=>esc(nameOf(w))).join(' & ')} ${c.lasts.length>1?'doivent':'doit'} un verre</div>`:''].join('');
       const title=leagueTitle(lg.name).replace(/src="img\/(survivor|race|oneshot|merguez|x)\.png/g,'src="img/$1-white.png');
       h+=`<div class="ncard h"><div class="nci" data-a="open" data-v="${lg.id}" role="button" aria-label="Ouvrir la ligue">${coverHtml(lg)}<div class="nci-sh"></div>
@@ -1089,7 +1099,7 @@ function dashCard(myL, todo){
     let st, pct, l='', r='';
     if(c.points){ const me=c.rankOf[S.me]||{}, p=me.pts||0; st=`<b>${p}</b> / ${c.N} pts`; pct=p*100/c.N;
       l=c.status==='upcoming'?`Début dans ${shortDur(t(c.lg.startAt))}`:`Classement : ${me.pos||'–'}${me.pos===1?'er':'e'}`; }
-    else { const a=c.status==='upcoming'?c.mem.length:c.alive.length, n=c.mem.length, out=n-a, dead=c.status!=='upcoming'&&!c.alive.includes(S.me);
+    else { const an=c.status==='upcoming'?c.mem:aliveNow(c), a=an.length, n=c.mem.length, out=n-a, dead=c.status!=='upcoming'&&!an.includes(S.me);
       st=`<b class="${dead?'ko':''}">${a}</b> / ${n} en vie`; pct=a*100/Math.max(1,n);
       if(c.status==='upcoming') l=`Début dans ${shortDur(t(c.lg.startAt))}`;
       else { const cur=c.rounds.find(r=>t(r.deadline)>now()); const jn=cur?((c.info[cur.k]||{}).n||(c.rounds.indexOf(cur)+1)):''; l=`${out} éliminé${out>1?'s':''}`; r=dead?'<b class="ko">Tu es éliminé</b>':`Tu es en vie${jn?' · J'+jn:''}`; } }
@@ -1672,7 +1682,7 @@ function survivorsView(c){
     const t3=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,3); if(t3.length) top=top3Bars(t3.map(([k,v])=>[k,Math.round(v*100/tot),lk[k]]),'',n);
   }
   const title=c.status==='finished'?'Vainqueur'+(c.winners.length>1?'s':''):c.status==='upcoming'?'Inscrits':`En vie${n?' · J'+n:''}`;
-  const headA=`<div class="sv-h"><span>${c.status==='finished'?IC.trophy:heart}${title}</span><small>${c.status==='finished'?'':`${alive.length} sur ${c.mem.length}`}</small></div>`; let hb='';
+  const headA=`<div class="sv-h"><span>${c.status==='finished'?IC.trophy:heart}${title}</span><small>${c.status==='finished'?'':`${c.status==='upcoming'?alive.length:aliveNow(c).length} sur ${c.mem.length}`}</small></div>`; let hb='';
   if(r && !vis && c.status!=='finished') hb+=`<div class="sv-lock">${IC.eyeOff}Choix révélés le ${fmtDT(r.deadline)}</div>`;
   let list=c.status==='finished'?c.winners:alive;
   // Journée en cours : suivi (qualifiés / éliminés / à jouer) + état de chaque choix, trié par heure du match
@@ -1886,7 +1896,7 @@ function leagueHero(c, lid){
     else chips.push(['pl',`${n} joueurs`]);
     if(c.status!=='finished') chips.push(['',`${cal}J${jn}`]);
     const done=c.rounds.filter(r=>['done','cancelled'].includes((c.info[r.k]||{}).state)).length;
-    gauge=G(c.alive.length*100/Math.max(1,n),`<b>${c.alive.length} survivant${c.alive.length>1?'s':''}</b> sur ${n}`,done?`après ${done} journée${done>1?'s':''}`:'');
+    gauge=G(aliveNow(c).length*100/Math.max(1,n),`<b>${aliveNow(c).length} survivant${aliveNow(c).length>1?'s':''}</b> sur ${n}`,done?`après ${done} journée${done>1?'s':''}`:'');
   }
   return `<div class="lh-backw"><button class="lh-back" data-a="back" aria-label="Retour">${I.back}</button></div><div class="lhero ${canManage(lg)?'adm':''}">${canManage(lg)?`<button class="lh-c lh-gear" data-a="manage" data-v="${lid}" aria-label="Gérer la ligue">${I.gear}</button>`:''}${title}<div class="lh-chips" style="grid-template-columns:repeat(${chips.length},1fr)">${chips.map(([k,x])=>k==='pl'?`<button class="lh-chip pl" data-a="ltab" data-v="surv">${x}</button>`:`<span class="lh-chip ${k}">${x}</span>`).join('')}</div>${gauge}</div>`;
 }
