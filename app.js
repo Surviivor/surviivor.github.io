@@ -1652,6 +1652,7 @@ function myUsedLine(c, r){
   if(!list.length) return '';
   return `<button class="myused" data-a="myUsed" data-v="${c.lg.id}"><span>Déjà joués</span><span class="mu-lg">${list.map(sd=>logoTag(sd,'mu-im')||`<b>${esc((sd.n||'?').slice(0,3))}</b>`).join('')}</span><em>›</em></button>`;
 }
+const CLK='<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
 function survivorsView(c){
   const lg=c.lg, lid=lg.id; let h='';
   const r=pendR(c)||c.rounds.find(r=>t(r.deadline)>now());
@@ -1669,18 +1670,35 @@ function survivorsView(c){
   const headA=`<div class="sv-h"><span>${c.status==='finished'?IC.trophy:heart}${title}</span><small>${c.status==='finished'?'':`${alive.length} sur ${c.mem.length}`}</small></div>`; let hb='';
   if(r && !vis && c.status!=='finished') hb+=`<div class="sv-lock">${IC.eyeOff}Choix révélés le ${fmtDT(r.deadline)}</div>`;
   hb+=top;
-  const list=c.status==='finished'?c.winners:alive;
+  let list=c.status==='finished'?c.winners:alive;
+  // Journée en cours : suivi (qualifiés / éliminés / à jouer) + état de chaque choix, trié par heure du match
+  const pkSt={};
+  const PI={won:`<span class="jpi won">${IC.check}</span>`, lost:`<span class="jpi lost">${IC.x}</span>`, todo:`<span class="jpi todo">${IC.clock||CLK}</span>`};
+  if(r && vis && c.status!=='finished'){
+    list.forEach(u=>{ const p=pickOf(u,lid,r.k); if(!p){ pkSt[u]={k:'none',d:Infinity}; return; }
+      const x=pickSides(p)[0], m=(r.matches||{})[x.m]; if(!m){ pkSt[u]={k:'none',d:Infinity}; return; }
+      const res=matchResult(lg,m), d=t(m.d)||Infinity;
+      pkSt[u]= res ? {k:pickOk(lg,res.r,x.p)?'won':'lost',d,sc:res.hs!=null&&res.as!=null?`${res.hs} – ${res.as}`:''} : {k:'todo',d}; });
+    list=[...list].sort((a,b)=>{ const o=k=>k==='todo'?1:k==='none'?2:0; return (o(pkSt[a].k)-o(pkSt[b].k))||(pkSt[a].d-pkSt[b].d)||nameOf(a).localeCompare(nameOf(b)); });
+    const nb=k=>list.filter(u=>pkSt[u].k===k).length, W=nb('won'), Lo=nb('lost')+nb('none'), T=nb('todo'), N=Math.max(1,list.length);
+    const ln=(k,lb,v)=>`<div class="js-r">${PI[k]}<div class="js-l"><b>${lb}</b><div class="js-bar"><i class="${k}" style="width:${v?Math.max(3,v*100/N):0}%"></i></div></div><em>${v}</em></div>`;
+    hb=`<div class="js"><div class="js-t">Suivi de la J${n}</div>${ln('won','Qualifiés',W)}${ln('lost','Éliminés',Lo)}${ln('todo','À jouer',T)}</div>`+hb;
+  }
+  const stTag=u=>{ const s=pkSt[u]; if(!s) return '';
+    if(s.k==='none') return `<span class="jres"><span class="jsc todo">Pas de pari</span>${PI.lost}</span>`;
+    if(s.k==='todo') return `<span class="jres"><span class="jsc todo">À jouer</span>${PI.todo}</span>`;
+    return `<span class="jres"><span class="jsc">${s.sc||(s.k==='won'?'Gagné':'Perdu')}</span>${PI[s.k]}</span>`; };
   const showPk=r && c.status!=='finished';
   const nPk=r?((c.info[r.k]||{}).n||(c.rounds.indexOf(r)+1)):'';
   if(showPk) hb+=`<div class="sv-th"><span></span><span>Pari J${nPk}</span></div>`;
   hb+=list.map(u=>{ const lv=c.lives?c.lives[u]||0:0;
     let right='';
     if(showPk){ const p=pickOf(u,lid,r.k);
-      if(!p) right=`<span class="sv-none">–</span>`;
+      if(!p) right=pkSt[u]?'':`<span class="sv-none">–</span>`;
       else if(!vis && u!==S.me) right=`<span class="rpk hid" title="Parié">${LOCK}</span>`;
       else { const x=pickSides(p)[0], m=(r.matches||{})[x.m];
         right=!m?'<span class="sv-none">–</span>':x.p==='D'?`<span class="sv-pk dr" title="Nul">${logoTag(m.h,'sv-im')}<b>=</b>${logoTag(m.a,'sv-im')}</span>`:(()=>{ const sd=x.p==='H'?m.h:m.a; return `<span class="sv-pk" title="${esc(sd.n)}">${logoTag(sd,'sv-im')||`<b>${esc((sd.n||'?').slice(0,3))}</b>`}</span>`; })(); } }
-    return `<div class="sv-r2">${avatarOf(u)}<div class="sv-n">${esc(nameOf(u))}${u===S.me?'<span class="toi">TOI</span>':''}${lv?`<small>${CI.heart} ${lv} vie${lv>1?'s':''}</small>`:''}</div><div class="sv-c">${right}</div></div>`; }).join('');
+    return `<div class="sv-r2${pkSt[u]?' pk-'+pkSt[u].k:''}">${avatarOf(u)}<div class="sv-n">${esc(nameOf(u))}${u===S.me?'<span class="toi">TOI</span>':''}${lv?`<small>${CI.heart} ${lv} vie${lv>1?'s':''}</small>`:''}</div><div class="sv-c">${right}${stTag(u)}</div></div>`; }).join('');
   h+=svCard('svA'+lid,true,headA,hb);
   { const ub=usedBoard(c, r&&t(r.deadline)<=now()?{deadline:new Date(t(r.deadline)+1).toISOString()}:(r||c.rounds[c.rounds.length-1]));
     if(ub.rows.some(x=>x.us.length) && c.status!=='finished'){
