@@ -1296,7 +1296,7 @@ function roundCard(c, r, o={}){
   if(dist&&dist.tot&&closed&&!['done','cancelled'].includes(ri.state)&&!o.compact){
     const rows=Object.entries(dist.c).map(([k,v])=>{ const [mk,pp]=k.split('|'), m=(r.matches||{})[mk]; if(!m) return null;
       return pp==='D'?[`Nul ${m.h.n} – ${m.a.n}`,v,[m.h,m.a]]:[(pp==='H'?m.h:m.a).n,v,[pp==='H'?m.h:m.a]]; }).filter(Boolean).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
-    if(rows.length) h+=`<div class="rc-t3">${top3Bars(rows.map(([nm,v,sd])=>[nm,Math.round(v*100/dist.tot),sd]),'',ri.n||(c.rounds.indexOf(r)+1))}</div>`;
+    if(rows.length) h+=`<div class="rc-t3">${top3Bars(rows.slice(0,3).map(([nm,v,sd])=>[nm,Math.round(v*100/dist.tot),sd]),'',ri.n||(c.rounds.indexOf(r)+1))}</div>`;
   }
   matchesOf(r).forEach(m=>{
     const res=matchResult(lg,m); const sc=matchScore(lg,m);
