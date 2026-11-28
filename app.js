@@ -1690,7 +1690,7 @@ function survivorsView(c){
   }
   const stTag=u=>{ const s=pkSt[u]; if(!s) return '';
     if(s.k==='none') return `<span class="jres"><span class="jsc todo">Pas de pari</span>${PI.lost}</span>`;
-    if(s.k==='todo') return `<span class="jres"><span class="jsc todo">À jouer</span>${PI.todo}</span>`;
+    if(s.k==='todo') return `<span class="jres" title="À jouer">${PI.todo}</span>`;
     return `<span class="jres"><span class="jsc">${s.sc||(s.k==='won'?'Gagné':'Perdu')}</span>${PI[s.k]}</span>`; };
   const showPk=r && c.status!=='finished';
   const nPk=r?((c.info[r.k]||{}).n||(c.rounds.indexOf(r)+1)):'';
